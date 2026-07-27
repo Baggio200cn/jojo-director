@@ -6,6 +6,7 @@
 import asyncio
 import base64
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -678,12 +679,21 @@ async def _run_compose(node: dict) -> dict:
         args = ["ffmpeg", "-y"]
         for v in videos:
             args += ["-i", v]
+        # 跨平台中文字体：Windows 用微软雅黑，Linux 用 Noto CJK（apt: fonts-noto-cjk）
+        if os.name == "nt":
+            _font = "C\\:/Windows/Fonts/msyh.ttc"
+        else:
+            _font = next((p for p in (
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc") if Path(p).exists()), "")
+
         def _cap_filter(i: int) -> str:
             cap = captions[i] if i < len(captions) else ""
-            if not cap:
+            if not cap or not _font:
                 return ""
             safe = cap.replace(chr(92), "").replace("'", "").replace(":", " ").replace("%", " ")[:40]
-            return (",drawtext=fontfile='C\\:/Windows/Fonts/msyh.ttc':text='" + safe
+            return (",drawtext=fontfile='" + _font + "':text='" + safe
                     + "':x=(w-text_w)/2:y=42:fontsize=44:fontcolor=white:borderw=3:bordercolor=black@0.7")
         filt = "".join(
             f"[{i}:v]scale=1280:720:force_original_aspect_ratio=decrease,"
