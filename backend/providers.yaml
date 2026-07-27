@@ -1,0 +1,71 @@
+# 模型供应商与路由配置。换模型/换供应商只改这个文件，代码零改动。
+providers:
+  ark:
+    base_url: https://ark.cn-beijing.volces.com/api/v3
+    api_key_env: ARK_API_KEY
+    enabled: true
+  openai:
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+    enabled: false            # GPT Image 通道就绪后置 true
+  kling:
+    enabled: false            # 预留：可灵
+  siliconflow:
+    enabled: false            # 预留：硅基流动
+  qianfan:
+    enabled: false            # 预留：百度千帆
+
+routes:
+  script:      { provider: ark, model: ep-m-20260628072122-2qpsz }        # DeepSeek-V4-pro
+  storyboard:  { provider: ark, model: ep-m-20260628072122-2qpsz }
+  image:       { provider: ark, model: ep-m-20260405031810-d2bbc }        # Seedream-4.5（文生图/首帧）
+  image_edit:  { provider: ark, model: doubao-seedream-5-0-pro-260628 }   # Seedream-5.0-pro（编辑/尾帧，实测可执行光效编辑）
+  # 编辑备选：doubao-seedream-5-0-260128（5.0 标准版，光效稍弱）
+  image_alt:   { provider: openai, model: gpt-image-2 }                    # 预留
+  video:       { provider: ark, model: doubao-seedance-2-0-mini-260615,   # Seedance-2.0-mini
+                 resolutions: ["480p", "720p"] }                           # mini 不支持 1080p
+  video_hd:    { provider: ark, model: doubao-seedance-2-0-260128 }       # 预留：2.0正式版 API 放开后启用
+  code_render: { provider: local, engine: manim }
+  qc_vision:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 视觉裁判：Doubao-Seed-2.1-pro
+  ref_video:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 参考视频分析（视觉模型）
+  research:    { provider: ark, model: ep-m-20260628072122-2qpsz }   # Agent 联网调研（需开通联网内容插件）
+
+# 成本阀：超限拒绝执行（单位：人民币元，预估值）
+budget:
+  max_cost_per_image: 1.0
+  max_cost_per_video: 5.0
+  max_video_retries: 2
+
+# Agent 对话可选模型（前端下拉框），第一个为默认
+agent_models:
+  - { label: DeepSeek-V4-pro,     model: ep-m-20260628072122-2qpsz }
+  - { label: Doubao-Seed-2.1-pro, model: doubao-seed-2-1-pro-260628 }
+
+# 单价表（人民币）：报表端点据此惰性结算 estimated_cost_cny
+# calibrated=true 表示由真实账单反推校准；false 为公开价目估计，拿到账单后应替换
+pricing:
+  ep-m-20260405031810-d2bbc:            # Seedream-4.5 文生图
+    per_image: 0.46                     # 2026-07账单61.9元/134张 校准
+    calibrated: true
+  doubao-seedream-5-0-pro-260628:       # Seedream-5.0-pro 编辑
+    per_image: 0.46                     # 同上账单口径（混合均价）
+    calibrated: true
+  doubao-seedance-2-0-mini-260615:      # Seedance-2.0-mini 视频（按 output tokens）
+    per_million_output_tokens: 7.0      # 估计值！待视频类目账单校准
+    calibrated: false
+  doubao-seed-2-1-pro-260628:           # 视觉裁判（按 tokens）
+    per_million_input_tokens: 0.8       # 估计值
+    per_million_output_tokens: 8.0      # 估计值
+    calibrated: false
+  ep-m-20260628072122-2qpsz:            # DeepSeek-V4-pro 文本
+    per_million_input_tokens: 2.0       # 估计值
+    per_million_output_tokens: 8.0      # 估计值
+    calibrated: false
+
+# 质检控制阀
+qc:
+  mode: advisory              # advisory=有硬伤时合成弹警告但放行 / strict=拦截合成
+  frames_per_video: 5         # 每条视频抽帧数
+  confidence_threshold: 0.7   # 裁判置信度低于此值 → 判 uncertain 转人工
+  edit_precheck: true         # 编辑式生成后自动做一致性预检，不合格自动重抽
+  edit_max_attempts: 3        # 编辑式生成最多尝试次数（含首次）

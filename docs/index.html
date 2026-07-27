@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOJO Director · 职教微课 AI 创作画布</title>
+<style>
+  :root { --navy:#0E1A2B; --card:#16283F; --line:#24405F; --txt:#C9D6E5; --dim:#7E93AB;
+          --cyan:#5CC5EC; --amber:#F2B45C; --green:#7ED6A5; --pink:#E8A0BF; --violet:#B49CE8; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:var(--txt); font-family:"Microsoft YaHei","PingFang SC",sans-serif; line-height:1.7; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  header { padding:64px 0 40px; text-align:center; }
+  h1 { font-size:44px; color:#fff; letter-spacing:2px; }
+  .tag { color:var(--cyan); font-size:17px; margin-top:12px; }
+  .sub { color:var(--dim); font-size:14px; margin-top:8px; }
+  section { padding:36px 0; border-top:1px solid var(--line); }
+  h2 { color:#fff; font-size:24px; margin-bottom:18px; }
+  h2 span { color:var(--amber); margin-right:8px; }
+  video, img.arch { width:100%; border-radius:12px; border:1px solid var(--line); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; }
+  .stat { background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:18px; text-align:center; }
+  .stat b { display:block; font-size:30px; margin-bottom:6px; }
+  .stat small { color:var(--dim); font-size:12.5px; }
+  .c1{color:var(--cyan)} .c2{color:var(--amber)} .c3{color:var(--green)} .c4{color:var(--pink)} .c5{color:var(--violet)}
+  textarea { width:100%; min-height:88px; background:#0A1522; color:var(--txt); border:1.5px solid var(--line);
+             border-radius:10px; padding:14px; font-size:15px; font-family:inherit; resize:vertical; }
+  textarea:focus { outline:none; border-color:var(--cyan); }
+  .btnrow { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  button { background:var(--cyan); color:#062033; border:none; border-radius:8px; padding:10px 22px;
+           font-size:15px; font-weight:bold; cursor:pointer; font-family:inherit; }
+  button.ghost { background:transparent; color:var(--cyan); border:1.5px solid var(--cyan); font-weight:normal; }
+  .verdicts { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+  .vcard { background:var(--card); border-left:4px solid var(--amber); border-radius:8px; padding:14px 16px; }
+  .vcard.ok { border-left-color:var(--green); }
+  .vcard b { color:#fff; }
+  .vcard .route { color:var(--cyan); }
+  .vcard small { color:var(--dim); display:block; margin-top:4px; }
+  .quick { background:var(--card); border-radius:12px; padding:20px 24px; }
+  code { background:#0A1522; padding:2px 8px; border-radius:6px; color:var(--green); font-size:14px; }
+  pre { background:#0A1522; border-radius:10px; padding:16px; overflow-x:auto; color:var(--green); font-size:13.5px; margin-top:10px; }
+  a { color:var(--cyan); }
+  footer { padding:40px 0 60px; text-align:center; color:var(--dim); font-size:13px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>JOJO Director</h1>
+  <div class="tag">面向职业教育的 AI 微课创作画布</div>
+  <div class="sub">把「教学准确性」写进产线，而不是写进祈祷词</div>
+</header>
+
+<section>
+  <h2><span>▶</span>实测成片：《LED驱动器与智慧照明控制》</h2>
+  <p style="color:var(--dim);margin-bottom:14px">12 镜 · 2分08秒 · 11条AI视频＋1条代码渲染 · 63条同步字幕 · 全程无人工剪辑</p>
+  <video controls preload="metadata"
+    src="https://github.com/Baggio200cn/jojo-director/releases/download/v0.3.0/LED_demo_film.mp4"></video>
+</section>
+
+<section>
+  <h2><span>◆</span>一次真实生产的账单</h2>
+  <div class="stats">
+    <div class="stat"><b class="c1">42 → 0</b><small>首轮暴露问题<br>全部机制化闭环</small></div>
+    <div class="stat"><b class="c2">12/12</b><small>成片段落<br>无一缺席</small></div>
+    <div class="stat"><b class="c3">¥59</b><small>项目全周期<br>模型调用成本</small></div>
+    <div class="stat"><b class="c4">47%</b><small>Route Regret<br>本可避免的浪费</small></div>
+    <div class="stat"><b class="c5">10 次</b><small>人工裁决<br>一屏坐诊完成</small></div>
+  </div>
+  <p style="color:var(--dim);margin-top:14px;font-size:14px">
+    Route Regret＝明知模型不擅长仍反复尝试造成的浪费。MAAO 路由引擎的目标就是把这 47% 归零——这正是下面这个模拟器做的事。</p>
+</section>
+
+<section>
+  <h2><span>⚙</span>MAAO 路由模拟器（试一试）</h2>
+  <p style="color:var(--dim);margin-bottom:12px">
+    输入一句分镜描述，看路由引擎如何根据<b style="color:var(--txt)">实测能力地图</b>决定生产路径。
+    规则与线上产线同源（<a href="https://github.com/Baggio200cn/jojo-director/blob/main/backend/capability_map.yaml">capability_map.yaml</a>），纯前端运行。</p>
+  <textarea id="inp" placeholder="例：尾帧要求勺子上的颗粒比首帧更亮，散发金色光芒"></textarea>
+  <div class="btnrow">
+    <button onclick="route()">路由决策</button>
+    <button class="ghost" onclick="fill('尾帧要求勺子上的发光颗粒比首帧更亮，金色光芒更强')">例1·亮度变化</button>
+    <button class="ghost" onclick="fill('画面必须显示水管连接到灯泡，所有设备接入总线')">例2·连接拓扑</button>
+    <button class="ghost" onclick="fill('工作台上恰好5个模块，屏幕显示文字 Status Normal')">例3·数量+文字</button>
+    <button class="ghost" onclick="fill('教室全景，镜头缓缓推近天花板的LED灯')">例4·普通场景</button>
+  </div>
+  <div id="out" class="verdicts"></div>
+</section>
+
+<section>
+  <h2><span>▦</span>技术架构</h2>
+  <img class="arch" src="architecture.png" alt="JOJO Director 技术架构">
+</section>
+
+<section>
+  <h2><span>⚡</span>5 分钟本地跑起来</h2>
+  <div class="quick">
+    <p>需要：Python 3.11+ / Node 18+ / ffmpeg / <a href="https://console.volcengine.com/ark">火山方舟</a> API Key（自备，一部微课约 ¥30-60）</p>
+    <pre>git clone https://github.com/Baggio200cn/jojo-director.git
+cd jojo-director/backend
+pip install -r requirements.txt
+cp .env.example .env        # 填入 ARK_API_KEY
+python -m uvicorn app.main:app --port 8000
+# 另开终端
+cd ../frontend && npm install && npm run dev</pre>
+    <p style="margin-top:10px">完整文档：<a href="https://github.com/Baggio200cn/jojo-director#readme">README</a> ·
+       方法论：<a href="https://github.com/Baggio200cn/jojo-director/blob/main/docs/MAAO_Runtime_Specification_v0.3.md">MAAO Runtime Specification v0.3</a></p>
+  </div>
+</section>
+
+<footer>
+  JOJO Director · Apache-2.0 · Copyright 2026 Baggio200cn<br>
+  本页所有视频与图像均由 JOJO Director 产线自动生成
+</footer>
+</div>
+
+<script>
+const RULES = [
+  { id:'亮度/颜色方向变化', kws:['更亮','更暗','变亮','变暗','亮度','更红','更蓝','发光增强','光芒更强','brighter','dimmer'],
+    tier:'LOW', ev:6, route:'移交视频阶段渐变，该镜转单帧驱动',
+    why:'编辑模型做"方向性亮度/颜色变化"实测常把方向做反（更亮→更暗）' },
+  { id:'屏幕文字保持', kws:['保持文字','屏幕显示','文字不变','显示屏','status'],
+    tier:'LOW', ev:3, route:'转单帧驱动（不做尾帧编辑）',
+    why:'编辑模型无法保持屏幕小字原样，3/3 次乱码化' },
+  { id:'连接拓扑', kws:['接入','连接到','串联','相连','连通','接线','连线','管道连接','必须连接','接到','connect'],
+    tier:'LOW', ev:5, route:'改用代码渲染模板（block_diagram 等）',
+    why:'文生图对"谁接谁"的空间拓扑不稳，悬空/错接高发' },
+  { id:'画面内文字', kws:['写着','显示文字','标题为','文字为','显示 status','显示文字'],
+    tier:'LOW', ev:6, route:'文字移入合成期字幕字卡',
+    why:'画面内中文必乱码（实测出现过 PWW、Fower Supply、伪汉字）' },
+  { id:'精确数量', re:/(恰好|正好|exactly)\s*[0-9一二三四五六七八九十]+|必须[^。]{0,12}[0-9一二三四五六七八九十]+\s*[个盏台块条颗]/,
+    tier:'LOW', ev:4, route:'断言自动加容差（±1 可接受）',
+    why:'文生图对"恰好N个"常多画或少画 1-2 个' },
+];
+function fill(t){ document.getElementById('inp').value=t; route(); }
+function route(){
+  const t = document.getElementById('inp').value.trim();
+  const out = document.getElementById('out');
+  out.innerHTML='';
+  if(!t){ out.innerHTML='<div class="vcard"><b>请输入分镜描述</b></div>'; return; }
+  let hits=0;
+  for(const r of RULES){
+    const hit = r.re ? r.re.test(t) : r.kws.some(k=>t.toLowerCase().includes(k.toLowerCase()));
+    if(hit){ hits++;
+      out.innerHTML += `<div class="vcard"><b>⚠ 检测到：${r.id}</b>（能力档位 ${r.tier}，证据 ${r.ev} 次）<br>
+        路由决策：<span class="route">${r.route}</span><small>${r.why}</small></div>`;
+    }
+  }
+  if(!hits){
+    out.innerHTML = `<div class="vcard ok"><b>✓ 未命中低可靠区</b><br>
+      路由决策：<span class="route">常规产线（文生图首帧 → 编辑尾帧 → 首尾帧驱动视频）</span>
+      <small>场景构图/氛围类是当前模型的强项（HIGH，证据14次），直接生成</small></div>`;
+  }
+}
+</script>
+</body>
+</html>

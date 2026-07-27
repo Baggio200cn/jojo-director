@@ -1,0 +1,28 @@
+# 通用质检规则包（所有学科共用）
+# severity: blocker=硬红线(不合格) / warning=软提醒 / info=备注不扣分
+# 规则是给"视觉裁判"的审题标准，用自然语言描述，老师可直接增改
+rules:
+  - id: GEN-01
+    name: 画面与分镜一致
+    severity: blocker
+    check: 画面内容必须与分镜描述的场景、对象、动作一致，不得出现无关物体或场景漂移
+  - id: GEN-02
+    name: 中文文字零错字
+    severity: blocker
+    check: 画面中出现的所有中文文字必须正确无错字、无乱码、无伪汉字
+  - id: GEN-03
+    name: 结构无穿帮
+    severity: blocker
+    check: 物体结构必须完整合理，不得出现断裂悬空、穿模、多余肢体、扭曲变形等生成瑕疵
+  - id: GEN-04
+    name: 无真实人脸
+    severity: blocker
+    check: 不得出现照片级真实人脸（平台审核红线），示意人物应为剪影、图标或卡通风格
+  - id: GEN-05
+    name: 无多余文字水印
+    severity: warning
+    check: 除设计要求外，画面不应有多余的水印、logo、乱入文字
+  - id: GEN-06
+    name: 画质与曝光
+    severity: warning
+    check: 画面清晰、曝光正常，无严重噪点、模糊、过曝欠曝

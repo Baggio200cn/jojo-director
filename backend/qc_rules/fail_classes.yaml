@@ -1,0 +1,22 @@
+# 质检 fail 分类：cosmetic（光效颜色类→直接人工裁决，不烧重抽钱）
+# 命中任一词即计为 cosmetic；其余为 structural（值得教练重抽一次）
+cosmetic_words:
+  - 亮度
+  - 更亮
+  - 变亮
+  - 光晕
+  - 辉光
+  - 发光
+  - 光效
+  - 颜色
+  - 色调
+  - 青色
+  - 蓝色
+  - 橙
+  - glow
+  - bright
+  - color
+  - halo
+  - 散景
+  - 柔光
+  - 脉冲

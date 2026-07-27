@@ -1,0 +1,80 @@
+# ══════════════════════════════════════════════════════════════
+# JOJO Director 能力地图（MAAO 落地版·手工curated + 台账证据）
+# 档位: HIGH / MEDIUM / LOW / UNKNOWN（证据<3次一律 UNKNOWN）
+# 证据计数由 /api/stats/capability 从 model_tasks 台账实时统计，
+# 本文件的 evidence 字段是上次人工核对时的快照，仅供参考。
+# 更新纪律：换模型（ark-model-watch 提醒）必须重测后再改档。
+# ══════════════════════════════════════════════════════════════
+version: 1
+updated: "2026-07-23"
+
+capabilities:
+  # ── 粗粒度总档（质检 verdict 自动回写用这四个 ID，细分档在下面）──
+  image_t2i:                    { tier: MEDIUM,  evidence: 14, note: "文生图总体：构图强，拓扑/数量/文字弱" }
+  image_edit:                   { tier: MEDIUM,  evidence: 11, note: "编辑总体：空间变化可用，方向性变化弱" }
+  video_gen:                    { tier: MEDIUM,  evidence: 13, note: "视频总体：渐变强，小人肢体/动作完成度弱" }
+  code_render:                  { tier: HIGH,    evidence: 3,  note: "程序渲染：零幻觉零费用" }
+
+  # ── 文生图（Seedream 4.5）──
+  t2i_scene_composition:        { tier: HIGH,    evidence: 14, note: "场景/人物/氛围构图，含风格锚遵从" }
+  t2i_connection_topology:      { tier: LOW,     evidence: 5,  note: "管道接灯泡/设备接总线等『谁接谁』，悬空错接高发" }
+  t2i_exact_count:              { tier: LOW,     evidence: 4,  note: "恰好N个物件，常±1~2" }
+  t2i_in_image_text:            { tier: LOW,     evidence: 6,  note: "画面内中文必乱码，英文短标签(≤6字母)勉强" }
+
+  # ── 图像编辑（Seedream 5.0 Pro，尾帧通道）──
+  edit_spatial_change:          { tier: MEDIUM,  evidence: 8,  note: "位置移动/新增元素/姿态变化，配预检重试可用" }
+  edit_luminosity_direction:    { tier: LOW,     evidence: 6,  note: "更亮/更暗/更红类方向变化，观测中方向常做反" }
+  edit_preserve_screen_text:    { tier: LOW,     evidence: 3,  note: "保持屏幕小字原样，3/3失败乱码化" }
+
+  # ── 视频（Seedance 2.0 mini）──
+  video_state_transition:       { tier: HIGH,    evidence: 10, note: "状态A渐变到状态B（含亮度/氛围变化），首尾帧或单帧驱动均可" }
+  video_small_figure_limbs:     { tier: LOW,     evidence: 4,  note: "小人肢体在720p下穿模/断肢高发" }
+  video_action_completion:      { tier: MEDIUM,  evidence: 5,  note: "多步时序动作常做一半（如离开→关灯）" }
+
+  # ── 代码渲染（本地程序）──
+  code_render_engineering:      { tier: HIGH,    evidence: 3,  note: "波形/光路/框图/参数扫描，零幻觉零API费" }
+
+# ══════════════════════════════════════════════════════════════
+# 分镜期路由规则（确定性引擎，_route_shots 按序执行）
+# action:
+#   move_delta_to_video  尾帧编辑指令整体移入视频提示词，该镜转单帧驱动
+#   relax_count          断言中的精确数量加容差注记
+#   advise               只产出建议注记（写进分镜产出与Agent上下文）
+# ══════════════════════════════════════════════════════════════
+routing_rules:
+  - id: luminosity_to_video
+    capability: edit_luminosity_direction
+    applies_to: last_frame_delta
+    detect_any: ["更亮", "更暗", "变亮", "变暗", "亮度", "更红", "更蓝", "发光增强",
+                 "brighter", "dimmer", "darker", "more red", "glow stronger", "光芒更强"]
+    action: move_delta_to_video
+    advice: "亮度/颜色方向变化——编辑模型实测常做反(证据6次)，已整体移交视频提示词，本镜转单帧驱动"
+
+  - id: screen_text_to_single_frame
+    capability: edit_preserve_screen_text
+    applies_to: last_frame_delta
+    detect_any: ["保持文字", "屏幕显示", "文字不变", "keep the text", "screen text", "显示屏"]
+    action: move_delta_to_video
+    advice: "尾帧编辑需保持屏幕文字——实测3/3乱码(证据3次)，本镜转单帧驱动"
+
+  - id: exact_count_tolerance
+    capability: t2i_exact_count
+    applies_to: assertions
+    detect_regex: "(恰好|正好|exactly)\\s*[0-9一二三四五六七八九十]+|必须[^。]{0,12}[0-9一二三四五六七八九十]+\\s*[个盏台块条颗]"
+    action: relax_count
+    advice: "精确数量断言——文生图数量不稳(证据4次)，已加容差注记(±1可接受)"
+
+  - id: topology_to_code_render
+    capability: t2i_connection_topology
+    applies_to: first_frame_prompt_and_assertions
+    detect_any: ["接入", "连接到", "串联", "相连", "连通", "接线", "连线", "管道连接",
+                 "必须连接", "connect to", "connected to", "接到"]
+    action: advise
+    advice: "含连接拓扑要求——文生图错接高发(证据5次)，建议改用代码渲染模板(block_diagram等)或降低拓扑精度要求"
+
+  - id: in_image_text_warning
+    capability: t2i_in_image_text
+    applies_to: first_frame_prompt
+    detect_any: ["写着", "显示文字", "标题为", "文字为", "with text", "labeled with Chinese"]
+    action: advise
+    advice: "提示词要求画面内出现文字——中文必乱码(证据6次)，建议移入 caption 字幕层"

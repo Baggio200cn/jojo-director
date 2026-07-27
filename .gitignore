@@ -1,0 +1,18 @@
+# 密钥与本地数据（绝不入库）
+.env
+*.env
+*.db
+*.db-*
+backend/assets/*
+!backend/assets/.gitkeep
+
+# 依赖与构建产物
+node_modules/
+dist/
+__pycache__/
+*.pyc
+
+# 日志与本地报告
+*.log
+*_log.txt
+backend/tests/report_*.json

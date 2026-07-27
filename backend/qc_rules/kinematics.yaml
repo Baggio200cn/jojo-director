@@ -1,0 +1,28 @@
+# 运动学领域质检规则包（体育/抛体/机构运动类镜头）
+rules:
+  - id: KIN-01
+    name: 运动主体唯一
+    severity: blocker
+    check: 同一运动主体（球、工件、飞行物）在同一画面中只能出现一个，不得出现主体复制（如同屏两个球）
+    on_fail: 改提示词强调 single ball / only one，或重抽
+  - id: KIN-02
+    name: 抛体轨迹为平滑抛物线
+    severity: blocker
+    check: 无动力抛体（球类、抛出物）的飞行轨迹必须是单一平滑的抛物线，不得分叉、螺旋、S形上卷或中途无外力改向
+    on_fail: 转 code_render（轨迹按抛体方程计算）
+  - id: KIN-03
+    name: 拖尾与轨迹一致
+    severity: blocker
+    check: 若画面有运动拖尾/轨迹线，其几何形状必须与主体实际经过的路径吻合，终点必须落在主体当前位置
+  - id: KIN-04
+    name: 时间尺度一致
+    severity: blocker
+    check: 慢动作画面中所有物体共享同一时间流速：球在慢放时，人物、旗帜、草屑等也必须同等慢放，不得一方冻结一方运动
+  - id: KIN-05
+    name: 速度变化合理
+    severity: warning
+    check: 无外力时运动主体不得突然加速；受阻（入网、落地、碰撞）后速度应明显衰减并伴随受力形变（网兜、弹跳）
+  - id: KIN-06
+    name: 尺寸与透视一致
+    severity: warning
+    check: 运动主体近大远小应随距离连续变化，不得忽大忽小

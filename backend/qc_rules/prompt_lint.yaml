@@ -1,0 +1,7 @@
+# 图像模型歧义词自动替换（代码层执行，勿写进提示词）
+# find 命中（整词、不分大小写）即替换为 use，并记录在分镜节点的 lint 输出里
+replacements:
+  - {find: "bus", use: "data line"}
+  - {find: "chip", use: "microchip component"}
+  - {find: "terminal", use: "connection point"}
+  - {find: "cell", use: "battery cell"}

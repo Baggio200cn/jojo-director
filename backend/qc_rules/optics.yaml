@@ -1,0 +1,33 @@
+# 光学领域质检规则包（机器视觉/光电类课程）
+rules:
+  - id: OPT-01
+    name: 平行光束平行性
+    severity: blocker
+    check: 声称为平行光的光束，各光线之间必须严格保持平行，不得呈扇形发散或在到达透镜前就相互会聚
+    on_fail: 转 code_render 节点（光路由薄透镜公式逐帧计算）
+  - id: OPT-02
+    name: 折射只在界面发生
+    severity: blocker
+    check: 光线方向的改变只能发生在镜片、棱镜等介质界面处，在空气等均匀介质中必须沿直线传播
+    on_fail: 转 code_render 节点
+  - id: OPT-03
+    name: 焦点位置正确
+    severity: blocker
+    check: 平行光经会聚透镜后的焦点必须位于最后一片镜片之后的光轴上（像方），绝不能出现在镜筒或镜片组内部
+    on_fail: 转 code_render 节点
+  - id: OPT-04
+    name: 汇聚点唯一
+    severity: blocker
+    check: 同一束平行光经同一透镜只能汇聚出一个焦点，不得出现多个亮斑或分叉光路
+  - id: OPT-05
+    name: 反射角关系
+    severity: blocker
+    check: 出现镜面反射时，反射光线与入射光线应关于法线对称（入射角等于反射角），不得随意弹射
+  - id: OPT-06
+    name: 光源与阴影一致
+    severity: warning
+    check: 画面中物体的阴影方向应与光源位置一致，多光源场景阴影关系应合理
+  - id: OPT-10
+    name: 光路可见性
+    severity: info
+    check: 空气中可见光路属于教学示意的约定俗成可视化，不算错误，仅备注

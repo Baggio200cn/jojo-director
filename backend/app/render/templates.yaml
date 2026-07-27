@@ -1,0 +1,33 @@
+# 代码渲染模板注册表：参数即承诺（断言要什么，参数保证什么）
+templates:
+  lens_focus:
+    label: 平行光过透镜聚焦
+    params:
+      - {key: focal_length, label: 焦距(场景单位), type: number, default: 2.2}
+      - {key: num_rays, label: 光线条数, type: number, default: 7}
+      - {key: duration, label: 时长(秒), type: number, default: 6}
+  pwm_waveform:
+    label: PWM 波形与占空比
+    params:
+      - {key: duty, label: 固定占空比%(不扫描时), type: number, default: 50}
+      - {key: duty_from, label: 扫描起始占空比%, type: number, default: 25}
+      - {key: duty_to, label: 扫描结束占空比%, type: number, default: 90}
+      - {key: steps, label: 扫描档数, type: number, default: 3}
+      - {key: duration, label: 时长(秒), type: number, default: 12}
+  spectrum_recipe:
+    label: 光谱配方(蓝红远红)
+    params:
+      - {key: stage, label: 生长期, type: text, default: 育苗期}
+      - {key: duty_blue, label: 蓝光占比%, type: number, default: 40}
+      - {key: duty_red, label: 红光占比%, type: number, default: 50}
+      - {key: duty_farred, label: 远红占比%, type: number, default: 10}
+      - {key: duration, label: 时长(秒), type: number, default: 11}
+  block_diagram:
+    label: 信号流程框图
+    params:
+      - {key: duration, label: 时长(秒), type: number, default: 12}
+  rotary_drill_station:
+    label: 回转钻孔工作站
+    params:
+      - {key: phase, label: 阶段(cycle等), type: text, default: cycle}
+      - {key: duration, label: 时长(秒), type: number, default: 18}
