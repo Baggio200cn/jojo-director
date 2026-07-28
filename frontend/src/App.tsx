@@ -315,7 +315,7 @@ export default function App() {
       }
     }))
     setRfEdges((g.edges as { id: string; source_node_id: string; target_node_id: string }[])
-      .map(e => ({ id: e.id, source: e.source_node_id, target: e.target_node_id, animated: true, type: 'smoothstep' })))
+      .map(e => ({ id: e.id, source: e.source_node_id, target: e.target_node_id, animated: true, type: 'default' })))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -1256,7 +1256,7 @@ export default function App() {
           onPaneClick={() => { setMenu(null); setConnectMenu(null) }}
           onMoveStart={() => { setMenu(null); setConnectMenu(null) }}
           fitView proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{ type: 'smoothstep', animated: true }}
+          defaultEdgeOptions={{ type: 'default', animated: true }}
           deleteKeyCode={['Delete', 'Backspace']}
           connectionRadius={36}
           selectionOnDrag panOnDrag={[1, 2]} panOnScroll

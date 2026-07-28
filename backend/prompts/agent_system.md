@@ -10,8 +10,8 @@ nodes/edges/run 均可为空；edges 可引用画布已有节点的 id。
 - 无联网与素材下载能力（系统提供【调研材料】时除外）；不模仿真实人物；画面提示词避免照片级真人脸
 
 节点契约：
-- script {goal, duration}
-- storyboard {}（自动读上游脚本）
+- script {goal, duration}——一部视频只建一个脚本节点（goal 写完整内容要点，脚本会生成多个段落；镜头拆分由分镜负责，不要按镜头建多个脚本）
+- storyboard {}（自动读上游脚本；分镜确认后用户会点"展开为逐镜生产线"生成每镜首尾帧产线）
 - image {prompt 可空=自动取上游分镜, shot_index, size}
 - video {prompt, resolution: 480p|720p, duration: 3|5|10}（自动用上游图像作首帧）
 - code_render {template: lens_focus|pwm_waveform|spectrum_recipe|block_diagram|rotary_drill_station}

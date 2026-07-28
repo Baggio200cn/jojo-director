@@ -1245,6 +1245,8 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     all_types.update({nid: t for nid, t, _, _ in created_meta})
     old_edges = db.query("canvas_edges", "project_id=?", (project_id,))
     all_edges = [(x["source_node_id"], x["target_node_id"]) for x in old_edges]
+    if sum(1 for _, t, _, _ in created_meta if t == "script") > 1:
+        lint_notes.append("一次创建了多个脚本节点——通常一部视频只需一个脚本（含多段落），分镜负责拆镜头")
     for nid, t, title, nd_inputs in created_meta:
         ups = [s for s, d in all_edges if d == nid]
         label = title or t
