@@ -1232,7 +1232,7 @@ export default function App() {
             }
           })
           const nums = Object.keys(groups).map(Number).sort((a, b) => a - b)
-          if (!nums.length) return null
+          // 没有镜头编号的项目也保留「看全部」——否则用户在大画布上找不到散落的节点
           return (
             <div className="shot-nav">
               {nums.map(k => (
@@ -1240,7 +1240,7 @@ export default function App() {
                   nodes: groups[k].map(id => ({ id })), padding: 0.25, duration: 300 })}>
                   {k}</button>
               ))}
-              <button onClick={() => focusAll()}>全部</button>
+              <button onClick={() => focusAll()}>⛶ 全部</button>
             </div>
           )
         })()}
