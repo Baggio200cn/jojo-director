@@ -461,9 +461,14 @@ export default function App() {
       setChat(done)
       localStorage.setItem(`jojo_chat_${pid}`, JSON.stringify(done.slice(-40)))
       await syncGraph(pid)
-      if (r.created > 0) focusAll()
+      // 镜头对准 Agent 新建的节点（而非全景），延时避开渲染竞态
+      const ids: string[] = r.created_ids ?? []
+      if (ids.length) {
+        setTimeout(() => flowRef.current?.fitView({
+          nodes: ids.map(id => ({ id })), padding: 0.35, duration: 400 }), 450)
+      } else if (r.created > 0) focusAll()
       const parts = []
-      if (r.created > 0) parts.push(`新建 ${r.created} 个节点`)
+      if (r.created > 0) parts.push(`新建 ${r.created} 个节点（画布已对准）`)
       if (r.ran > 0) parts.push(`已开始执行 ${r.ran} 个，结果稍后显示在节点上`)
       say(parts.length ? parts.join('，') : 'Agent 已回复')
     } catch (e) {

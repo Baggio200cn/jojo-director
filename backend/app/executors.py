@@ -1266,18 +1266,28 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
             await execute_chain(nid)
         except Exception:
             pass  # 失败详情已写入节点
+    ran_ids: set[str] = set()
     for ref in plan.get("run", []) or []:
         nid = _resolve(str(ref))
         if nid:
             asyncio.get_event_loop().create_task(_bg_run(nid))
+            ran_ids.add(nid)
             ran += 1
         else:
             lint_notes.append(f"忽略无法解析的执行目标「{ref}」")
+
+    # 工作流铁律（代码级保障）：新建的脚本节点必须立即生成内容——
+    # 只建壳不出内容，用户在画布上看到的是空节点，无从审阅确认
+    for nid, t, _, _ in created_meta:
+        if t == "script" and nid not in ran_ids:
+            asyncio.get_event_loop().create_task(_bg_run(nid))
+            ran += 1
 
     reply = plan.get("reply", "已处理")
     if lint_notes:
         reply += "\n（系统校验：" + "；".join(lint_notes[:5]) + "）"
     return {"reply": reply, "created": created, "ran": ran,
+            "created_ids": [nid for nid, _, _, _ in created_meta],
             "research": research_note,
             "tokens": resp["input_tokens"] + resp["output_tokens"]}
 
