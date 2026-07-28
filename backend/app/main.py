@@ -4,14 +4,16 @@
 """
 import asyncio
 import json
+import re as _re
 from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import db, executors
+from . import auth, db, executors
 from .config import ASSETS_DIR
 
 app = FastAPI(title="JOJO Studio API", version="0.1.0")
@@ -20,6 +22,114 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 ASSETS_DIR.mkdir(exist_ok=True)
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 db.init_db()
+auth.init()
+
+
+@app.middleware("http")
+async def auth_guard(request: Request, call_next):
+    """会话门禁：/api 与 /assets 需登录；付费执行做邀请级限额+全站熔断。"""
+    path = request.url.path
+    if path.startswith("/api"):
+        if path != "/api/health" and not path.startswith("/api/auth/"):
+            s = auth.get_session(request)
+            if not s:
+                return JSONResponse({"detail": "未登录"}, status_code=401)
+            request.state.session = s
+            if request.method == "POST":
+                m = _re.match(r"^/api/nodes/([^/]+)/(execute|execute_chain)$", path)
+                if m:
+                    node = db.get("canvas_nodes", m.group(1))
+                    if node:
+                        try:
+                            auth.check_and_log(s, node["type"])
+                        except HTTPException as e:
+                            return JSONResponse({"detail": e.detail}, status_code=e.status_code)
+    elif path.startswith("/assets"):
+        if not auth.get_session(request):
+            return JSONResponse({"detail": "未登录"}, status_code=401)
+    return await call_next(request)
+
+
+class LoginIn(BaseModel):
+    username: str = ""
+    password: str = ""
+    invite_code: str = ""
+
+
+class InviteIn(BaseModel):
+    label: str = ""
+    daily_video_limit: int = 3
+    daily_cost_limit_cny: float = 10.0
+
+
+@app.post("/api/auth/login")
+def auth_login(body: LoginIn):
+    if body.invite_code:
+        token = auth.login_invite(body.invite_code)
+        role = "invite"
+    else:
+        token = auth.login_admin(body.username, body.password)
+        role = "admin"
+    resp = JSONResponse({"ok": True, "role": role})
+    resp.set_cookie(auth.COOKIE, token, max_age=auth.SESSION_DAYS * 86400,
+                    httponly=True, samesite="lax")
+    return resp
+
+
+@app.post("/api/auth/logout")
+def auth_logout(request: Request):
+    auth.logout(request.cookies.get(auth.COOKIE))
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(auth.COOKIE)
+    return resp
+
+
+@app.get("/api/auth/me")
+def auth_me(request: Request):
+    s = auth.get_session(request)
+    if not s:
+        return JSONResponse({"detail": "未登录"}, status_code=401)
+    out = {"role": s["role"], "auth_enabled": auth.enabled()}
+    if s["role"] == "invite":
+        rows = db.query("invite_codes", "code=?", (s["invite_code"],))
+        if rows:
+            out["limits"] = {"daily_video_limit": rows[0]["daily_video_limit"],
+                             "daily_cost_limit_cny": rows[0]["daily_cost_limit_cny"]}
+            out["usage_today"] = auth.usage_today(s["invite_code"])
+    return out
+
+
+@app.get("/api/admin/invites")
+def admin_list_invites(request: Request):
+    auth.require_admin(request)
+    rows = db.query("invite_codes", "1=1 ORDER BY created_at DESC")
+    for r in rows:
+        r["usage_today"] = auth.usage_today(r["code"])
+    return rows
+
+
+@app.post("/api/admin/invites")
+def admin_create_invite(body: InviteIn, request: Request):
+    auth.require_admin(request)
+    import secrets as _secrets
+    code = "JOJO-" + _secrets.token_hex(3).upper()
+    db.insert("invite_codes", {
+        "id": db.new_id("inv"), "code": code, "label": body.label,
+        "daily_video_limit": body.daily_video_limit,
+        "daily_cost_limit_cny": body.daily_cost_limit_cny,
+        "disabled": 0, "created_at": db.now()})
+    return db.query("invite_codes", "code=?", (code,))[0]
+
+
+@app.patch("/api/admin/invites/{code}")
+def admin_toggle_invite(code: str, request: Request):
+    auth.require_admin(request)
+    rows = db.query("invite_codes", "code=?", (code,))
+    if not rows:
+        raise HTTPException(404, "邀请码不存在")
+    with db._conn() as c:
+        c.execute("UPDATE invite_codes SET disabled=1-disabled WHERE code=?", (code,))
+    return db.query("invite_codes", "code=?", (code,))[0]
 
 # 项目美术风格锚：新增 style 列（已存在则忽略）
 with db._conn() as _c:

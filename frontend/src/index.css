@@ -457,3 +457,52 @@ body {
   border: none; border-radius: 6px; cursor: pointer; font-size: 12px;
   background: #2563eb; color: #fff; padding: 7px 11px; font-weight: 600;
 }
+
+/* ── 登录页 ── */
+.login-page { height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at top, #171a22 0%, #0f1115 60%); }
+.login-card { width: 340px; background: #14161c; border: 1px solid #262a35; border-radius: 16px;
+  padding: 34px 30px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.login-logo { width: 72px; height: 72px; margin: 0 auto; border-radius: 14px; }
+.login-card h1 { font-size: 22px; letter-spacing: 3px; color: #eef1f6; margin: 0; }
+.login-card .sub { color: #7e8698; font-size: 13px; margin-bottom: 6px; }
+.login-tabs { justify-content: center; }
+.login-card input { background: #0f1115; border: 1px solid #2a2f3b; border-radius: 8px;
+  padding: 11px 12px; color: #e6e9f0; font-size: 14px; }
+.login-card input:focus { outline: none; border-color: #4d7fd6; }
+.login-err { color: #e05b4b; font-size: 13px; }
+.login-go { padding: 11px; font-size: 15px; }
+
+/* ── 工具栏徽标与成本条 ── */
+.badge-host { position: relative; }
+.count-badge { position: absolute; top: -6px; right: -6px; background: #e05b4b; color: #fff;
+  border-radius: 9px; min-width: 18px; height: 18px; font-size: 11px; line-height: 18px;
+  padding: 0 4px; font-weight: bold; }
+.cost-chip { font-size: 12px; color: #f2b45c; background: #1c1a14; border: 1px solid #3a3322;
+  border-radius: 8px; padding: 6px 10px; text-align: center; }
+
+/* ── 大图预览 lightbox / 弹窗 ── */
+.lightbox { position: fixed; inset: 0; background: rgba(8, 10, 14, 0.82); z-index: 200;
+  display: flex; align-items: center; justify-content: center; }
+.lightbox-inner { max-width: 86vw; max-height: 88vh; background: #14161c; border-radius: 12px;
+  border: 1px solid #2a2f3b; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.lightbox-inner img, .lightbox-inner video { max-width: 82vw; max-height: 76vh; border-radius: 8px; }
+.lightbox-head { display: flex; justify-content: space-between; align-items: center; color: #e6e9f0; }
+.lightbox-head button { width: auto; padding: 5px 12px; }
+
+/* ── 拖线建议菜单 ── */
+.ctx-title { color: #7e8698; font-size: 11px; padding: 4px 10px 2px; }
+
+/* ── 邀请码管理 ── */
+.invite-panel { min-width: 620px; }
+.invite-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #cfd5e1; }
+.invite-table th, .invite-table td { border-bottom: 1px solid #23262f; padding: 7px 8px; text-align: left; }
+.invite-table th { color: #7e8698; font-weight: normal; font-size: 12px; }
+.invite-table tr.off td { opacity: 0.45; }
+.invite-table code { color: #5cc5ec; }
+.invite-table .mini { width: auto; padding: 2px 8px; margin-left: 6px; }
+
+/* ── 首页登录信息条 ── */
+.auth-bar { position: absolute; top: 14px; right: 18px; display: flex; gap: 10px;
+  align-items: center; z-index: 20; }
+.auth-bar button { width: auto; padding: 6px 14px; }

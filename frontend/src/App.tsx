@@ -180,7 +180,13 @@ function JojoNode({ id, data, selected }: NodeProps) {
         {b.status === 'idle' && Object.keys(out).length === 0 && !promptText && (
           <div className="muted">点击节点，在右侧填写参数</div>
         )}
-        {b.status === 'running' && <div className="running-line">生成中…</div>}
+        {b.status === 'running' && (() => {
+          const st = data.startedAt as number | undefined
+          const secs = st ? Math.max(0, Math.round((Date.now() - st) / 1000)) : 0
+          const t = secs >= 60 ? `${Math.floor(secs / 60)}分${secs % 60}秒` : `${secs}秒`
+          const stage = b.type === 'video' ? '视频生成通常 2-5 分钟' : b.type === 'qc' ? '判卷中' : b.type === 'image' ? '出图中' : '处理中'
+          return <div className="running-line">⏳ 生成中 · 已 {t}（{stage}）</div>
+        })()}
       </div>
       <Handle type="source" position={Position.Right} />
     </div>
@@ -225,6 +231,20 @@ export default function App() {
   const [assets, setAssets] = useState<{ id: string; kind: string; url: string; starred?: boolean }[]>([])
   const [assetScope, setAssetScope] = useState<'project' | 'starred'>('project')
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null)
+  // ── 鉴权 / 手感升级新状态 ──
+  const [authRole, setAuthRole] = useState<'checking' | 'none' | 'admin' | 'invite'>('checking')
+  const [authInfo, setAuthInfo] = useState<{ auth_enabled?: boolean; limits?: { daily_video_limit: number; daily_cost_limit_cny: number }; usage_today?: { videos: number; cost: number } }>({})
+  const [loginMode, setLoginMode] = useState<'admin' | 'invite'>('admin')
+  const [loginU, setLoginU] = useState(''); const [loginP, setLoginP] = useState(''); const [loginCode, setLoginCode] = useState('')
+  const [loginErr, setLoginErr] = useState(''); const [loginBusy, setLoginBusy] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [invites, setInvites] = useState<{ code: string; label: string; daily_video_limit: number; daily_cost_limit_cny: number; disabled: number; usage_today?: { videos: number; cost: number } }[]>([])
+  const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null)
+  const [connectMenu, setConnectMenu] = useState<{ x: number; y: number; fx: number; fy: number; src: string } | null>(null)
+  const connectSrcRef = useRef<string | null>(null)
+  const [reviewCount, setReviewCount] = useState(0)
+  const [projCost, setProjCost] = useState<number | null>(null)
+  const runStartRef = useRef<Record<string, number>>({})
   const flowRef = useRef<ReactFlowInstance | null>(null)
   const focusAll = () => setTimeout(() => flowRef.current?.fitView({ padding: 0.25, duration: 400 }), 80)
   const undoRef = useRef<{ nodes: BNode[]; edges: { id: string; source: string; target: string }[] }[]>([])
@@ -263,13 +283,35 @@ export default function App() {
     const g = await api.getGraph(pid)
     const map: Record<string, BNode> = {}
     for (const n of g.nodes as BNode[]) map[n.id] = n
+    // 运行状态迁移：登记开跑时刻；完成/失败时弹提示（含耗时）并刷新成本
+    let transitioned = false
+    for (const n of g.nodes as BNode[]) {
+      const prev = bnodesRef.current[n.id]
+      if (n.status === 'running' && !runStartRef.current[n.id]) {
+        runStartRef.current[n.id] = prev?.status === 'running' ? Date.now() : Date.now()
+      }
+      if (prev?.status === 'running' && n.status !== 'running') {
+        const secs = Math.round((Date.now() - (runStartRef.current[n.id] ?? Date.now())) / 1000)
+        const dur = secs >= 60 ? `${Math.floor(secs / 60)}分${secs % 60}秒` : `${secs}秒`
+        say(n.status === 'succeeded'
+          ? `✅ ${n.title || TYPE_META[n.type]?.label} 完成（${dur}）`
+          : `❌ ${n.title || TYPE_META[n.type]?.label} 失败（${dur}）——节点上看原因`)
+        delete runStartRef.current[n.id]
+        transitioned = true
+      }
+    }
+    if (transitioned) {
+      api.projectStats(pid).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
+      api.reviewQueue(pid).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
+    }
     setBnodes(map)
     setRfNodes(prev => (g.nodes as BNode[]).map(n => {
       const old = prev.find(p => p.id === n.id)
       return {
         id: n.id, type: 'jojo',
         position: old?.position ?? { x: n.position_x, y: n.position_y },
-        data: { b: n, run: runChain, del: delNode, sel: setSelectedId },
+        data: { b: n, run: runChain, del: delNode, sel: setSelectedId,
+                startedAt: runStartRef.current[n.id] },
       }
     }))
     setRfEdges((g.edges as { id: string; source_node_id: string; target_node_id: string }[])
@@ -318,7 +360,34 @@ export default function App() {
     say('连线已删除')
   }, [syncGraph])
 
+  // ── 鉴权：进门先验会话；任何 401 都会把用户送回登录页 ──
   useEffect(() => {
+    const onNeedAuth = () => setAuthRole('none')
+    window.addEventListener('jojo-auth-required', onNeedAuth)
+    api.authMe()
+      .then(me => { setAuthInfo(me); setAuthRole(me.role) })
+      .catch(() => setAuthRole('none'))
+    return () => window.removeEventListener('jojo-auth-required', onNeedAuth)
+  }, [])
+
+  const doLogin = async () => {
+    if (loginBusy) return
+    setLoginBusy(true); setLoginErr('')
+    try {
+      await api.authLogin(loginMode === 'admin'
+        ? { username: loginU, password: loginP }
+        : { invite_code: loginCode })
+      const me = await api.authMe()
+      setAuthInfo(me); setAuthRole(me.role)
+    } catch (e) {
+      setLoginErr(String(e).replace('Error: ', ''))
+    } finally { setLoginBusy(false) }
+  }
+
+  const loadInvites = async () => setInvites(await api.adminInvites())
+
+  useEffect(() => {
+    if (authRole !== 'admin' && authRole !== 'invite') return
     (async () => {
       let list = await api.listProjects()
       if (!list.length) list = [await api.createProject('微课示例项目')]
@@ -332,8 +401,11 @@ export default function App() {
         setAgentModel(models[0].model)
       }
       await syncGraph(list[0].id)
+      api.projectStats(list[0].id).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
+      api.reviewQueue(list[0].id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     })()
-  }, [syncGraph])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncGraph, authRole])
 
   const dupNode = useCallback(async (nid: string) => {
     const b = bnodesRef.current[nid]
@@ -356,7 +428,18 @@ export default function App() {
     redoRef.current = []
     setChat(JSON.parse(localStorage.getItem(`jojo_chat_${pid}`) ?? '[]'))
     await syncGraph(pid)
-    focusAll()
+    // 视口记忆：回到上次看的位置；没有记录则全景
+    const saved = localStorage.getItem(`jojo_vp_${pid}`)
+    if (saved) {
+      try {
+        const vp = JSON.parse(saved)
+        setTimeout(() => flowRef.current?.setViewport(vp, { duration: 300 }), 150)
+      } catch { focusAll() }
+    } else {
+      setTimeout(() => flowRef.current?.fitView({ padding: 0.2, duration: 400 }), 250)
+    }
+    api.projectStats(pid).then(s => setProjCost(s.total_cost_cny)).catch(() => setProjCost(null))
+    api.reviewQueue(pid).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
   }
 
   // ── Agent 对话（常驻右侧；首页大输入框也走这里） ──
@@ -498,6 +581,7 @@ export default function App() {
       if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return
       if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo() }
       if (e.ctrlKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo() }
+      if (e.key === 'Escape') { setLightbox(null); setConnectMenu(null); setMenu(null) }
     }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
@@ -635,6 +719,65 @@ export default function App() {
     setSelectedId(node.id)
   }, [])
 
+  // ── 拖线到空白处 → 弹"接什么节点"建议菜单（TapNow 式核心交互） ──
+  const CONNECT_SUGGEST: Record<string, { type: string; label: string }[]> = {
+    script: [{ type: 'storyboard', label: '🎞 分镜拆解' }],
+    storyboard: [{ type: 'image', label: '🖼 图像（帧）' }, { type: 'qc', label: '🔍 质检' }],
+    image: [{ type: 'qc', label: '🔍 质检' }, { type: 'video', label: '🎬 视频' }, { type: 'image', label: '🖼 图像（尾帧）' }],
+    video: [{ type: 'qc', label: '🔍 质检' }, { type: 'compose', label: '🎞 拼接成片' }],
+    code_render: [{ type: 'qc', label: '🔍 质检' }, { type: 'compose', label: '🎞 拼接成片' }],
+    ref_video: [{ type: 'video', label: '🎬 视频' }],
+  }
+  const onConnectStart = useCallback((_e: unknown, params: { nodeId: string | null }) => {
+    connectSrcRef.current = params.nodeId
+  }, [])
+  const onConnectEnd = useCallback((e: MouseEvent | TouchEvent) => {
+    const src = connectSrcRef.current
+    connectSrcRef.current = null
+    if (!src) return
+    const target = e.target as HTMLElement
+    if (!target?.classList?.contains('react-flow__pane')) return
+    const srcNode = bnodesRef.current[src]
+    if (!srcNode || !CONNECT_SUGGEST[srcNode.type]?.length) return
+    const ev = e as MouseEvent
+    const rect = target.closest('.canvas')?.getBoundingClientRect()
+    const inst = flowRef.current as unknown as { screenToFlowPosition?: (p: { x: number; y: number }) => { x: number; y: number }; project?: (p: { x: number; y: number }) => { x: number; y: number } }
+    const fp = inst?.screenToFlowPosition?.({ x: ev.clientX, y: ev.clientY })
+      ?? inst?.project?.({ x: ev.clientX - (rect?.left ?? 0), y: ev.clientY - (rect?.top ?? 0) })
+      ?? { x: 0, y: 0 }
+    setConnectMenu({ x: ev.clientX - (rect?.left ?? 0), y: ev.clientY - (rect?.top ?? 0), fx: fp.x, fy: fp.y, src })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const createFromConnect = async (type: string) => {
+    const cm = connectMenu
+    setConnectMenu(null)
+    if (!cm) return
+    const defaults: Record<string, object> = {
+      storyboard: {}, image: { prompt: '', shot_index: 1, size: '2560x1440' },
+      video: { prompt: '', resolution: '720p', duration: 5 },
+      qc: { domain: 'general', shot_index: 1 }, compose: { burn_subtitles: '是' },
+    }
+    const created = await api.createNode(projectRef.current, {
+      type, title: '', inputs: defaults[type] ?? {}, position: { x: cm.fx, y: cm.fy },
+    })
+    await api.createEdge(projectRef.current, cm.src, created.id)
+    await syncGraph(projectRef.current)
+    setSelectedId(created.id)
+    say(`已创建并连线：${TYPE_META[type]?.label}——右侧填参数`)
+  }
+
+  // ── 双击节点：有成果开大图预览，无成果聚焦右侧编辑 ──
+  const onNodeDoubleClick = useCallback((_e: unknown, node: Node) => {
+    const b = bnodesRef.current[node.id]
+    const url = b?.outputs?.asset_url
+    if (typeof url === 'string' && url) {
+      setLightbox({ url, title: b.title || TYPE_META[b.type]?.label || '' })
+    } else {
+      setSelectedId(node.id)
+      say('该节点还没有成果——右侧编辑参数后点 ▶')
+    }
+  }, [])
+
   // 新建节点：若当前选中了节点，自动连线并放到它右侧
   const addNode = async (type: string) => {
     const sel = bnodesRef.current[selectedId]
@@ -748,9 +891,109 @@ export default function App() {
     say('图片已上传并挂到该节点')
   }
 
+  // ── 登录页（管理员账密 / 邀请码 双通道） ──
+  if (authRole === 'checking') return (
+    <div className="login-page"><div className="login-card"><h1>JOJO DIRECTOR</h1><div className="muted">正在验证登录状态…</div></div></div>
+  )
+  if (authRole === 'none') return (
+    <div className="login-page notranslate" translate="no">
+      <div className="login-card">
+        <img src="/jojo-logo.png" alt="" className="login-logo" />
+        <h1>JOJO DIRECTOR</h1>
+        <div className="sub">职教微课创作画布</div>
+        <div className="tab-bar login-tabs">
+          <button className={loginMode === 'admin' ? 'on' : ''} onClick={() => { setLoginMode('admin'); setLoginErr('') }}>管理员</button>
+          <button className={loginMode === 'invite' ? 'on' : ''} onClick={() => { setLoginMode('invite'); setLoginErr('') }}>邀请码进入</button>
+        </div>
+        {loginMode === 'admin' ? (
+          <>
+            <input type="text" placeholder="账号" value={loginU} autoComplete="username"
+              onChange={e => setLoginU(e.target.value)} />
+            <input type="password" placeholder="密码" value={loginP} autoComplete="current-password"
+              onChange={e => setLoginP(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && doLogin()} />
+          </>
+        ) : (
+          <input type="text" placeholder="输入邀请码，如 JOJO-A1B2C3" value={loginCode}
+            onChange={e => setLoginCode(e.target.value.toUpperCase())}
+            onKeyDown={e => e.key === 'Enter' && doLogin()} />
+        )}
+        {loginErr && <div className="login-err">{loginErr}</div>}
+        <button className="accent login-go" disabled={loginBusy} onClick={doLogin}>
+          {loginBusy ? '登录中…' : '进入画布'}
+        </button>
+        {loginMode === 'invite' && (
+          <div className="muted" style={{ fontSize: 12 }}>
+            邀请码由管理员发放，含每日生成额度；生成费用由平台承担
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  const authBar = (
+    <div className="auth-bar">
+      {authRole === 'admin' && authInfo.auth_enabled !== false && (
+        <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 邀请码管理</button>
+      )}
+      {authRole === 'invite' && authInfo.usage_today && (
+        <span className="muted" style={{ fontSize: 12 }}>
+          今日已用 视频{authInfo.usage_today.videos}/{authInfo.limits?.daily_video_limit ?? '-'}条
+          · ¥{authInfo.usage_today.cost.toFixed(1)}/{authInfo.limits?.daily_cost_limit_cny ?? '-'}
+        </span>
+      )}
+      {authInfo.auth_enabled !== false && (
+        <button onClick={async () => { await api.authLogout(); setAuthRole('none') }}>退出</button>
+      )}
+    </div>
+  )
+
+  const inviteModal = inviteOpen && (
+    <div className="lightbox" onClick={() => setInviteOpen(false)}>
+      <div className="lightbox-inner invite-panel" onClick={e => e.stopPropagation()}>
+        <div className="lightbox-head">
+          <b>🎟 邀请码管理</b>
+          <button onClick={() => setInviteOpen(false)}>✕ 关闭</button>
+        </div>
+        <button className="accent" onClick={async () => {
+          const label = window.prompt('备注（给谁用，如：伟东老师）：') ?? ''
+          const v = Number(window.prompt('每日视频条数上限：', '3') ?? '3') || 3
+          const c = Number(window.prompt('每日成本上限（元）：', '10') ?? '10') || 10
+          const inv = await api.adminCreateInvite({ label, daily_video_limit: v, daily_cost_limit_cny: c })
+          await loadInvites()
+          say(`新邀请码：${inv.code}（已生成，发给对方即可）`)
+        }}>＋ 新建邀请码</button>
+        <table className="invite-table">
+          <thead><tr><th>邀请码</th><th>备注</th><th>今日用量</th><th>限额</th><th>状态</th><th></th></tr></thead>
+          <tbody>
+            {invites.map(iv => (
+              <tr key={iv.code} className={iv.disabled ? 'off' : ''}>
+                <td><code>{iv.code}</code>
+                  <button className="mini" title="复制" onClick={() => { navigator.clipboard.writeText(iv.code); say('邀请码已复制') }}>📋</button>
+                </td>
+                <td>{iv.label || '—'}</td>
+                <td>{iv.usage_today ? `视频${iv.usage_today.videos}条 · ¥${iv.usage_today.cost}` : '—'}</td>
+                <td>{iv.daily_video_limit}条/天 · ¥{iv.daily_cost_limit_cny}/天</td>
+                <td>{iv.disabled ? '已停用' : '生效中'}</td>
+                <td><button className="mini" onClick={async () => { await api.adminToggleInvite(iv.code); await loadInvites() }}>
+                  {iv.disabled ? '启用' : '停用'}</button></td>
+              </tr>
+            ))}
+            {!invites.length && <tr><td colSpan={6} className="muted">还没有邀请码，点上面新建</td></tr>}
+          </tbody>
+        </table>
+        <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+          全站每日总预算由服务器 DAILY_BUDGET_CNY 控制（当前默认 ¥50），超出后所有邀请码当日停止生成，管理员不受限。
+        </div>
+      </div>
+    </div>
+  )
+
   if (view === 'home') return (
     <div className="home notranslate" translate="no">
       {offlineBanner}
+      {authBar}
+      {inviteModal}
       <div className="home-center">
         <img className="home-logo" src="/jojo-logo.png" alt="JOJO DIRECTOR" />
         <h1 className="home-title">今天要做点什么微课？</h1>
@@ -893,8 +1136,15 @@ export default function App() {
         {tab === 'nodes' && (
           <>
             <button className="accent" onClick={buildChain}>⚡ 一键搭建微课链</button>
-            <button onClick={openReview}>🩺 验收台</button>
+            <button onClick={openReview} className="badge-host">🩺 验收台
+              {reviewCount > 0 && <span className="count-badge">{reviewCount}</span>}
+            </button>
             <button onClick={tidyLayout}>🧹 一键整理布局</button>
+            {projCost != null && (
+              <div className="cost-chip" title="本项目累计模型调用成本（MAAO 台账实时计）">
+                💰 本项目已花 ¥{projCost.toFixed(2)}
+              </div>
+            )}
             <div className="style-bar">
               <select value={(projects.find(p => p.id === projectId) as { style?: string } | undefined)?.style ?? ''}
                 onChange={async e => {
@@ -995,7 +1245,11 @@ export default function App() {
           onNodesChange={onNodesChange} onConnect={onConnect}
           onEdgesDelete={onEdgesDelete} onEdgeDoubleClick={onEdgeDoubleClick}
           onNodeContextMenu={onNodeContextMenu}
-          onPaneClick={() => setMenu(null)} onMoveStart={() => setMenu(null)}
+          onConnectStart={onConnectStart} onConnectEnd={onConnectEnd}
+          onNodeDoubleClick={onNodeDoubleClick}
+          onMoveEnd={(_e, vp) => localStorage.setItem(`jojo_vp_${projectRef.current}`, JSON.stringify(vp))}
+          onPaneClick={() => { setMenu(null); setConnectMenu(null) }}
+          onMoveStart={() => { setMenu(null); setConnectMenu(null) }}
           fitView proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{ type: 'smoothstep', animated: true }}
           deleteKeyCode={['Delete', 'Backspace']}
@@ -1022,7 +1276,36 @@ export default function App() {
               await syncGraph(projectRef.current)
             }}>▶ 只跑本节点</button>
             <button onClick={() => dupNode(menu.id)}>⧉ 复制节点</button>
+            {typeof bnodes[menu.id]?.outputs?.asset_url === 'string' && (
+              <button onClick={() => {
+                const b = bnodes[menu.id]
+                setMenu(null)
+                setLightbox({ url: b.outputs.asset_url as string, title: b.title || '' })
+              }}>🔍 大图预览</button>
+            )}
             <button className="danger" onClick={() => delNode(menu.id)}>🗑 删除节点</button>
+          </div>
+        )}
+        {connectMenu && (
+          <div className="ctx-menu" style={{ left: connectMenu.x, top: connectMenu.y }}>
+            <div className="ctx-title">接一个…</div>
+            {(CONNECT_SUGGEST[bnodes[connectMenu.src]?.type] ?? []).map(s => (
+              <button key={s.type + s.label} onClick={() => createFromConnect(s.type)}>{s.label}</button>
+            ))}
+            <button className="danger" onClick={() => setConnectMenu(null)}>取消</button>
+          </div>
+        )}
+        {lightbox && (
+          <div className="lightbox" onClick={() => setLightbox(null)}>
+            <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
+              <div className="lightbox-head">
+                <b>{lightbox.title}</b>
+                <button onClick={() => setLightbox(null)}>✕ 关闭（Esc）</button>
+              </div>
+              {lightbox.url.endsWith('.mp4')
+                ? <video src={lightbox.url} controls autoPlay />
+                : <img src={lightbox.url} alt="" />}
+            </div>
           </div>
         )}
       </div>

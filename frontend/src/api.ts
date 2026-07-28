@@ -1,5 +1,6 @@
 const j = async (r: Response) => {
   if (!r.ok) {
+    if (r.status === 401) window.dispatchEvent(new CustomEvent('jojo-auth-required'))
     let msg = `HTTP ${r.status}`
     try {
       const d = await r.json()
@@ -63,4 +64,14 @@ export const api = {
     post(`/api/nodes/${nid}/expand_storyboard`, { domain }),
   restore: (pid: string, nodes: object[], edges: object[]) =>
     post(`/api/projects/${pid}/restore`, { nodes, edges }),
+  authMe: () => fetch('/api/auth/me').then(j),
+  authLogin: (body: { username?: string; password?: string; invite_code?: string }) =>
+    post('/api/auth/login', body),
+  authLogout: () => post('/api/auth/logout'),
+  adminInvites: () => fetch('/api/admin/invites').then(j),
+  adminCreateInvite: (body: { label: string; daily_video_limit: number; daily_cost_limit_cny: number }) =>
+    post('/api/admin/invites', body),
+  adminToggleInvite: (code: string) =>
+    fetch(`/api/admin/invites/${code}`, { method: 'PATCH' }).then(j),
+  projectStats: (pid: string) => fetch(`/api/projects/${pid}/stats`).then(j),
 }
