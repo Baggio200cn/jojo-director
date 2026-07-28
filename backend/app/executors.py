@@ -302,18 +302,44 @@ async def _run_storyboard(node: dict) -> dict:
     if not script:
         script = _upstream_output(node, "script")
     style = _project_style(node["project_id"])
+    # 用户硬约束：镜头数 / 总时长（约束是数据不是恳求；每镜上限10秒=视频模型物理限制）
+    want_n = int(inputs.get("shot_count") or 0)
+    want_t = int(inputs.get("total_duration") or 0)
+    constraint = ""
+    if want_n or want_t:
+        parts = []
+        if want_n:
+            parts.append(f"镜头数必须恰好为 {want_n} 个")
+        if want_t:
+            parts.append(f"全片总时长约 {want_t} 秒")
+        parts.append("每个镜头时长只能取 5 或 10 秒（视频模型单段上限 10 秒），"
+                     "时长不够就增加镜头数量来凑，禁止出现超过 10 秒的镜头")
+        constraint = chr(10) + "【硬性要求】" + "；".join(parts)
     r = route("storyboard")
     task_id = _record_task(node, "text_generation", r, {"script": script})
+    user_msg = (json.dumps(script, ensure_ascii=False)
+                + (chr(10) + "【项目美术风格锚】" + style + "——所有 first_frame_prompt 必须显式包含此风格描述" if style else "")
+                + constraint)
     data, resp = await _chat_json(r["model"], [
         {"role": "system", "content": load_prompt("storyboard_system")},
-        {"role": "user", "content": json.dumps(script, ensure_ascii=False) + (chr(10) + "【项目美术风格锚】" + style + "——所有 first_frame_prompt 必须显式包含此风格描述" if style else "")},
+        {"role": "user", "content": user_msg},
     ])
+    # 镜头数校验：不符则带着纠错说明重试一次（架构级保障，不指望模型一次听话）
+    if want_n and len((data or {}).get("shots", [])) != want_n:
+        got = len((data or {}).get("shots", []))
+        data, resp = await _chat_json(r["model"], [
+            {"role": "system", "content": load_prompt("storyboard_system")},
+            {"role": "user", "content": user_msg
+             + chr(10) + f"【纠错】上次你生成了 {got} 个镜头，不符合要求，必须恰好 {want_n} 个。"},
+        ])
     db.update("model_tasks", task_id, {
         "status": "succeeded", "finished_at": db.now(),
         "input_tokens": resp["input_tokens"], "output_tokens": resp["output_tokens"],
         "response_payload": json.dumps({"text": resp["text"]}, ensure_ascii=False),
     })
     notes = _normalize_shots(data) + _lint_prompts(data) + _route_shots(data)
+    if want_n and len(data.get("shots", [])) != want_n:
+        notes.append(f"⚠ 两次生成均未达到要求的 {want_n} 镜（实际 {len(data.get('shots', []))} 镜），请人工裁决")
     out = {"storyboard": data}
     if notes:
         out["lint"] = notes

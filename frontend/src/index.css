@@ -506,3 +506,11 @@ body {
 .auth-bar { position: absolute; top: 14px; right: 18px; display: flex; gap: 10px;
   align-items: center; z-index: 20; }
 .auth-bar button { width: auto; padding: 6px 14px; }
+
+/* 成果预览：放大按钮 */
+.preview-wrap { position: relative; }
+.preview-wrap img { cursor: zoom-in; }
+.zoom-btn { position: absolute; right: 8px; bottom: 10px; width: auto; padding: 5px 12px;
+  background: rgba(10, 13, 18, 0.78); border: 1px solid #3a4152; border-radius: 8px;
+  color: #dfe5ee; font-size: 12px; }
+.zoom-btn:hover { border-color: #5cc5ec; color: #5cc5ec; }

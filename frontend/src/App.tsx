@@ -29,8 +29,11 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
   },
   storyboard: {
     label: '分镜', icon: '🎞',
-    hint: '连接上游脚本节点后执行，自动拆分镜头并标注 AI 生成 / 代码渲染双路线',
-    fields: [],
+    hint: '连接上游脚本节点后执行，自动拆分镜头并标注 AI 生成 / 代码渲染双路线。镜头数/总时长填了就是硬约束（每镜上限 10 秒是视频模型的物理限制）',
+    fields: [
+      { key: 'shot_count', label: '镜头数（0 = 自动决定）', kind: 'number' },
+      { key: 'total_duration', label: '总时长秒（0 = 自动；每镜只能 5 或 10 秒）', kind: 'number' },
+    ],
   },
   image: {
     label: '图像', icon: '🖼',
@@ -138,6 +141,14 @@ function JojoNode({ id, data, selected }: NodeProps) {
         <span className={`dot ${b.status}`} />
         <span className="node-title">{b.title || meta?.label || b.type}</span>
         <span className="type-badge">{meta?.icon} {meta?.label}</span>
+        {typeof out.asset_url === 'string' && (
+          <button className="run-btn nodrag" title="放大预览"
+            onClick={e => {
+              e.stopPropagation()
+              ;(data.zoom as ((url: string, title: string) => void) | undefined)?.(
+                out.asset_url as string, b.title || meta?.label || '')
+            }}>🔍</button>
+        )}
         <button
           className="run-btn nodrag"
           title="运行到此节点（上游未完成的会先跑）"
@@ -311,6 +322,7 @@ export default function App() {
         id: n.id, type: 'jojo',
         position: old?.position ?? { x: n.position_x, y: n.position_y },
         data: { b: n, run: runChain, del: delNode, sel: setSelectedId,
+                zoom: (url: string, title: string) => setLightbox({ url, title }),
                 startedAt: runStartRef.current[n.id] },
       }
     }))
@@ -1259,7 +1271,7 @@ export default function App() {
           defaultEdgeOptions={{ type: 'default', animated: true }}
           deleteKeyCode={['Delete', 'Backspace']}
           connectionRadius={36}
-          selectionOnDrag panOnDrag={[1, 2]} panOnScroll
+          selectionOnDrag panOnDrag={[1, 2]} panOnScroll zoomOnDoubleClick={false}
         >
           <Background color="#23262f" />
           <Controls />
@@ -1420,9 +1432,16 @@ export default function App() {
               </div>
             )}
             {typeof selected.outputs?.asset_url === 'string' && (
-              (selected.outputs.asset_url as string).endsWith('.mp4')
-                ? <video src={selected.outputs.asset_url as string} controls />
-                : <img src={selected.outputs.asset_url as string} alt="" />
+              <div className="preview-wrap">
+                {(selected.outputs.asset_url as string).endsWith('.mp4')
+                  ? <video src={selected.outputs.asset_url as string} controls />
+                  : <img src={selected.outputs.asset_url as string} alt=""
+                      title="点击放大预览"
+                      onClick={() => setLightbox({ url: selected.outputs.asset_url as string, title: selected.title || '' })} />}
+                <button className="zoom-btn" onClick={() =>
+                  setLightbox({ url: selected.outputs.asset_url as string, title: selected.title || '' })
+                }>🔍 放大预览</button>
+              </div>
             )}
             {selected.outputs?.script != null && <ScriptView script={selected.outputs.script} />}
             {selected.outputs?.storyboard != null && (
