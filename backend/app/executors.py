@@ -994,6 +994,8 @@ def _intake_report(seg_out: list[dict], transcript: dict | None) -> dict:
     words = len((transcript or {}).get("text") or "")
     if faces / n >= 0.6 and words > 150:
         kind = "talking_head"
+    elif faces / n <= 0.2 and words > 150:
+        kind = "narrated_demo"
     elif faces / n <= 0.2:
         kind = "demo_experiment"
     else:
