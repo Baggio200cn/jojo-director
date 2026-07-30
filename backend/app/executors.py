@@ -577,7 +577,7 @@ async def _run_code_render(node: dict) -> dict:
     inputs = db.jloads(node["inputs"])
     template = inputs.get("template", "lens_focus")
     if template not in ("lens_focus", "pwm_waveform", "spectrum_recipe",
-                        "block_diagram", "rotary_drill_station"):
+                        "block_diagram", "rotary_drill_station", "michelson_fringes"):
         raise ValueError(f"暂不支持模板 {template}（可扩展 app/render/）")
     r = {"provider": "local", "model": f"code_render/{template}"}
     task_id = _record_task(node, "code_render", r, inputs)
@@ -607,6 +607,16 @@ async def _run_code_render(node: dict) -> dict:
         meta = await asyncio.to_thread(
             block_diagram.render, str(ASSETS_DIR / filename),
             duration=float(inputs.get("duration") or 12),
+            fps=int(inputs.get("fps") or 24),
+        )
+    elif template == "michelson_fringes":
+        from .render import michelson_fringes
+        meta = await asyncio.to_thread(
+            michelson_fringes.render, str(ASSETS_DIR / filename),
+            mode=str(inputs.get("mode") or "expand"),
+            d_um=float(inputs.get("d_um") or 20),
+            delta_um=float(inputs.get("delta_um") or 1.5),
+            duration=float(inputs.get("duration") or 10),
             fps=int(inputs.get("fps") or 24),
         )
     elif template == "pwm_waveform":

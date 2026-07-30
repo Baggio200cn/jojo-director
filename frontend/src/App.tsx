@@ -59,7 +59,7 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
     label: '代码渲染', icon: '⚙',
     hint: '严格几何/波形动画：每帧按公式计算、内置物理断言，本地渲染零费用。适合原理演示镜头',
     fields: [
-      { key: 'template', label: '模板', kind: 'select', options: ['lens_focus', 'pwm_waveform', 'spectrum_recipe', 'block_diagram', 'rotary_drill_station'] },
+      { key: 'template', label: '模板', kind: 'select', options: ['lens_focus', 'pwm_waveform', 'spectrum_recipe', 'block_diagram', 'rotary_drill_station', 'michelson_fringes'] },
     ],
   },
   compose: {
@@ -122,6 +122,10 @@ const CR_FIELDS: Record<string, Field[]> = {
   block_diagram: [
     { key: 'duration', label: '时长（秒）', kind: 'number' },
   ],
+  michelson_fringes: [
+    { key: 'mode', label: '模式（expand=吐条纹 / contract=吞条纹）', kind: 'select', options: ['expand', 'contract'] },
+    { key: 'duration', label: '时长（秒）', kind: 'number' },
+  ],
   rotary_drill_station: [
     { key: 'phase', label: '演示段（cycle=四步循环 / interlock=安全联锁）', kind: 'select', options: ['cycle', 'interlock'] },
     { key: 'duration', label: '时长（秒）', kind: 'number' },
@@ -133,6 +137,7 @@ const CR_DEFAULTS: Record<string, object> = {
   spectrum_recipe: { template: 'spectrum_recipe', stage: '育苗期', duty_blue: 40, duty_red: 50, duty_farred: 10, duration: 11 },
   block_diagram: { template: 'block_diagram', duration: 12 },
   rotary_drill_station: { template: 'rotary_drill_station', phase: 'cycle', duration: 18 },
+  michelson_fringes: { template: 'michelson_fringes', mode: 'expand', d_um: 20, delta_um: 1.5, duration: 10 },
 }
 
 function excerpt(v: unknown, n = 60): string {
