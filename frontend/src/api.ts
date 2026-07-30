@@ -75,4 +75,5 @@ export const api = {
     fetch(`/api/admin/invites/${code}`, { method: 'PATCH' }).then(j),
   projectStats: (pid: string) => fetch(`/api/projects/${pid}/stats`).then(j),
   storyboardFromRef: (nid: string) => post(`/api/nodes/${nid}/storyboard_from_ref`),
+  scriptFromRef: (nid: string) => post(`/api/nodes/${nid}/script_from_ref`),
 }

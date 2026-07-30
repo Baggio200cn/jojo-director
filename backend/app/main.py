@@ -401,6 +401,37 @@ async def storyboard_from_ref(nid: str):
     return {"storyboard_node": sb_id, "shots": len(shots)}
 
 
+@app.post("/api/nodes/{nid}/script_from_ref")
+async def script_from_ref(nid: str):
+    """R4 内容重演绎：口播讲稿 → 微课脚本节点（去口头语/纠错字/保留知识点，自动生成内容）。"""
+    node = db.get("canvas_nodes", nid)
+    if not node or node["type"] != "ref_video":
+        raise HTTPException(404, "参考视频节点不存在")
+    out = db.jloads(node["outputs"])
+    transcript = (out.get("transcript") or {}).get("text", "")
+    if not transcript:
+        raise HTTPException(400, "该参考视频没有可用讲稿（无音轨或未转写）——请先执行参考视频节点")
+    domain = db.jloads(node["inputs"]).get("domain") or "general"
+    goal = ("将以下教师口播讲稿重演绎为微课脚本（R4 内容重演绎）。要求：\n"
+            "1. 保留全部知识点、公式、案例与讲解顺序，一个都不能丢；\n"
+            "2. 语音转写存在同音错字，按学科专业术语纠正（如'丹射'应为'干涉'、'光尘差'应为'光程差'）；\n"
+            "3. 去掉口头语与重复，压缩到微课节奏；\n"
+            "4. 每段解说都要说明配什么可视化画面（严谨图表/公式类标注用代码渲染呈现）。\n"
+            f"【学科】{domain}\n【口播讲稿全文】\n{transcript[:4000]}")
+    sid = db.new_id("node")
+    db.insert("canvas_nodes", {
+        "id": sid, "project_id": node["project_id"], "type": "script",
+        "title": "脚本·R4重演绎",
+        "position_x": node["position_x"] + 340, "position_y": node["position_y"] + 260,
+        "inputs": json.dumps({"goal": goal, "duration": 120}, ensure_ascii=False),
+        "outputs": "{}", "status": "idle",
+        "created_at": db.now(), "updated_at": db.now()})
+    db.insert("canvas_edges", {"id": db.new_id("edge"), "project_id": node["project_id"],
+                               "source_node_id": nid, "target_node_id": sid})
+    await executors.execute_chain(sid)
+    return {"script_node": sid, "status": db.get("canvas_nodes", sid)["status"]}
+
+
 @app.post("/api/nodes/{nid}/expand_storyboard")
 def expand_storyboard(nid: str, req: ExpandIn):
     """把已完成的分镜展开为逐镜生产线：

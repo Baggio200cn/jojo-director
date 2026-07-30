@@ -1475,6 +1475,36 @@ export default function App() {
             {selected.outputs?.motion_card != null && (
               <MotionCardView card={selected.outputs.motion_card as Record<string, unknown>} />
             )}
+            {selected.type === 'ref_video' && selected.outputs?.intake != null && (() => {
+              const ik = selected.outputs.intake as { kind: string; label: string; default_route: string; rationale: string; faces_ratio: number; speech_chars: number; moves?: string[]; rights?: string[] }
+              const tr = selected.outputs.transcript as { text?: string } | undefined
+              return (
+                <div className="intake-card">
+                  <b>📋 素材体检报告</b>
+                  <div>类型：<b>{ik.label}</b>（人脸段占比 {Math.round(ik.faces_ratio * 100)}% · 语音 {ik.speech_chars} 字）</div>
+                  <div>建议路线：<b className="route">{ik.default_route}</b> —— {ik.rationale}</div>
+                  {(ik.rights ?? []).length > 0 && (
+                    <div className="rights">⚖ {ik.rights![0]}</div>
+                  )}
+                  {tr?.text && (
+                    <details><summary>📝 讲稿转写（{tr.text.length}字，点开预览）</summary>
+                      <div className="transcript">{tr.text.slice(0, 600)}{tr.text.length > 600 ? '…' : ''}</div>
+                    </details>
+                  )}
+                  {tr?.text && (
+                    <button className="accent" onClick={async () => {
+                      say('R4 重演绎：正在把讲稿转成微课脚本（约1分钟）…')
+                      const r = await api.scriptFromRef(selected.id)
+                      say('R4 脚本已生成——审阅修改后接分镜即可')
+                      await syncGraph(projectRef.current)
+                      setSelectedId(r.script_node)
+                      setTimeout(() => flowRef.current?.fitView({
+                        nodes: [{ id: r.script_node }], padding: 0.4, duration: 400 }), 400)
+                    }}>📝 R4 内容重演绎（讲稿→微课脚本）</button>
+                  )}
+                </div>
+              )
+            })()}
             {selected.type === 'ref_video' && Array.isArray(selected.outputs?.segments)
               && (selected.outputs.segments as unknown[]).length > 0 && (
               <button className="accent" style={{ marginTop: 8 }} onClick={async () => {

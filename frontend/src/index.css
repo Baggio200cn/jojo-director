@@ -514,3 +514,13 @@ body {
   background: rgba(10, 13, 18, 0.78); border: 1px solid #3a4152; border-radius: 8px;
   color: #dfe5ee; font-size: 12px; }
 .zoom-btn:hover { border-color: #5cc5ec; color: #5cc5ec; }
+
+/* 素材体检报告卡 */
+.intake-card { background: #16283F; border: 1px solid #2a4a6a; border-radius: 10px;
+  padding: 12px 14px; margin-top: 8px; font-size: 13px; color: #c9d6e5;
+  display: flex; flex-direction: column; gap: 6px; }
+.intake-card .route { color: #f2b45c; }
+.intake-card .rights { color: #e8a0bf; font-size: 12px; }
+.intake-card details summary { cursor: pointer; color: #5cc5ec; }
+.intake-card .transcript { max-height: 180px; overflow-y: auto; font-size: 12px;
+  background: #0f1115; border-radius: 6px; padding: 8px; margin-top: 6px; line-height: 1.7; }

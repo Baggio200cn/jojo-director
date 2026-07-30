@@ -4,3 +4,4 @@ httpx
 python-dotenv
 pyyaml
 python-multipart
+faster-whisper

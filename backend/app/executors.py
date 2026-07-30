@@ -944,7 +944,66 @@ async def _run_ref_video(node: dict) -> dict:
                         "seconds": round(dur, 1), "clip_url": clip_url,
                         "keyframes": kf_urls, "card": seg_card})
     out["segments"] = seg_out
+    # ── 音频转写（本地 Whisper，零费用）+ 素材体检报告 ──
+    transcript = await asyncio.to_thread(_transcribe, src_path)
+    if transcript:
+        for s in seg_out:   # 讲稿按时间窗切给各段
+            s["speech"] = "".join(x["text"] for x in transcript["lines"]
+                                  if x["start"] < s["end"] and x["end"] > s["start"])
+        out["transcript"] = transcript
+    out["intake"] = _intake_report(seg_out, transcript)
     return out
+
+
+_WHISPER_MODEL = None
+
+
+def _transcribe(path: str) -> dict | None:
+    """本地 Whisper 转写（零 API 费）。无音轨或未装 faster-whisper 时返回 None。"""
+    pr = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a",
+                         "-show_entries", "stream=codec_type", "-of", "csv=p=0", path],
+                        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if "audio" not in (pr.stdout or ""):
+        return None
+    try:
+        os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+        from faster_whisper import WhisperModel
+    except ImportError:
+        return None
+    global _WHISPER_MODEL
+    if _WHISPER_MODEL is None:
+        _WHISPER_MODEL = WhisperModel("small", device="cpu", compute_type="int8")
+    segments, info = _WHISPER_MODEL.transcribe(path, language="zh", vad_filter=True)
+    lines = [{"start": round(s.start, 1), "end": round(s.end, 1), "text": s.text.strip()}
+             for s in segments]
+    return {"language": info.language, "lines": lines,
+            "text": "".join(x["text"] for x in lines)}
+
+
+def _load_playbook() -> dict:
+    p = QC_RULES_DIR / "replication_playbook.yaml"
+    if p.exists():
+        return (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("kinds", {})
+    return {}
+
+
+def _intake_report(seg_out: list[dict], transcript: dict | None) -> dict:
+    """素材体检：定性素材类型并给出打法库建议（讨论产出制度化的机器端）。"""
+    n = max(1, len(seg_out))
+    faces = sum(1 for s in seg_out if (s.get("card") or {}).get("has_faces"))
+    words = len((transcript or {}).get("text") or "")
+    if faces / n >= 0.6 and words > 150:
+        kind = "talking_head"
+    elif faces / n <= 0.2:
+        kind = "demo_experiment"
+    else:
+        kind = "mixed"
+    entry = _load_playbook().get(kind, {})
+    return {"kind": kind, "label": entry.get("label", kind),
+            "faces_ratio": round(faces / n, 2), "speech_chars": words,
+            "default_route": entry.get("default_route", ""),
+            "rationale": entry.get("rationale", ""),
+            "moves": entry.get("moves", []), "rights": entry.get("rights", [])}
 
 
 def _scene_segments(path: str, max_segs: int = 10) -> list[tuple[float, float]]:
