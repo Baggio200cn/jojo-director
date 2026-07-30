@@ -233,10 +233,13 @@ async def execute_node(node_id: str) -> None:
         infra_kw = ("网络异常", "Timeout", "Connect", "Overloaded", "overloaded",
                     "下载失败", "503", "500", "ServerBusy")
         err_class = "infra" if any(k in msg for k in infra_kw) else "content"
+        # 合并而非覆盖：失败不得抹掉已有成果（如已上传的参考视频 asset_url）
+        cur = db.jloads((db.get("canvas_nodes", node_id) or {}).get("outputs"))
+        cur["error"] = msg
+        cur["error_class"] = err_class
         db.update("canvas_nodes", node_id, {
             "status": "failed",
-            "outputs": json.dumps({"error": msg, "error_class": err_class},
-                                  ensure_ascii=False),
+            "outputs": json.dumps(cur, ensure_ascii=False),
             "updated_at": db.now(),
         })
         raise
