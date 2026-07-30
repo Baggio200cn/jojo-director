@@ -5,3 +5,4 @@ python-dotenv
 pyyaml
 python-multipart
 faster-whisper
+matplotlib

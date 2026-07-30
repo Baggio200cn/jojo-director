@@ -343,6 +343,8 @@ def update_node(nid: str, body: dict):
     if "position" in body:
         fields["position_x"] = body["position"].get("x", 0)
         fields["position_y"] = body["position"].get("y", 0)
+    if "outputs" in body:   # 管理/产线工具需要改写成果（如调整分镜路由）
+        fields["outputs"] = json.dumps(body["outputs"], ensure_ascii=False)
     if fields:
         fields["updated_at"] = db.now()
         db.update("canvas_nodes", nid, fields)
