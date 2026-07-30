@@ -908,14 +908,13 @@ async def _run_ref_video(node: dict) -> dict:
 
     # ── 阶段1：场景切分 → 每段关键帧+片段素材 → 逐段复刻卡 ──
     src_path = str(ASSETS_DIR / src.split("/assets/")[-1])
-    segs = _scene_segments(src_path)
-    seg_out = []
-    for si, (t0, t1) in enumerate(segs, start=1):
-        dur = t1 - t0
-        # 关键帧：段首/段中/段末
-        kf_urls = []
-        for tag, ts in (("a", t0 + min(0.3, dur / 4)), ("b", (t0 + t1) / 2),
-                        ("c", max(t0, t1 - min(0.3, dur / 4)))):
+    segs = await asyncio.to_thread(_scene_segments, src_path)
+
+    def _cut_assets(t0: float, t1: float) -> tuple[list[str], str]:
+        """段关键帧+片段切割（同步 ffmpeg，必须在工作线程跑，不得阻塞事件循环）。"""
+        dur_ = t1 - t0
+        kf: list[str] = []
+        for ts in (t0 + min(0.3, dur_ / 4), (t0 + t1) / 2, max(t0, t1 - min(0.3, dur_ / 4))):
             aid = db.new_id("asset")
             fn = f"{aid}.jpg"
             subprocess.run(["ffmpeg", "-y", "-ss", f"{ts:.2f}", "-i", src_path,
@@ -925,19 +924,24 @@ async def _run_ref_video(node: dict) -> dict:
                 db.insert("assets", {"id": aid, "project_id": node["project_id"],
                                      "node_id": node["id"], "kind": "image",
                                      "filename": fn, "created_at": db.now()})
-                kf_urls.append(f"/assets/{fn}")
-        # 段片段（R1 真实素材增强的原料）
+                kf.append(f"/assets/{fn}")
         cid = db.new_id("asset")
         cfn = f"{cid}.mp4"
-        subprocess.run(["ffmpeg", "-y", "-ss", f"{t0:.2f}", "-t", f"{dur:.2f}",
+        subprocess.run(["ffmpeg", "-y", "-ss", f"{t0:.2f}", "-t", f"{dur_:.2f}",
                         "-i", src_path, "-c:v", "libx264", "-preset", "veryfast",
                         "-crf", "22", "-an", str(ASSETS_DIR / cfn)], capture_output=True)
-        clip_url = ""
+        cu = ""
         if (ASSETS_DIR / cfn).exists():
             db.insert("assets", {"id": cid, "project_id": node["project_id"],
                                  "node_id": node["id"], "kind": "video",
                                  "filename": cfn, "created_at": db.now()})
-            clip_url = f"/assets/{cfn}"
+            cu = f"/assets/{cfn}"
+        return kf, cu
+
+    seg_out = []
+    for si, (t0, t1) in enumerate(segs, start=1):
+        dur = t1 - t0
+        kf_urls, clip_url = await asyncio.to_thread(_cut_assets, t0, t1)
         # 逐段复刻卡（科学事实断言是核心产出；按学科提取指引抓重点）
         focus_lines = _load_extract_focus(str(inputs.get("domain") or "general"))
         focus_txt = ("\n【本学科重点提取】\n- " + "\n- ".join(focus_lines)) if focus_lines else ""
