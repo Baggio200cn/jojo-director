@@ -989,7 +989,9 @@ def _transcribe(path: str) -> dict | None:
         return None
     global _WHISPER_MODEL
     if _WHISPER_MODEL is None:
-        _WHISPER_MODEL = WhisperModel("small", device="cpu", compute_type="int8")
+        # 优先本地模型目录（服务器网络到 HF 不可靠，模型由部署时直接推上来）
+        model_ref = os.getenv("WHISPER_MODEL_DIR") or "small"
+        _WHISPER_MODEL = WhisperModel(model_ref, device="cpu", compute_type="int8")
     segments, info = _WHISPER_MODEL.transcribe(path, language="zh", vad_filter=True)
     lines = [{"start": round(s.start, 1), "end": round(s.end, 1), "text": s.text.strip()}
              for s in segments]
