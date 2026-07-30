@@ -928,9 +928,11 @@ async def _run_ref_video(node: dict) -> dict:
                                  "node_id": node["id"], "kind": "video",
                                  "filename": cfn, "created_at": db.now()})
             clip_url = f"/assets/{cfn}"
-        # 逐段复刻卡（科学事实断言是核心产出）
+        # 逐段复刻卡（科学事实断言是核心产出；按学科提取指引抓重点）
+        focus_lines = _load_extract_focus(str(inputs.get("domain") or "general"))
+        focus_txt = ("\n【本学科重点提取】\n- " + "\n- ".join(focus_lines)) if focus_lines else ""
         card_content: list[dict] = [{"type": "text", "text":
-            f"这是参考视频第 {si} 段（{dur:.1f} 秒）的首/中/末三帧："}]
+            f"这是参考视频第 {si} 段（{dur:.1f} 秒）的首/中/末三帧：{focus_txt}"}]
         for u in kf_urls:
             card_content.append({"type": "image_url",
                                  "image_url": {"url": _asset_to_data_uri(u)}})
@@ -1062,12 +1064,32 @@ async def _run_enhance(node: dict) -> dict:
 
 def _load_rules(domain: str) -> list[dict]:
     rules: list[dict] = []
-    for name in ["general", domain]:
+    for name in dict.fromkeys(["general", domain]):
         p = QC_RULES_DIR / f"{name}.yaml"
         if p.exists():
             data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
             rules += data.get("rules", [])
     return rules
+
+
+def _load_ref_rules(domain: str, cap: int = 9) -> list[dict]:
+    """保真对照规则：通用层+学科层，从规则包读取（判卷注意力有限，总量封顶）。"""
+    rules: list[dict] = []
+    for name in dict.fromkeys(["general", domain]):
+        p = QC_RULES_DIR / f"{name}.yaml"
+        if p.exists():
+            data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            rules += data.get("ref_rules", [])
+    return rules[:cap]
+
+
+def _load_extract_focus(domain: str) -> list[str]:
+    """复刻卡提取指引：分析参考视频时按学科清单抓科学事实。"""
+    p = QC_RULES_DIR / f"{domain}.yaml"
+    if p.exists():
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        return [str(x) for x in data.get("ref_extract_focus", [])]
+    return []
 
 
 def _extract_qc_frames(node_id: str, asset_path: str, n: int) -> list[str]:
@@ -1181,18 +1203,10 @@ async def _run_qc(node: dict) -> dict:
         tgt_in = db.jloads(target["inputs"])
         orig_prompt = str(tgt_in.get("prompt") or "").strip()
         tgt_delta = str(tgt_in.get("edit_delta") or "").strip()
-        # 保真对照模式：附参考视频基准帧，科学事实必须与参考一致（风格可以不同）
+        # 保真对照模式：附参考基准帧，保真规则从规则包读取（通用层+学科层，老师可改 yaml）
         ref_frames = [str(u) for u in (inputs.get("ref_frames") or []) if u]
         if ref_frames:
-            checklist.extend([
-                {"id": "REF-01", "name": "科学事实保真", "severity": "blocker",
-                 "check": "与参考基准帧对照：仪表读数/器件状态/光路方向/实验现象等科学事实必须一致，"
-                          "不得增删或改变；美术风格允许不同"},
-                {"id": "REF-02", "name": "动作与顺序一致", "severity": "blocker",
-                 "check": "主体的动作姿态、操作顺序、发展阶段应与参考基准帧对应时刻一致"},
-                {"id": "REF-03", "name": "空间关系一致", "severity": "blocker",
-                 "check": "主体间的相对位置、朝向、连接关系应与参考基准帧一致"},
-            ])
+            checklist.extend(_load_ref_rules(domain))
         ask = ("被检素材的抽帧图如下（按时间顺序）。请对以下每条规则/断言逐条裁决：\n"
                + json.dumps(checklist, ensure_ascii=False))
         style = _project_style(node["project_id"])

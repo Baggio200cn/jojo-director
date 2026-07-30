@@ -391,7 +391,7 @@ async def storyboard_from_ref(nid: str):
         "id": sb_id, "project_id": node["project_id"], "type": "storyboard",
         "title": f"分镜·按参考视频（{len(shots)}镜）",
         "position_x": node["position_x"] + 340, "position_y": node["position_y"],
-        "inputs": json.dumps({"from_ref_node": nid}, ensure_ascii=False),
+        "inputs": json.dumps({"from_ref_node": nid, "domain": db.jloads(node["inputs"]).get("domain") or "general"}, ensure_ascii=False),
         "outputs": json.dumps({"storyboard": {"shots": shots},
                                "note": "由参考视频复刻卡生成：R1=真实素材增强 R2=真实帧锚定 R3=风格化重演"},
                               ensure_ascii=False),
@@ -412,6 +412,10 @@ def expand_storyboard(nid: str, req: ExpandIn):
         raise HTTPException(404, "分镜节点不存在")
     sb = db.jloads(node["outputs"]).get("storyboard")
     shots = (sb or {}).get("shots") or []
+    # 分镜自带学科（参考视频产线传入）时，作为质检领域缺省
+    _sb_domain = db.jloads(node["inputs"]).get("domain")
+    if _sb_domain and req.domain == "general":
+        req.domain = _sb_domain
     if not shots:
         raise HTTPException(400, "请先执行分镜节点，生成镜头列表")
     pid = node["project_id"]

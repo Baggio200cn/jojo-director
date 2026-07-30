@@ -74,7 +74,7 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
     label: '质检', icon: '🔍',
     hint: '科学性质检：抽帧后按领域规则包+分镜断言逐条裁决。接在图像/视频节点后面。未配置视觉裁判模型时转人工验收模式',
     fields: [
-      { key: 'domain', label: '领域规则包', kind: 'select', options: ['optics', 'mechanics', 'kinematics', 'general'] },
+      { key: 'domain', label: '领域规则包', kind: 'select', options: ['optics', 'machine_vision', 'mechanics', 'kinematics', 'general'] },
       { key: 'shot_index', label: '对应分镜第几镜（取其断言）', kind: 'number' },
     ],
   },
@@ -82,7 +82,8 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
     label: '参考视频', icon: '🎥',
     hint: '上传参考视频后执行：自动场景切分→每段抽关键帧+切片段→逐段生成"复刻卡"（含必须保真的科学事实断言）。然后点"按参考视频生成分镜"进入复刻产线',
     fields: [
-      { key: 'focus', label: '分析重点', kind: 'textarea', placeholder: '例：重点记录仪表读数、光路方向、操作顺序等科学事实' },
+      { key: 'domain', label: '学科（决定复刻卡提取重点与保真规则包）', kind: 'select', options: ['general', 'optics', 'machine_vision', 'mechanics', 'kinematics'] },
+      { key: 'focus', label: '补充分析重点（可选）', kind: 'textarea', placeholder: '例：重点记录第二段的游标卡尺读数' },
     ],
   },
   enhance: {
