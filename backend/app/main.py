@@ -353,6 +353,54 @@ class ExpandIn(BaseModel):
     domain: str = "general"      # 帧/视频质检使用的领域规则包
 
 
+@app.post("/api/nodes/{nid}/storyboard_from_ref")
+async def storyboard_from_ref(nid: str):
+    """按参考视频生成分镜：把参考视频节点的逐段复刻卡转成分镜（镜头数/时长对齐参考，
+    每镜携带真实关键帧锚点与路线建议 R1/R2/R3），产出一个已完成的分镜节点。"""
+    node = db.get("canvas_nodes", nid)
+    if not node or node["type"] != "ref_video":
+        raise HTTPException(404, "参考视频节点不存在")
+    segs = db.jloads(node["outputs"]).get("segments") or []
+    if not segs:
+        raise HTTPException(400, "请先执行参考视频节点（需为升级后的切分版）")
+    shots = []
+    for s in segs:
+        card = s.get("card") or {}
+        sec = float(s.get("seconds") or 5)
+        route_mode = "R3" if card.get("has_faces") else "R2"
+        facts = [str(x) for x in (card.get("science_facts") or [])]
+        kfs = s.get("keyframes") or []
+        shots.append({
+            "index": s["index"], "type": "ai_video",
+            "first_frame_prompt": card.get("first_frame_desc") or "",
+            "last_frame_delta": "",
+            "last_frame_prompt": card.get("last_frame_desc") or "",
+            "motion": f"{card.get('camera') or ''}；{card.get('action_timeline') or ''}"[:200],
+            "seconds": 10 if sec > 5 else 5,
+            "frame_elements": (card.get("subjects") or [])[:3],
+            "caption": "",
+            "assertions": ([{"text": f, "phase": "frame"} for f in facts[:4]]
+                           + [{"text": "画面与参考基准帧的科学事实一致", "phase": "frame"}]),
+            "route_mode": route_mode,
+            "ref_first_url": kfs[0] if kfs else "",
+            "ref_last_url": kfs[-1] if len(kfs) > 1 else "",
+            "ref_clip_url": s.get("clip_url") or "",
+        })
+    sb_id = db.new_id("node")
+    db.insert("canvas_nodes", {
+        "id": sb_id, "project_id": node["project_id"], "type": "storyboard",
+        "title": f"分镜·按参考视频（{len(shots)}镜）",
+        "position_x": node["position_x"] + 340, "position_y": node["position_y"],
+        "inputs": json.dumps({"from_ref_node": nid}, ensure_ascii=False),
+        "outputs": json.dumps({"storyboard": {"shots": shots},
+                               "note": "由参考视频复刻卡生成：R1=真实素材增强 R2=真实帧锚定 R3=风格化重演"},
+                              ensure_ascii=False),
+        "status": "succeeded", "created_at": db.now(), "updated_at": db.now()})
+    db.insert("canvas_edges", {"id": db.new_id("edge"), "project_id": node["project_id"],
+                               "source_node_id": nid, "target_node_id": sb_id})
+    return {"storyboard_node": sb_id, "shots": len(shots)}
+
+
 @app.post("/api/nodes/{nid}/expand_storyboard")
 def expand_storyboard(nid: str, req: ExpandIn):
     """把已完成的分镜展开为逐镜生产线：
@@ -410,12 +458,38 @@ def expand_storyboard(nid: str, req: ExpandIn):
             link(cr, comp_id)
             created += 2
             continue
+        # ── 参考视频复刻路线（storyboard_from_ref 生成的分镜携带锚点）──
+        route_mode = str(shot.get("route_mode") or "")
+        ref_first = str(shot.get("ref_first_url") or "")
+        ref_last = str(shot.get("ref_last_url") or "")
+        if route_mode in ("R2", "R3") and ref_first:
+            qc_frame_in = {**qc_frame_in, "ref_frames": [ref_first]}
+            qc_in = {**qc_in, "ref_frames": [u for u in (ref_first, ref_last) if u]}
+        if route_mode == "R1" and shot.get("ref_clip_url"):
+            # R1 真实素材增强：真实片段直接进产线（慢放/特写/标注在节点上调）
+            en = mk("enhance", f"镜头{i}·素材增强",
+                    {"source_url": shot["ref_clip_url"], "slow_factor": 1,
+                     "caption": shot.get("caption") or ""}, x0 + 320, y)
+            q = mk("qc", f"镜头{i}·质检", qc_in, x0 + 320, y + 250)
+            link(en, q)
+            link(en, comp_id)
+            created += 2
+            continue
         first_p = (shot.get("first_frame_prompt") or "").strip()
         # 新版分镜输出 last_frame_delta（一句话变化指令）；兼容旧版 last_frame_prompt
         last_delta = (shot.get("last_frame_delta") or "").strip()
         legacy_last = (shot.get("last_frame_prompt") or "").strip()
-        f1 = mk("image", f"镜头{i}·首帧",
-                {"prompt": first_p, "shot_index": i, "size": "2560x1440"}, x0 + 320, y)
+        STYLIZE = ("Re-render this exact scene in the project's art style: keep the same "
+                   "composition, subjects, positions and lighting; stylized character "
+                   "faces only, no photorealistic faces. ")
+        f1_in: dict = {"prompt": first_p, "shot_index": i, "size": "2560x1440"}
+        if route_mode == "R2" and ref_first:
+            # 真实帧锚定：关键帧直接作为首帧成品（零成本零幻觉）
+            f1_in.update({"ref_asset_url": ref_first, "use_ref_as_output": "是"})
+        elif route_mode == "R3" and ref_first:
+            # 风格化重演：以真实帧为参考整体重渲（两步法的机制化）
+            f1_in.update({"ref_asset_url": ref_first, "prompt": STYLIZE + first_p})
+        f1 = mk("image", f"镜头{i}·首帧", f1_in, x0 + 320, y)
         q1 = mk("qc", f"镜头{i}·首帧质检", qc_frame_in, x0 + 320, y + 250)
         link(f1, q1)
         created += 2
@@ -423,7 +497,23 @@ def expand_storyboard(nid: str, req: ExpandIn):
                           "caption": shot.get("caption") or "",
                           "duration": 10 if sec > 5 else 5, "first_frame_node": f1}
         vx = x0 + 640
-        if last_delta or (legacy_last and legacy_last != first_p):
+        make_ref_tail = route_mode in ("R2", "R3") and ref_last and ref_last != ref_first
+        if make_ref_tail:
+            f2_in: dict = {"shot_index": i, "size": "2560x1440"}
+            if route_mode == "R2":
+                f2_in.update({"ref_asset_url": ref_last, "use_ref_as_output": "是"})
+            else:
+                f2_in.update({"ref_asset_url": ref_last,
+                              "prompt": STYLIZE + (legacy_last or first_p)})
+            f2 = mk("image", f"镜头{i}·尾帧", f2_in, x0 + 640, y)
+            q2 = mk("qc", f"镜头{i}·尾帧质检",
+                    {**qc_frame_in, "pair_first_node": f1,
+                     "ref_frames": [ref_last]}, x0 + 640, y + 250)
+            link(f2, q2)
+            v_inputs["last_frame_node"] = f2
+            vx = x0 + 960
+            created += 2
+        elif last_delta or (legacy_last and legacy_last != first_p):
             # 编辑式尾帧：运行时取首帧成品图做参考，只执行一句话的最小变化
             delta = last_delta or (f"apply the end-state change described here: {legacy_last}")
             f2 = mk("image", f"镜头{i}·尾帧",

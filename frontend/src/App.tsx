@@ -80,9 +80,22 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
   },
   ref_video: {
     label: '参考视频', icon: '🎥',
-    hint: '上传你有权观看的参考镜头（录屏/下载），分析后输出"运动特征卡"（轨迹/速度/机位，自动剥离真实人物身份）。下游视频节点提示词留空即自动引用特征卡',
+    hint: '上传参考视频后执行：自动场景切分→每段抽关键帧+切片段→逐段生成"复刻卡"（含必须保真的科学事实断言）。然后点"按参考视频生成分镜"进入复刻产线',
     fields: [
-      { key: 'focus', label: '分析重点', kind: 'textarea', placeholder: '例：只分析足球的飞行轨迹、速度变化和机位运动，忽略球员' },
+      { key: 'focus', label: '分析重点', kind: 'textarea', placeholder: '例：重点记录仪表读数、光路方向、操作顺序等科学事实' },
+    ],
+  },
+  enhance: {
+    label: '素材增强', icon: '✂️',
+    hint: 'R1 真实素材增强：对真实片段做慢放/区域特写/标注框/画中画，本地处理零 API 费、零幻觉——实验类微课的默认路线',
+    fields: [
+      { key: 'segment_index', label: '取上游参考视频第几段（连了参考视频时生效）', kind: 'number' },
+      { key: 'slow_factor', label: '慢放倍数（1=原速，2=慢一倍）', kind: 'number' },
+      { key: 'zoom_region', label: '特写区域 x,y,w,h（百分比，留空不裁）', kind: 'text', placeholder: '例：25,25,50,50 = 画面中央放大' },
+      { key: 'label_box', label: '标注框 x,y,w,h（百分比，留空无框）', kind: 'text', placeholder: '例：40,30,20,25' },
+      { key: 'label_text', label: '标注文字（顶部黄字，留空无）', kind: 'text', placeholder: '例：注意此处光斑变化' },
+      { key: 'pip_url', label: '画中画素材URL（如代码渲染波形，留空无）', kind: 'text', placeholder: '/assets/xxx.mp4' },
+      { key: 'caption', label: '字幕字卡（合成时烧录）', kind: 'text' },
     ],
   },
 }
@@ -174,6 +187,7 @@ function JojoNode({ id, data, selected }: NodeProps) {
         {out.script != null && <div className="ok">📄 脚本已生成，点击查看</div>}
         {out.storyboard != null && <div className="ok">🎞 分镜已生成，点击查看</div>}
         {out.motion_card != null && <div className="ok">🎥 运动特征卡已提取</div>}
+        {Array.isArray(out.segments) && (out.segments as unknown[]).length > 0 && (<div className="ok">🎬 已切分 {(out.segments as unknown[]).length} 段·复刻卡就绪</div>)}
         {b.type === 'qc' && typeof out.verdict === 'string' && (
           <div className={`qc-badge ${out.verdict}`}>
             {{ pass: '✅ 质检通过', reject: '⛔ 不合格', needs_human: '👁 待人工验收' }[out.verdict as string] ?? out.verdict}
@@ -743,7 +757,8 @@ export default function App() {
     image: [{ type: 'qc', label: '🔍 质检' }, { type: 'video', label: '🎬 视频' }, { type: 'image', label: '🖼 图像（尾帧）' }],
     video: [{ type: 'qc', label: '🔍 质检' }, { type: 'compose', label: '🎞 拼接成片' }],
     code_render: [{ type: 'qc', label: '🔍 质检' }, { type: 'compose', label: '🎞 拼接成片' }],
-    ref_video: [{ type: 'video', label: '🎬 视频' }],
+    ref_video: [{ type: 'enhance', label: '✂️ 素材增强' }, { type: 'video', label: '🎬 视频' }],
+    enhance: [{ type: 'qc', label: '🔍 质检' }, { type: 'compose', label: '🎞 拼接成片' }],
   }
   const onConnectStart = useCallback((_e: unknown, params: { nodeId: string | null }) => {
     connectSrcRef.current = params.nodeId
@@ -773,6 +788,7 @@ export default function App() {
       storyboard: {}, image: { prompt: '', shot_index: 1, size: '2560x1440' },
       video: { prompt: '', resolution: '720p', duration: 5 },
       qc: { domain: 'general', shot_index: 1 }, compose: { burn_subtitles: '是' },
+      enhance: { slow_factor: 1, segment_index: 1 },
     }
     const created = await api.createNode(projectRef.current, {
       type, title: '', inputs: defaults[type] ?? {}, position: { x: cm.fx, y: cm.fy },
@@ -811,6 +827,7 @@ export default function App() {
       compose: { burn_subtitles: '是' },
       qc: { domain: 'optics', shot_index: 1 },
       ref_video: { focus: '' },
+      enhance: { slow_factor: 1, segment_index: 1 },
     }
     const created = await api.createNode(projectRef.current, {
       type, title: '', inputs: defaults[type] ?? {}, position: pos,
@@ -1456,6 +1473,17 @@ export default function App() {
             )}
             {selected.outputs?.motion_card != null && (
               <MotionCardView card={selected.outputs.motion_card as Record<string, unknown>} />
+            )}
+            {selected.type === 'ref_video' && Array.isArray(selected.outputs?.segments)
+              && (selected.outputs.segments as unknown[]).length > 0 && (
+              <button className="accent" style={{ marginTop: 8 }} onClick={async () => {
+                const r = await api.storyboardFromRef(selected.id)
+                say(`已按参考视频生成分镜（${r.shots} 镜，含真实帧锚点与 R1/R2/R3 路线）`)
+                await syncGraph(projectRef.current)
+                setSelectedId(r.storyboard_node)
+                setTimeout(() => flowRef.current?.fitView({
+                  nodes: [{ id: r.storyboard_node }], padding: 0.4, duration: 400 }), 400)
+              }}>🎬 按参考视频生成分镜（复刻产线）</button>
             )}
             {selected.type === 'qc' && selected.outputs?.verdict != null && (
               <QcReportView out={selected.outputs}

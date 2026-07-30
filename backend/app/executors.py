@@ -219,6 +219,7 @@ async def execute_node(node_id: str) -> None:
             "compose": _run_compose,
             "qc": _run_qc,
             "ref_video": _run_ref_video,
+            "enhance": _run_enhance,
         }.get(node["type"])
         if not handler:
             raise ValueError(f"暂不支持的节点类型: {node['type']}")
@@ -364,6 +365,20 @@ async def _run_image(node: dict) -> dict:
         ref = (db.jloads(rn["outputs"]).get("asset_url") or "") if rn else ""
         if not ref:
             raise ValueError("参考帧节点还没有成品图——请先把首帧跑成功再跑本节点")
+    # R1/R2 锚定直用：参考帧（真实关键帧）直接作为本节点成品，零生成费、零幻觉
+    if str(inputs.get("use_ref_as_output") or "") in ("是", "1", "true") and ref:
+        src_p = ASSETS_DIR / ref.split("/assets/")[-1]
+        if not src_p.exists():
+            raise ValueError("参考帧文件不存在")
+        aid = db.new_id("asset")
+        fn = f"{aid}{src_p.suffix}"
+        import shutil as _sh
+        _sh.copyfile(src_p, ASSETS_DIR / fn)
+        db.insert("assets", {"id": aid, "project_id": node["project_id"],
+                             "node_id": node["id"], "kind": "image",
+                             "filename": fn, "created_at": db.now()})
+        return {"asset_id": aid, "asset_url": f"/assets/{fn}",
+                "engine": "ref_anchor", "note": "真实参考帧直用（零成本锚定）"}
     delta = (inputs.get("edit_delta") or "").strip()
     delta_note = ""
     if delta and not ref:
@@ -880,7 +895,167 @@ async def _run_ref_video(node: dict) -> dict:
     out = {"motion_card": card, "frames": [f"/assets/{f}" for f in frames]}
     if own:
         out["asset_url"] = own  # 保留已上传的参考视频
+
+    # ── 阶段1：场景切分 → 每段关键帧+片段素材 → 逐段复刻卡 ──
+    src_path = str(ASSETS_DIR / src.split("/assets/")[-1])
+    segs = _scene_segments(src_path)
+    seg_out = []
+    for si, (t0, t1) in enumerate(segs, start=1):
+        dur = t1 - t0
+        # 关键帧：段首/段中/段末
+        kf_urls = []
+        for tag, ts in (("a", t0 + min(0.3, dur / 4)), ("b", (t0 + t1) / 2),
+                        ("c", max(t0, t1 - min(0.3, dur / 4)))):
+            aid = db.new_id("asset")
+            fn = f"{aid}.jpg"
+            subprocess.run(["ffmpeg", "-y", "-ss", f"{ts:.2f}", "-i", src_path,
+                            "-frames:v", "1", "-q:v", "3", str(ASSETS_DIR / fn)],
+                           capture_output=True)
+            if (ASSETS_DIR / fn).exists():
+                db.insert("assets", {"id": aid, "project_id": node["project_id"],
+                                     "node_id": node["id"], "kind": "image",
+                                     "filename": fn, "created_at": db.now()})
+                kf_urls.append(f"/assets/{fn}")
+        # 段片段（R1 真实素材增强的原料）
+        cid = db.new_id("asset")
+        cfn = f"{cid}.mp4"
+        subprocess.run(["ffmpeg", "-y", "-ss", f"{t0:.2f}", "-t", f"{dur:.2f}",
+                        "-i", src_path, "-c:v", "libx264", "-preset", "veryfast",
+                        "-crf", "22", "-an", str(ASSETS_DIR / cfn)], capture_output=True)
+        clip_url = ""
+        if (ASSETS_DIR / cfn).exists():
+            db.insert("assets", {"id": cid, "project_id": node["project_id"],
+                                 "node_id": node["id"], "kind": "video",
+                                 "filename": cfn, "created_at": db.now()})
+            clip_url = f"/assets/{cfn}"
+        # 逐段复刻卡（科学事实断言是核心产出）
+        card_content: list[dict] = [{"type": "text", "text":
+            f"这是参考视频第 {si} 段（{dur:.1f} 秒）的首/中/末三帧："}]
+        for u in kf_urls:
+            card_content.append({"type": "image_url",
+                                 "image_url": {"url": _asset_to_data_uri(u)}})
+        seg_card, seg_resp = await _chat_json(r["model"], [
+            {"role": "system", "content": load_prompt("ref_replica_system")},
+            {"role": "user", "content": card_content},
+        ])
+        seg_out.append({"index": si, "start": round(t0, 2), "end": round(t1, 2),
+                        "seconds": round(dur, 1), "clip_url": clip_url,
+                        "keyframes": kf_urls, "card": seg_card})
+    out["segments"] = seg_out
     return out
+
+
+def _scene_segments(path: str, max_segs: int = 10) -> list[tuple[float, float]]:
+    """ffmpeg 场景切分：scdet 找切点；无明显切点时按 8 秒等分。段长下限 2 秒。"""
+    dur = 0.0
+    pr = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                         "-of", "csv=p=0", path], capture_output=True, text=True,
+                        encoding="utf-8", errors="replace")
+    try:
+        dur = float((pr.stdout or "0").strip())
+    except ValueError:
+        dur = 0.0
+    if dur <= 0:
+        raise ValueError("无法读取参考视频时长")
+    sc = subprocess.run(["ffmpeg", "-i", path, "-vf",
+                         "select='gt(scene,0.30)',showinfo", "-f", "null", "-"],
+                        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    cuts = [float(m) for m in re.findall(r"pts_time:([0-9.]+)", sc.stderr or "")]
+    bounds = [0.0] + [c for c in cuts if 0.5 < c < dur - 0.5] + [dur]
+    segs: list[tuple[float, float]] = []
+    for a, b in zip(bounds, bounds[1:]):
+        if segs and b - segs[-1][0] < 2.0:      # 过短并入前段
+            segs[-1] = (segs[-1][0], b)
+        elif b - a < 2.0 and segs:
+            segs[-1] = (segs[-1][0], b)
+        else:
+            segs.append((a, b))
+    if len(segs) <= 1 and dur > 12:             # 无切点：按 8 秒等分
+        n = min(max_segs, max(2, int(dur // 8)))
+        step = dur / n
+        segs = [(i * step, (i + 1) * step) for i in range(n)]
+    return segs[:max_segs]
+
+
+async def _run_enhance(node: dict) -> dict:
+    """真实素材增强（R1 路线）：慢放/区域特写/标注框/画中画，本地 ffmpeg 零 API 费。
+    素材来源：inputs.source_url，否则取上游节点（参考视频段/视频/代码渲染）的 mp4 成果。"""
+    inputs = db.jloads(node["inputs"])
+    src = str(inputs.get("source_url") or "").strip()
+    if not src:
+        for up in _upstream_nodes(node):
+            out_u = db.jloads(up["outputs"])
+            au = out_u.get("asset_url", "")
+            if up["status"] == "succeeded" and au.endswith(".mp4"):
+                src = au
+                break
+            segs = out_u.get("segments") or []
+            si = int(inputs.get("segment_index") or 1)
+            if up["type"] == "ref_video" and segs:
+                src = segs[min(si, len(segs)) - 1].get("clip_url", "")
+                if src:
+                    break
+    if not src:
+        raise ValueError("请填 source_url 或连接参考视频/视频/代码渲染节点（可用 segment_index 选段）")
+    src_path = str(ASSETS_DIR / src.split("/assets/")[-1])
+    task_id = _record_task(node, "enhance", {"provider": "local", "model": "ffmpeg/enhance"}, inputs)
+
+    vf: list[str] = []
+    zoom = str(inputs.get("zoom_region") or "").strip()     # "x,y,w,h" 百分比
+    if zoom:
+        try:
+            zx, zy, zw, zh = [max(0.0, min(100.0, float(v))) / 100 for v in zoom.split(",")]
+            vf.append(f"crop=iw*{zw:.3f}:ih*{zh:.3f}:iw*{zx:.3f}:ih*{zy:.3f},scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2")
+        except (ValueError, IndexError):
+            raise ValueError("zoom_region 格式应为 x,y,w,h 百分比，例：25,25,50,50")
+    slow = float(inputs.get("slow_factor") or 1)
+    if slow > 1:
+        vf.append(f"setpts={slow:.2f}*PTS")
+    box = str(inputs.get("label_box") or "").strip()
+    label = str(inputs.get("label_text") or "").strip()
+    if box:
+        try:
+            bx, by, bw, bh = [max(0.0, min(100.0, float(v))) / 100 for v in box.split(",")]
+            vf.append(f"drawbox=x=iw*{bx:.3f}:y=ih*{by:.3f}:w=iw*{bw:.3f}:h=ih*{bh:.3f}:color=yellow@0.9:t=4")
+        except (ValueError, IndexError):
+            raise ValueError("label_box 格式应为 x,y,w,h 百分比")
+    if label:
+        if os.name == "nt":
+            _font = "C\\:/Windows/Fonts/msyh.ttc"
+        else:
+            _font = next((p for p in (
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc") if Path(p).exists()), "")
+        safe = label.replace(chr(92), "").replace("'", "").replace(":", " ")[:40]
+        if _font:
+            vf.append(f"drawtext=fontfile='{_font}':text='{safe}':x=(w-text_w)/2:y=36:"
+                      f"fontsize=40:fontcolor=yellow:borderw=3:bordercolor=black@0.7")
+
+    asset_id = db.new_id("asset")
+    filename = f"{asset_id}.mp4"
+    out_path = str(ASSETS_DIR / filename)
+    args = ["ffmpeg", "-y", "-i", src_path]
+    pip = str(inputs.get("pip_url") or "").strip()
+    if pip:
+        pip_path = str(ASSETS_DIR / pip.split("/assets/")[-1])
+        chain = ",".join(vf) if vf else "null"
+        args += ["-i", pip_path, "-filter_complex",
+                 f"[0:v]{chain}[base];[1:v]scale=iw*0.3:-1[pip];"
+                 f"[base][pip]overlay=W-w-24:H-h-24[v]",
+                 "-map", "[v]"]
+    elif vf:
+        args += ["-vf", ",".join(vf)]
+    args += ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out_path]
+    pr = subprocess.run(args, capture_output=True, text=True,
+                        encoding="utf-8", errors="replace")
+    if pr.returncode != 0 or not Path(out_path).exists():
+        raise ValueError("增强处理失败：" + (pr.stderr or "")[-300:])
+    db.insert("assets", {"id": asset_id, "project_id": node["project_id"],
+                         "node_id": node["id"], "kind": "video",
+                         "filename": filename, "created_at": db.now()})
+    db.update("model_tasks", task_id, {"status": "succeeded", "finished_at": db.now()})
+    return {"asset_id": asset_id, "asset_url": f"/assets/{filename}",
+            "engine": "enhance", "source": src}
 
 
 
@@ -1006,6 +1181,18 @@ async def _run_qc(node: dict) -> dict:
         tgt_in = db.jloads(target["inputs"])
         orig_prompt = str(tgt_in.get("prompt") or "").strip()
         tgt_delta = str(tgt_in.get("edit_delta") or "").strip()
+        # 保真对照模式：附参考视频基准帧，科学事实必须与参考一致（风格可以不同）
+        ref_frames = [str(u) for u in (inputs.get("ref_frames") or []) if u]
+        if ref_frames:
+            checklist.extend([
+                {"id": "REF-01", "name": "科学事实保真", "severity": "blocker",
+                 "check": "与参考基准帧对照：仪表读数/器件状态/光路方向/实验现象等科学事实必须一致，"
+                          "不得增删或改变；美术风格允许不同"},
+                {"id": "REF-02", "name": "动作与顺序一致", "severity": "blocker",
+                 "check": "主体的动作姿态、操作顺序、发展阶段应与参考基准帧对应时刻一致"},
+                {"id": "REF-03", "name": "空间关系一致", "severity": "blocker",
+                 "check": "主体间的相对位置、朝向、连接关系应与参考基准帧一致"},
+            ])
         ask = ("被检素材的抽帧图如下（按时间顺序）。请对以下每条规则/断言逐条裁决：\n"
                + json.dumps(checklist, ensure_ascii=False))
         style = _project_style(node["project_id"])
@@ -1053,6 +1240,9 @@ async def _run_qc(node: dict) -> dict:
                         "若问题源于首尾帧本身场景/风格不一致，请在 summary 中明确指出"
                         "'病根在帧'并说明应统一哪张帧；suggested_prompt 仍针对视频提示词，"
                         "且不得与首尾帧的实际画面相矛盾。")
+        if ref_frames:
+            ask += (f"\n\n【保真对照】最后 {len(ref_frames)} 张图是参考视频的基准帧"
+                    "——REF 系列规则以它们为准绳裁决")
         content: list[dict] = [{"type": "text", "text": ask}]
         for f in frames:
             content.append({"type": "image_url", "image_url":
@@ -1060,6 +1250,9 @@ async def _run_qc(node: dict) -> dict:
         for pu in pair_imgs:
             content.append({"type": "image_url", "image_url":
                             {"url": _asset_to_data_uri(pu)}})
+        for ru in ref_frames:
+            content.append({"type": "image_url", "image_url":
+                            {"url": _asset_to_data_uri(ru)}})
         report, resp = await _chat_json(r["model"], [
             {"role": "system", "content": load_prompt("qc_judge_system")},
             {"role": "user", "content": content},
@@ -1223,7 +1416,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     if plan is None:
         raise RuntimeError(f"规划模型两次都未返回有效 JSON，请换个说法或换个模型重试。{last_err}")
 
-    allowed = {"script", "storyboard", "image", "video", "code_render",
+    allowed = {"enhance", "script", "storyboard", "image", "video", "code_render",
                "compose", "qc", "ref_video"}
     existing_ids = {n["id"] for n in existing}
     base_x = max([n["position_x"] or 0 for n in existing], default=-220) + 300
