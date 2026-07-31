@@ -678,17 +678,39 @@ def _has_audio(path: str) -> bool:
     return "audio" in r.stdout
 
 
-def _build_srt(script: dict) -> str:
+def _build_srt(script: dict, total: float | None = None) -> str:
+    """单一字幕轨：解说按成片实际时长缩放对齐，逐句切分（每条≤22字），永不重叠。"""
     def ts(sec: float) -> str:
         h, m = divmod(int(sec), 3600)
         m, s = divmod(m, 60)
         return f"{h:02d}:{m:02d}:{s:02d},{int(sec % 1 * 1000):03d}"
-    lines, t = [], 0.0
-    for seg in script.get("segments", []):
-        dur = float(seg.get("seconds", 5))
-        lines.append(f"{seg['index']}\n{ts(t)} --> {ts(t + dur)}\n{seg['narration']}\n")
+    segs = script.get("segments", [])
+    claimed = sum(float(x.get("seconds", 5)) for x in segs) or 1.0
+    scale = (total / claimed) if total else 1.0
+    out, idx, t = [], 1, 0.0
+    for seg in segs:
+        dur = float(seg.get("seconds", 5)) * scale
+        narr = str(seg.get("narration", "")).strip()
+        parts = [x for x in re.split(r"(?<=[。！？；])|(?<=[，、])(?=.{12,})", narr) if x.strip()]
+        merged: list[str] = []
+        for x in parts:
+            if merged and len(merged[-1]) + len(x) <= 22:
+                merged[-1] += x
+            else:
+                merged.append(x)
+        if not merged:
+            t += dur
+            continue
+        w = [max(len(x), 4) for x in merged]
+        ws = float(sum(w))
+        tt = t
+        for x, wi in zip(merged, w):
+            dt = dur * wi / ws
+            out.append(f"{idx}\n{ts(tt)} --> {ts(min(tt + dt - 0.05, t + dur))}\n{x.strip()}\n")
+            idx += 1
+            tt += dt
         t += dur
-    return "\n".join(lines)
+    return "\n".join(out)
 
 
 async def _run_compose(node: dict) -> dict:
@@ -742,16 +764,10 @@ async def _run_compose(node: dict) -> dict:
                 "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
                 "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc") if Path(p).exists()), "")
 
-        def _cap_filter(i: int) -> str:
-            cap = captions[i] if i < len(captions) else ""
-            if not cap or not _font:
-                return ""
-            safe = cap.replace(chr(92), "").replace("'", "").replace(":", " ").replace("%", " ")[:40]
-            return (",drawtext=fontfile='" + _font + "':text='" + safe
-                    + "':x=(w-text_w)/2:y=42:fontsize=44:fontcolor=white:borderw=3:bordercolor=black@0.7")
+        # 单一字幕轨原则：镜内不再烧字卡，全部文字统一由合成期 SRT 排布
         filt = "".join(
             f"[{i}:v]scale=1280:720:force_original_aspect_ratio=decrease,"
-            f"pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=24{_cap_filter(i)}[v{i}];"
+            f"pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=24[v{i}];"
             for i in range(n))
         if with_audio:
             filt += "".join(f"[v{i}][{i}:a]" for i in range(n))
@@ -786,14 +802,24 @@ async def _run_compose(node: dict) -> dict:
                         break
         if script:
             srt_name = f"{asset_id}.srt"
-            (ASSETS_DIR / srt_name).write_text(_build_srt(script), encoding="utf-8")
+            pb = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                                 "format=duration", "-of", "csv=p=0",
+                                 str(ASSETS_DIR / filename)],
+                                capture_output=True, text=True,
+                                encoding="utf-8", errors="replace")
+            try:
+                _total = float((pb.stdout or "0").strip())
+            except ValueError:
+                _total = 0.0
+            (ASSETS_DIR / srt_name).write_text(
+                _build_srt(script, _total or None), encoding="utf-8")
             burned = f"{asset_id}_sub.mp4"
 
             def _burn() -> None:
                 rr = subprocess.run(
                     ["ffmpeg", "-y", "-i", filename,
                      "-vf", f"subtitles={srt_name}:force_style="
-                            f"'FontName=Microsoft YaHei,FontSize=18,"
+                            f"'FontName=Microsoft YaHei,FontSize=17,MarginV=26,Outline=1,Shadow=0,"
                             f"PrimaryColour=&HFFFFFF&,OutlineColour=&H80000000&'",
                      "-c:a", "copy", burned],
                     capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ASSETS_DIR))
@@ -811,7 +837,7 @@ async def _run_compose(node: dict) -> dict:
             note = "上游没有脚本节点，未加字幕"
 
     # BGM：合成舒缓垫乐并混入（本地 ffmpeg，零费用）
-    if str(inputs.get("bgm") or "无") != "无":
+    if str(inputs.get("bgm") or "舒缓垫乐") != "无":
         def _bgm() -> None:
             probe = subprocess.run(
                 ["ffprobe", "-v", "error", "-show_entries", "format=duration",
