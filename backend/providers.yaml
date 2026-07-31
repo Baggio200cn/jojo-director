@@ -23,8 +23,8 @@ routes:
   # 编辑备选：doubao-seedream-5-0-260128（5.0 标准版，光效稍弱）
   image_alt:   { provider: openai, model: gpt-image-2 }                    # 预留
   video:       { provider: ark, model: doubao-seedance-2-0-mini-260615,   # Seedance-2.0-mini
-                 resolutions: ["480p", "720p"] }                           # mini 不支持 1080p
-  video_hd:    { provider: ark, model: doubao-seedance-2-0-260128 }       # 预留：2.0正式版 API 放开后启用
+                 resolutions: ["480p", "720p", "1080p"] }                  # 2026-08-01 探针实测 mini 已支持 1080p
+  video_hd:    { provider: ark, model: doubao-seedance-2-0-260128 }       # 2.0正式版：账号已可开通（控制台点开通即用），开通后可切此路由
   code_render: { provider: local, engine: manim }
   qc_vision:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 视觉裁判：Doubao-Seed-2.1-pro
   ref_video:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 参考视频分析（视觉模型）

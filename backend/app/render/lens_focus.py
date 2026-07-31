@@ -71,7 +71,7 @@ def render(out_path: str, focal_length: float = 2.2, num_rays: int = 7,
     tmp = Path(tempfile.mkdtemp(prefix="lens_"))
 
     for k in range(frames_total):
-        fig, ax = plt.subplots(figsize=(12.8, 7.2), dpi=100)
+        fig, ax = plt.subplots(figsize=(12.8, 7.2), dpi=150)
         fig.patch.set_facecolor(BG)
         ax.set_facecolor(BG)
         ax.set_xlim(X0, X_END)

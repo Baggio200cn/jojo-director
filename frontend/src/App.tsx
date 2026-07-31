@@ -50,7 +50,7 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
     hint: '连接上游图像节点后，其成果自动作为首帧；生成约需 1-3 分钟',
     fields: [
       { key: 'prompt', label: '运镜 / 动作提示词', kind: 'textarea', placeholder: '例：Slow push-in shot, camera moves closer to the bottle cap' },
-      { key: 'resolution', label: '分辨率（1080p 需 2.0 正式版，暂不可选）', kind: 'select', options: ['480p', '720p'] },
+      { key: 'resolution', label: '分辨率（正式成片用 1080p）', kind: 'select', options: ['480p', '720p', '1080p'] },
       { key: 'duration', label: '时长（秒）', kind: 'select', options: ['3', '5', '10'] },
       { key: 'skip_pair_check', label: '跳过首尾帧配对预检（已人工确认两帧可用时选"是"）', kind: 'select', options: ['否', '是'] },
     ],
@@ -59,7 +59,7 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
     label: '代码渲染', icon: '⚙',
     hint: '严格几何/波形动画：每帧按公式计算、内置物理断言，本地渲染零费用。适合原理演示镜头',
     fields: [
-      { key: 'template', label: '模板', kind: 'select', options: ['lens_focus', 'pwm_waveform', 'spectrum_recipe', 'block_diagram', 'rotary_drill_station', 'michelson_fringes'] },
+      { key: 'template', label: '模板', kind: 'select', options: ['lens_focus', 'pwm_waveform', 'spectrum_recipe', 'block_diagram', 'rotary_drill_station', 'michelson_fringes', 'michelson_lightpath'] },
     ],
   },
   compose: {
@@ -100,6 +100,7 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
     hint: 'R1 真实素材增强：对真实片段做慢放/区域特写/标注框/画中画，本地处理零 API 费、零幻觉——实验类微课的默认路线',
     fields: [
       { key: 'segment_index', label: '取上游参考视频第几段（连了参考视频时生效）', kind: 'number' },
+      { key: 'own_material', label: '素材为自有/已授权（权利硬闸：非自有片段拼接时会被排除）', kind: 'select', options: ['否', '是'] },
       { key: 'slow_factor', label: '慢放倍数（1=原速，2=慢一倍）', kind: 'number' },
       { key: 'zoom_region', label: '特写区域 x,y,w,h（百分比，留空不裁）', kind: 'text', placeholder: '例：25,25,50,50 = 画面中央放大' },
       { key: 'label_box', label: '标注框 x,y,w,h（百分比，留空无框）', kind: 'text', placeholder: '例：40,30,20,25' },

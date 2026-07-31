@@ -530,7 +530,7 @@ def expand_storyboard(nid: str, req: ExpandIn):
         q1 = mk("qc", f"镜头{i}·首帧质检", qc_frame_in, x0 + 320, y + 250)
         link(f1, q1)
         created += 2
-        v_inputs: dict = {"prompt": shot.get("motion") or "", "resolution": "720p",
+        v_inputs: dict = {"prompt": shot.get("motion") or "", "resolution": "1080p",
                           "caption": shot.get("caption") or "",
                           "duration": 10 if sec > 5 else 5, "first_frame_node": f1}
         vx = x0 + 640
@@ -758,7 +758,7 @@ async def execute_node(nid: str, background: BackgroundTasks):
         raise HTTPException(404, "节点不存在")
     if node["status"] == "running":
         raise HTTPException(409, "节点正在执行中")
-    if node["type"] in ("video", "ref_video", "enhance", "compose", "tts"):
+    if node["type"] in ("video", "ref_video", "enhance", "compose", "tts", "code_render"):
         # 长任务后台执行，前端轮询节点状态（同步长请求会被代理掐断且阻塞事件循环）
         background.add_task(_run_async, nid, False)
         db.update("canvas_nodes", nid, {"status": "running", "updated_at": db.now()})

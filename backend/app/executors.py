@@ -581,7 +581,8 @@ async def _run_code_render(node: dict) -> dict:
     inputs = db.jloads(node["inputs"])
     template = inputs.get("template", "lens_focus")
     if template not in ("lens_focus", "pwm_waveform", "spectrum_recipe",
-                        "block_diagram", "rotary_drill_station", "michelson_fringes"):
+                        "block_diagram", "rotary_drill_station", "michelson_fringes",
+                        "michelson_lightpath"):
         raise ValueError(f"暂不支持模板 {template}（可扩展 app/render/）")
     r = {"provider": "local", "model": f"code_render/{template}"}
     task_id = _record_task(node, "code_render", r, inputs)
@@ -620,6 +621,15 @@ async def _run_code_render(node: dict) -> dict:
             mode=str(inputs.get("mode") or "expand"),
             d_um=float(inputs.get("d_um") or 20),
             delta_um=float(inputs.get("delta_um") or 1.5),
+            duration=float(inputs.get("duration") or 10),
+            fps=int(inputs.get("fps") or 24),
+            formula=str(inputs.get("formula") or ""),
+            note=str(inputs.get("note") or ""),
+        )
+    elif template == "michelson_lightpath":
+        from .render import michelson_lightpath
+        meta = await asyncio.to_thread(
+            michelson_lightpath.render, str(ASSETS_DIR / filename),
             duration=float(inputs.get("duration") or 10),
             fps=int(inputs.get("fps") or 24),
         )
@@ -727,11 +737,16 @@ async def _run_compose(node: dict) -> dict:
         return (1, 0, n["position_y"], n["position_x"])
 
     ups = sorted(_upstream_nodes(node), key=_clip_order)
-    videos, captions, qc_flags = [], [], []
+    videos, captions, qc_flags, rights_excluded = [], [], [], []
     for u in ups:
         out = db.jloads(u["outputs"])
         au = out.get("asset_url", "")
         if u["status"] == "succeeded" and au.endswith(".mp4"):
+            # 权利硬闸：增强节点的素材必须声明自有（own_material=是）才允许进片，
+            # 否则视为第三方参考片段——只学结构，禁用原声原像
+            if u["type"] == "enhance" and str(db.jloads(u["inputs"]).get("own_material") or "否") != "是":
+                rights_excluded.append(u.get("title") or u["id"])
+                continue
             videos.append(str(ASSETS_DIR / au.split("/assets/")[-1]))
             captions.append(str(db.jloads(u["inputs"]).get("caption") or "").strip())
             qc = out.get("qc", {})
@@ -766,9 +781,10 @@ async def _run_compose(node: dict) -> dict:
                 "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc") if Path(p).exists()), "")
 
         # 单一字幕轨原则：镜内不再烧字卡，全部文字统一由合成期 SRT 排布
+        # 输出 1080p：低分辨率素材 lanczos 上采样
         filt = "".join(
-            f"[{i}:v]scale=1280:720:force_original_aspect_ratio=decrease,"
-            f"pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=24[v{i}];"
+            f"[{i}:v]scale=1920:1080:force_original_aspect_ratio=decrease:flags=lanczos,"
+            f"pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=24[v{i}];"
             for i in range(n))
         if with_audio:
             filt += "".join(f"[v{i}][{i}:a]" for i in range(n))
@@ -820,7 +836,7 @@ async def _run_compose(node: dict) -> dict:
                 rr = subprocess.run(
                     ["ffmpeg", "-y", "-i", filename,
                      "-vf", f"subtitles={srt_name}:force_style="
-                            f"'FontName=Microsoft YaHei,FontSize=17,MarginV=26,Outline=1,Shadow=0,"
+                            f"'FontName=Microsoft YaHei,FontSize=26,MarginV=40,Outline=2,Shadow=0,"
                             f"PrimaryColour=&HFFFFFF&,OutlineColour=&H80000000&'",
                      "-c:a", "copy", burned],
                     capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ASSETS_DIR))
@@ -917,6 +933,8 @@ async def _run_compose(node: dict) -> dict:
     db.update("model_tasks", task_id, {"status": "succeeded", "finished_at": db.now()})
     if qc_flags:
         note = (note + "；" if note else "") + "⚠ 质检警示（advisory 放行）：" + "；".join(qc_flags)
+    if rights_excluded:
+        note = (note + "；" if note else "") + "🚫 权利红线：已排除未声明自有的第三方片段 " + "、".join(rights_excluded)
     return {"asset_id": asset_id, "asset_url": f"/assets/{filename}",
             "clips": len(videos), "note": note}
 

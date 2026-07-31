@@ -31,3 +31,16 @@ templates:
     params:
       - {key: phase, label: 阶段(cycle等), type: text, default: cycle}
       - {key: duration, label: 时长(秒), type: number, default: 18}
+  michelson_fringes:
+    label: 迈克尔逊等倾条纹吞吐
+    params:
+      - {key: mode, label: 模式(expand吐/contract吞), type: text, default: expand}
+      - {key: d_um, label: 初始d(微米), type: number, default: 20}
+      - {key: delta_um, label: 变化量(微米), type: number, default: 1.5}
+      - {key: formula, label: 右侧公式(留空=ΔL=2d·cosθ), type: text, default: ''}
+      - {key: note, label: 底部说明(留空=默认), type: text, default: ''}
+      - {key: duration, label: 时长(秒), type: number, default: 10}
+  michelson_lightpath:
+    label: 迈克尔逊光路传播
+    params:
+      - {key: duration, label: 时长(秒), type: number, default: 10}

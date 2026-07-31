@@ -20,14 +20,15 @@ for _f in (r"C:\Windows\Fonts\msyh.ttc",
 
 
 def render(out_path: str, mode: str = "expand", d_um: float = 20.0,
-           delta_um: float = 1.5, duration: float = 10.0, fps: int = 24) -> dict:
+           delta_um: float = 1.5, duration: float = 10.0, fps: int = 24,
+           formula: str = "", note: str = "") -> dict:
     lam = 0.6328  # HeNe 波长 μm
     n_frames = int(duration * fps)
     tmp = Path(out_path).with_suffix("")
     tmp.mkdir(exist_ok=True)
     # 观察屏角坐标网格
-    ang = np.linspace(0, 0.35, 480)                      # θ 0~0.35rad
-    xx, yy = np.meshgrid(np.linspace(-1, 1, 480), np.linspace(-1, 1, 480))
+    ang = np.linspace(0, 0.35, 760)                      # θ 0~0.35rad
+    xx, yy = np.meshgrid(np.linspace(-1, 1, 760), np.linspace(-1, 1, 760))
     rr = np.sqrt(xx ** 2 + yy ** 2)
     theta = rr * ang.max()
     for i in range(n_frames):
@@ -35,7 +36,7 @@ def render(out_path: str, mode: str = "expand", d_um: float = 20.0,
         d = d_um + (delta_um * u if mode == "expand" else -delta_um * u)
         phase = 4 * np.pi * d * np.cos(theta) / lam
         inten = 0.5 * (1 + np.cos(phase))
-        fig, (a1, a2) = plt.subplots(1, 2, figsize=(12.8, 7.2), dpi=100,
+        fig, (a1, a2) = plt.subplots(1, 2, figsize=(12.8, 7.2), dpi=150,  # 1920×1080
                                      gridspec_kw={"width_ratios": [1.15, 1]})
         fig.patch.set_facecolor("#0f1115")
         a1.imshow(inten, cmap="inferno", extent=[-1, 1, -1, 1])
@@ -43,8 +44,8 @@ def render(out_path: str, mode: str = "expand", d_um: float = 20.0,
         a1.axis("off")
         a2.set_facecolor("#0f1115")
         a2.axis("off")
-        a2.text(0.5, 0.86, "ΔL = 2d·cosθ", ha="center", fontsize=22, color="#5CC5EC",
-                transform=a2.transAxes)
+        a2.text(0.5, 0.86, formula or "ΔL = 2d·cosθ", ha="center", fontsize=22,
+                color="#5CC5EC", transform=a2.transAxes, fontproperties=_YH)
         a2.text(0.5, 0.70, f"d = {d:.3f} μm", ha="center", fontsize=18, color="#F2B45C",
                 transform=a2.transAxes, fontproperties=_YH)
         bar_u = (d - (d_um - (0 if mode == "expand" else delta_um))) / delta_um
@@ -54,7 +55,7 @@ def render(out_path: str, mode: str = "expand", d_um: float = 20.0,
                 else "d 减小 → 条纹向中心缩进（吞）",
                 ha="center", fontsize=15, color="w", fontproperties=_YH,
                 transform=a2.transAxes)
-        a2.text(0.5, 0.18, "同一级条纹 ΔL 不变：d增大 → cosθ减小 → θ增大",
+        a2.text(0.5, 0.18, note or "同一级条纹 ΔL 不变：d增大 → cosθ减小 → θ增大",
                 ha="center", fontsize=13, color="#9FB3CC", fontproperties=_YH,
                 transform=a2.transAxes)
         fig.savefig(tmp / f"f{i:05d}.png", facecolor=fig.get_facecolor())
