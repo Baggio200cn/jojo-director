@@ -18,4 +18,5 @@ nodes/edges/run 均可为空；edges 可引用画布已有节点的 id。
 - compose {burn_subtitles: 是|否}（按画布从左到右拼接上游视频）
 - qc {domain: optics|mechanics|kinematics|general, shot_index}
 - ref_video {focus}（用户上传参考视频后执行：自动切分+逐段复刻卡；之后用户点"按参考视频生成分镜"进入复刻产线，不要手工替代这条路径）
+- tts {text 可空=自动取项目脚本解说, voice_type, speed_ratio}（配音节点：豆包语音合成，拼接时自动作为主音轨混入）
 - enhance {segment_index, slow_factor, zoom_region, label_text, caption}（R1 真实素材增强：对真实片段慢放/特写/标注，零费用零幻觉——实验演示类首选）

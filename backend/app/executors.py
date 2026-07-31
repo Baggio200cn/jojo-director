@@ -220,6 +220,7 @@ async def execute_node(node_id: str) -> None:
             "qc": _run_qc,
             "ref_video": _run_ref_video,
             "enhance": _run_enhance,
+            "tts": _run_tts,
         }.get(node["type"])
         if not handler:
             raise ValueError(f"暂不支持的节点类型: {node['type']}")
@@ -862,7 +863,29 @@ async def _run_compose(node: dict) -> dict:
                 raise RuntimeError(rr.stderr[-200:])
             mixed = str(ASSETS_DIR / f"{asset_id}_mix.mp4")
             src = str(ASSETS_DIR / filename)
-            if _has_audio(src):
+            # 配音主轨：项目里有已完成的配音节点则混入（配音 1.0 / 原声 0.4 / BGM 0.22）
+            voice_f = ""
+            for n2 in db.query("canvas_nodes", "project_id=?", (node["project_id"],)):
+                if n2["type"] == "tts" and n2["status"] == "succeeded":
+                    vu = db.jloads(n2["outputs"]).get("asset_url", "")
+                    if vu:
+                        voice_f = str(ASSETS_DIR / vu.split("/assets/")[-1])
+            if voice_f and Path(voice_f).exists():
+                if _has_audio(src):
+                    args = ["ffmpeg", "-y", "-i", src, "-i", voice_f, "-i", bgm_f,
+                            "-filter_complex",
+                            "[0:a][1:a][2:a]amix=inputs=3:duration=first:"
+                            "weights=0.4 1 0.22:normalize=0[a]",
+                            "-map", "0:v", "-map", "[a]", "-c:v", "copy",
+                            "-c:a", "aac", "-b:a", "160k", mixed]
+                else:
+                    args = ["ffmpeg", "-y", "-i", src, "-i", voice_f, "-i", bgm_f,
+                            "-filter_complex",
+                            "[1:a][2:a]amix=inputs=2:duration=longest:"
+                            "weights=1 0.22:normalize=0[a]",
+                            "-map", "0:v", "-map", "[a]", "-c:v", "copy",
+                            "-c:a", "aac", "-b:a", "160k", "-shortest", mixed]
+            elif _has_audio(src):
                 args = ["ffmpeg", "-y", "-i", src, "-i", bgm_f, "-filter_complex",
                         "[0:a][1:a]amix=inputs=2:duration=first:weights=1 0.6[a]",
                         "-map", "0:v", "-map", "[a]", "-c:v", "copy",
@@ -878,10 +901,11 @@ async def _run_compose(node: dict) -> dict:
             Path(src).unlink()
             Path(mixed).rename(src)
             Path(bgm_f).unlink(missing_ok=True)
+            return bool(voice_f)
 
         try:
-            await asyncio.to_thread(_bgm)
-            note = (note + "；" if note else "") + "已混入 BGM"
+            _voiced = await asyncio.to_thread(_bgm)
+            note = (note + "；" if note else "") + ("已混入配音+BGM" if _voiced else "已混入 BGM")
         except Exception as e:
             note = (note + "；" if note else "") + f"BGM 混入失败:{str(e)[:80]}"
 
@@ -1083,6 +1107,107 @@ def _scene_segments(path: str, max_segs: int = 10) -> list[tuple[float, float]]:
         step = dur / n
         segs = [(i * step, (i + 1) * step) for i in range(n)]
     return segs[:max_segs]
+
+
+async def _run_tts(node: dict) -> dict:
+    """配音节点：解说文本→豆包语音合成（分句合成+本地拼接）。
+    text 留空时自动取项目脚本的全部解说词。凭证 TTS_APPID/TTS_TOKEN 存 .env。"""
+    import base64
+    import uuid as _uuid
+    import urllib.request as _ur
+    inputs = db.jloads(node["inputs"])
+    appid = os.getenv("TTS_APPID", "").strip()
+    token = os.getenv("TTS_TOKEN", "").strip()
+    if not appid or not token:
+        raise ValueError("未配置豆包语音凭证：请在 backend/.env 填 TTS_APPID 与 TTS_TOKEN"
+                         "（火山控制台→语音技术→应用管理）")
+    text = str(inputs.get("text") or "").strip()
+    if not text:
+        for n2 in db.query("canvas_nodes", "project_id=?", (node["project_id"],)):
+            if n2["type"] == "script" and n2["status"] == "succeeded":
+                s = db.jloads(n2["outputs"]).get("script")
+                if s:
+                    text = "。".join(str(x.get("narration", "")).strip().rstrip("。")
+                                     for x in s.get("segments", [])) + "。"
+                    break
+    if not text:
+        raise ValueError("没有可配音的文本：填写 text 或先生成项目脚本")
+    voice = str(inputs.get("voice_type") or os.getenv("TTS_VOICE")
+                or "zh_female_vv_uranus_bigtts")
+    speed = float(inputs.get("speed_ratio") or 1.0)
+    task_id = _record_task(node, "tts", {"provider": "doubao_speech", "model": voice},
+                           {"chars": len(text)})
+
+    # 分句切块（每块≤280字，接口稳妥上限内）
+    parts = [p for p in re.split(r"(?<=[。！？；])", text) if p.strip()]
+    chunks: list[str] = []
+    for p in parts:
+        if chunks and len(chunks[-1]) + len(p) <= 280:
+            chunks[-1] += p
+        else:
+            chunks.append(p)
+
+    def _synth(txt: str, out_f: str) -> None:
+        body = {"app": {"appid": appid, "token": token, "cluster": "volcano_tts"},
+                "user": {"uid": "jojo"},
+                "audio": {"voice_type": voice, "encoding": "mp3", "speed_ratio": speed},
+                "request": {"reqid": str(_uuid.uuid4()), "text": txt, "operation": "query"}}
+        req = _ur.Request("https://openspeech.bytedance.com/api/v1/tts",
+                          data=json.dumps(body).encode(), method="POST",
+                          headers={"Authorization": f"Bearer;{token}",
+                                   "Content-Type": "application/json"})
+        last = ""
+        for att in range(3):
+            try:
+                r2 = json.load(_ur.urlopen(req, timeout=120))
+                if r2.get("code") == 3000 and r2.get("data"):
+                    Path(out_f).write_bytes(base64.b64decode(r2["data"]))
+                    return
+                last = f"code={r2.get('code')} {r2.get('message', '')}"
+            except Exception as e:
+                last = repr(e)[:120]
+            import time as _t
+            _t.sleep(5)
+        raise ValueError(f"语音合成失败：{last}")
+
+    asset_id = db.new_id("asset")
+    tmp_files: list[str] = []
+    for ci, ck in enumerate(chunks):
+        f = str(ASSETS_DIR / f"{asset_id}_p{ci:03d}.mp3")
+        await asyncio.to_thread(_synth, ck, f)
+        tmp_files.append(f)
+    filename = f"{asset_id}.mp3"
+    out_path = str(ASSETS_DIR / filename)
+
+    def _join() -> None:
+        if len(tmp_files) == 1:
+            Path(tmp_files[0]).rename(out_path)
+            return
+        lst = str(ASSETS_DIR / f"{asset_id}_list.txt")
+        Path(lst).write_text("".join(f"file '{f}'" + chr(10) for f in tmp_files),
+                             encoding="utf-8")
+        rr = subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lst,
+                             "-c:a", "libmp3lame", "-b:a", "128k", out_path],
+                            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        Path(lst).unlink(missing_ok=True)
+        for f in tmp_files:
+            Path(f).unlink(missing_ok=True)
+        if rr.returncode != 0:
+            raise RuntimeError("配音拼接失败：" + (rr.stderr or "")[-200:])
+
+    await asyncio.to_thread(_join)
+    pb = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                         "-of", "csv=p=0", out_path], capture_output=True, text=True,
+                        encoding="utf-8", errors="replace")
+    dur = round(float((pb.stdout or "0").strip() or 0), 1)
+    db.insert("assets", {"id": asset_id, "project_id": node["project_id"],
+                         "node_id": node["id"], "kind": "audio",
+                         "filename": filename, "created_at": db.now()})
+    db.update("model_tasks", task_id, {"status": "succeeded", "finished_at": db.now(),
+                                       "output_tokens": len(text)})
+    return {"asset_id": asset_id, "asset_url": f"/assets/{filename}",
+            "engine": "doubao_tts", "voice": voice, "chars": len(text),
+            "duration": dur, "chunks": len(chunks)}
 
 
 async def _run_enhance(node: dict) -> dict:
@@ -1536,7 +1661,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     if plan is None:
         raise RuntimeError(f"规划模型两次都未返回有效 JSON，请换个说法或换个模型重试。{last_err}")
 
-    allowed = {"enhance", "script", "storyboard", "image", "video", "code_render",
+    allowed = {"tts", "enhance", "script", "storyboard", "image", "video", "code_render",
                "compose", "qc", "ref_video"}
     existing_ids = {n["id"] for n in existing}
     base_x = max([n["position_x"] or 0 for n in existing], default=-220) + 300

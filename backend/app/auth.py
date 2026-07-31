@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS usage_log (
 """
 
 # 邀请级执行的粗粒度成本估算（元/次），用于限额判断；精确成本仍以 model_tasks 台账为准
-EST_COST = {"video": 2.0, "image": 0.5, "qc": 0.15, "script": 0.05,
+EST_COST = {"video": 2.0, "image": 0.5, "qc": 0.15, "script": 0.05, "tts": 0.05,
             "storyboard": 0.05, "agent": 0.05, "compose": 0.0, "code_render": 0.0}
 
 

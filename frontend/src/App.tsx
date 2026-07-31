@@ -86,6 +86,15 @@ const TYPE_META: Record<string, { label: string; icon: string; hint: string; fie
       { key: 'focus', label: '补充分析重点（可选）', kind: 'textarea', placeholder: '例：重点记录第二段的游标卡尺读数' },
     ],
   },
+  tts: {
+    label: '配音', icon: '🎙',
+    hint: '解说文本→豆包语音合成（留空自动取项目脚本全部解说词）。拼接时自动作为主音轨混入，BGM 自动压低',
+    fields: [
+      { key: 'text', label: '配音文本（留空 = 自动取项目脚本解说）', kind: 'textarea' },
+      { key: 'voice_type', label: '音色', kind: 'select', options: ['zh_female_vv_uranus_bigtts', 'zh_male_M392_conversation_wvae_bigtts'] },
+      { key: 'speed_ratio', label: '语速（0.8-1.5，1=常速）', kind: 'number' },
+    ],
+  },
   enhance: {
     label: '素材增强', icon: '✂️',
     hint: 'R1 真实素材增强：对真实片段做慢放/区域特写/标注框/画中画，本地处理零 API 费、零幻觉——实验类微课的默认路线',
@@ -758,7 +767,8 @@ export default function App() {
 
   // ── 拖线到空白处 → 弹"接什么节点"建议菜单（TapNow 式核心交互） ──
   const CONNECT_SUGGEST: Record<string, { type: string; label: string }[]> = {
-    script: [{ type: 'storyboard', label: '🎞 分镜拆解' }],
+    script: [{ type: 'storyboard', label: '🎞 分镜拆解' }, { type: 'tts', label: '🎙 配音' }],
+    tts: [{ type: 'compose', label: '🎞 拼接成片' }],
     storyboard: [{ type: 'image', label: '🖼 图像（帧）' }, { type: 'qc', label: '🔍 质检' }],
     image: [{ type: 'qc', label: '🔍 质检' }, { type: 'video', label: '🎬 视频' }, { type: 'image', label: '🖼 图像（尾帧）' }],
     video: [{ type: 'qc', label: '🔍 质检' }, { type: 'compose', label: '🎞 拼接成片' }],
@@ -795,6 +805,7 @@ export default function App() {
       video: { prompt: '', resolution: '720p', duration: 5 },
       qc: { domain: 'general', shot_index: 1 }, compose: { burn_subtitles: '是' },
       enhance: { slow_factor: 1, segment_index: 1 },
+      tts: { text: '', voice_type: 'zh_female_vv_uranus_bigtts', speed_ratio: 1 },
     }
     const created = await api.createNode(projectRef.current, {
       type, title: '', inputs: defaults[type] ?? {}, position: { x: cm.fx, y: cm.fy },
