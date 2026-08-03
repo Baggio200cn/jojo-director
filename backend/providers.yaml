@@ -24,7 +24,9 @@ routes:
   image_alt:   { provider: openai, model: gpt-image-2 }                    # 预留
   video:       { provider: ark, model: doubao-seedance-2-0-mini-260615,   # Seedance-2.0-mini
                  resolutions: ["480p", "720p"] }   # 实测：1080p 仅纯文生可用，图生(首帧驱动)上限720p——降档保护按图生口径
-  video_hd:    { provider: ark, model: doubao-seedance-2-0-260128 }       # 2.0正式版：账号已可开通（控制台点开通即用），开通后可切此路由
+  video_hd:    { provider: bjmoma, model: doubao-seedance-2-0-260128,     # 2.0正式版走北京移动Token平台（图生1080p/4k、4-15s）
+                 resolutions: ["480p", "540p", "720p", "1080p", "4k"] }
+  # video_hd 备选（方舟直连，需控制台开通）: { provider: ark, model: doubao-seedance-2-0-260128 }
   code_render: { provider: local, engine: manim }
   qc_vision:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 视觉裁判：Doubao-Seed-2.1-pro
   ref_video:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 参考视频分析（视觉模型）

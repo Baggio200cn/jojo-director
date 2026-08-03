@@ -16,8 +16,15 @@ import yaml
 from . import db
 from .config import ASSETS_DIR, QC, QC_RULES_DIR, route
 from .gateway.ark import ArkAdapter
+from .gateway.bjmoma import BjmomaAdapter, sign_pub_url
 
 ark = ArkAdapter()
+bjmoma = BjmomaAdapter()
+
+
+def _video_gw(r: dict):
+    """按 providers.yaml 的 provider 字段分发视频网关（默认方舟）。"""
+    return bjmoma if r.get("provider") == "bjmoma" else ark
 
 # ── 提示词外置：backend/prompts/*.md，改文件即生效（mtime 热加载） ──
 from .config import BACKEND_DIR
@@ -547,7 +554,9 @@ async def _run_video(node: dict) -> dict:
                 break
     if not (inputs.get("prompt") or "").strip():
         raise ValueError("缺少运镜提示词（或连接一个已分析完成的参考视频节点自动取）")
-    r = route("video")
+    # engine=hd 时走 video_hd 路由（可指向 bjmoma 等第二供应商）
+    r = route("video_hd") if str(inputs.get("engine") or "") == "hd" else route("video")
+    gw = _video_gw(r)
     payload = {k: inputs.get(k) for k in
                ("prompt", "first_frame_url", "last_frame_url", "resolution", "duration")}
     payload["prompt"] = inputs.get("prompt")
@@ -556,10 +565,11 @@ async def _run_video(node: dict) -> dict:
     supported = r.get("resolutions")
     if supported and resolution not in supported:
         resolution = supported[-1]  # 超出模型能力时降到最高支持档
-    provider_task_id = await ark.video_create(
+    _pub = gw is bjmoma   # bjmoma 图生只收公网 URL，帧走签名公链
+    provider_task_id = await gw.video_create(
         r["model"], inputs["prompt"],
-        first_frame_url=_resolve_frame(node, inputs, "first_frame_url"),
-        last_frame_url=_resolve_frame(node, inputs, "last_frame_url"),
+        first_frame_url=_resolve_frame(node, inputs, "first_frame_url", public=_pub),
+        last_frame_url=_resolve_frame(node, inputs, "last_frame_url", public=_pub),
         resolution=resolution,
         duration=int(inputs.get("duration", 5)),
     )
@@ -569,7 +579,7 @@ async def _run_video(node: dict) -> dict:
     poll_errors = 0
     for _ in range(120):
         try:
-            data = await ark.video_get(provider_task_id)
+            data = await gw.video_get(provider_task_id)
             poll_errors = 0
         except Exception:
             poll_errors += 1
@@ -582,7 +592,7 @@ async def _run_video(node: dict) -> dict:
             db.update("model_tasks", task_id, {"status": "downloading"})
             asset_id = db.new_id("asset")
             filename = f"{asset_id}.mp4"
-            await ark.download(data["content"]["video_url"], str(ASSETS_DIR / filename))
+            await gw.download(data["content"]["video_url"], str(ASSETS_DIR / filename))
             db.insert("assets", {
                 "id": asset_id, "project_id": node["project_id"], "node_id": node["id"],
                 "kind": "video", "filename": filename,
@@ -1843,13 +1853,17 @@ def _asset_to_data_uri(asset_url: str) -> str:
     return f"data:{mime};base64,{base64.b64encode(data).decode()}"
 
 
-def _resolve_frame(node: dict, inputs: dict, key: str) -> str | None:
+def _resolve_frame(node: dict, inputs: dict, key: str, public: bool = False) -> str | None:
     """解析首/尾帧：显式 URL 优先；其次是帧节点引用（first_frame_node /
     last_frame_node，由分镜展开产线写入）——引用的帧必须已生成且未被质检
     判死，否则拒绝执行（帧关卡）；最后回退为自动取上游图像节点成果。"""
+    def _out(asset_url: str) -> str:
+        if public and asset_url.startswith("/assets/"):
+            return sign_pub_url(asset_url.split("/assets/")[-1])
+        return _asset_to_data_uri(asset_url) if asset_url.startswith("/assets/") else asset_url
     v = (inputs.get(key) or "").strip()
     if v:
-        return _asset_to_data_uri(v) if v.startswith("/assets/") else v
+        return _out(v)
     ref = str(inputs.get(key.replace("_url", "_node")) or "").strip()
     if ref:
         fn = db.get("canvas_nodes", ref)
@@ -1862,14 +1876,14 @@ def _resolve_frame(node: dict, inputs: dict, key: str) -> str | None:
                              "请重生成该帧或在质检节点人工放行后再跑视频")
         au = fout.get("asset_url")
         if au:
-            return _asset_to_data_uri(au)
+            return _out(au)
         raise ValueError(f"帧关卡：{key} 引用的帧节点没有图像成果")
     if key == "first_frame_url":
         for up in _upstream_nodes(node):
             if up["type"] == "image" and up["status"] == "succeeded":
                 au = db.jloads(up["outputs"]).get("asset_url")
                 if au:
-                    return _asset_to_data_uri(au)
+                    return _out(au)
     return None
 
 

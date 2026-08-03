@@ -30,7 +30,8 @@ async def auth_guard(request: Request, call_next):
     """会话门禁：/api 与 /assets 需登录；付费执行做邀请级限额+全站熔断。"""
     path = request.url.path
     if path.startswith("/api"):
-        if path != "/api/health" and not path.startswith("/api/auth/"):
+        if (path != "/api/health" and not path.startswith("/api/auth/")
+                and not path.startswith("/api/pub/")):   # 签名公链自带HMAC门禁
             s = auth.get_session(request)
             if not s:
                 return JSONResponse({"detail": "未登录"}, status_code=401)
@@ -175,6 +176,25 @@ class EdgeIn(BaseModel):
 @app.get("/api/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/api/pub/{exp}/{sig}/{filename}")
+def pub_asset(exp: str, sig: str, filename: str):
+    """素材签名公链：供第三方平台（BJMoMA 图生视频）免登录取图。
+    HMAC 校验 + 过期时间，路径穿越防护；签名生成见 gateway/bjmoma.sign_pub_url。"""
+    import time as _time
+    from fastapi.responses import FileResponse
+    from .gateway.bjmoma import pub_sig
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(400, "非法文件名")
+    if not exp.isdigit() or int(exp) < _time.time():
+        raise HTTPException(403, "链接已过期")
+    if not __import__("secrets").compare_digest(sig, pub_sig(filename, exp)):
+        raise HTTPException(403, "签名无效")
+    p = ASSETS_DIR / filename
+    if not p.exists():
+        raise HTTPException(404, "素材不存在")
+    return FileResponse(str(p))
 
 
 @app.post("/api/projects")
