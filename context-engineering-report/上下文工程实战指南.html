@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>上下文工程实战指南——写给职业院校教师的 AI 教学改编报告</title>
+<style>
+/* ============================================================
+   §2 设计变量（design.md 唯一定义）
+   ============================================================ */
+:root {
+  --paper:      #F7EDE2;   /* 页面底色：暖纸色 */
+  --paper-2:    #FBF6EE;   /* 卡片/代码块底色 */
+  --ink:        #2E2A33;   /* 正文主色 */
+  --ink-soft:   #5B5560;   /* 次要文字 */
+  --heading:    #3D3252;   /* 标题深紫灰 */
+  --sage:       #6F9A8D;   /* 主强调：灰绿 */
+  --sage-deep:  #2F6B57;   /* 深绿：链接、激活态 */
+  --coral:      #F5CAC3;   /* 浅珊瑚：科普框底色 */
+  --salmon:     #D9776A;   /* 深珊瑚：科普框标签、强调 */
+  --amber:      #C9932B;   /* 琥珀：警示、星标 */
+  --fail-1:     #D64B3C;   /* 失效模式1 投毒 Poisoning 红 */
+  --fail-2:     #3F7FBF;   /* 失效模式2 分心 Distraction 蓝 */
+  --fail-3:     #C9932B;   /* 失效模式3 混淆 Confusion 琥珀 */
+  --fail-4:     #7A5FA8;   /* 失效模式4 饥饿 Starvation 紫 */
+  --line:       #E3D8C8;   /* 发丝分隔线 1px */
+  --code-bg:    #2B2F33;   /* 代码块深底 */
+  --code-fg:    #EDE6D8;   /* 代码块文字 */
+
+  --font-head:  "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  --font-body:  -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-code:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --content-w:  46rem;     /* 正文栏最大宽度（§4） */
+}
+
+/* ============================================================
+   基础重置与全局排版（§3）
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-head); color: var(--heading); }
+
+a { color: var(--sage-deep); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   §4 顶部 4px 阅读进度条
+   ============================================================ */
+#progress {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0;
+  height: 4px;
+  background: var(--sage);
+  z-index: 100;
+  transition: width 0.15s ease;
+}
+
+/* ============================================================
+   Hero 区（全宽：主标题 / 副题 / meta / 关键数字卡）
+   ============================================================ */
+.hero {
+  padding: 4.5rem 1.5rem 3.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero-title {
+  margin: 0 0 0.75rem;
+  font-size: 2.6rem;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.hero-sub {
+  margin: 0 auto 1rem;
+  max-width: 42rem;
+  font-family: var(--font-head);
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.hero-meta {
+  margin: 0 0 2.25rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.stat-card {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+}
+
+.stat-num {
+  display: block;
+  font-family: var(--font-head);
+  font-size: 1.7rem;
+  line-height: 1.2;
+  color: var(--sage-deep);
+}
+
+.stat-label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   §4 主体双栏：正文 + 右侧 sticky 目录
+   ============================================================ */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--content-w)) 16rem minmax(0, 1fr);
+  column-gap: 3rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.article {
+  grid-column: 2;
+  min-width: 0;
+  padding: 2rem 0 4rem;
+}
+
+.toc {
+  grid-column: 3;
+  padding: 2rem 0;
+}
+
+.toc-inner {
+  position: sticky;
+  top: 2rem;
+}
+
+.toc-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc-list a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.75rem;
+  border-left: 2px solid transparent;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.toc-list a:hover { color: var(--sage-deep); text-decoration: none; }
+
+.toc-list a.active {
+  color: var(--sage-deep);
+  border-left-color: var(--sage-deep);
+  font-weight: 600;
+}
+
+/* 移动端目录：折叠为顶部下拉（≤1080px 出现） */
+.toc-toggle { display: none; }
+
+/* ============================================================
+   §5.1 章节：大编号章节头 + 章节间距 + 发丝线
+   ============================================================ */
+.chapter {
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.chapter:first-child { border-top: none; }
+
+.chapter-head { margin-bottom: 1.5rem; }
+
+.chapter-num {
+  display: block;
+  font-family: var(--font-head);
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--sage);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.chapter-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.8rem;
+  line-height: 1.3;
+}
+
+.chapter-sub {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+/* §8 仅章节标题允许一次性 fade-up（JS 加 .is-visible） */
+.chapter-head {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.chapter-head.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   §5.1 正文排版 .prose 与 pull 引用
+   ============================================================ */
+.prose p { margin: 0 0 1.25rem; }
+
+.prose strong { color: var(--heading); }
+
+.prose ul, .prose ol {
+  margin: 0 0 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.prose li { margin-bottom: 0.4rem; }
+
+blockquote.pull {
+  margin: 2rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 3px solid var(--sage);
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: var(--heading);
+}
+
+/* ============================================================
+   §5.1 两种内容框：box-science / box-teach
+   ============================================================ */
+.box {
+  margin: 1.75rem 0;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.95rem;
+}
+
+.box p { margin: 0.6rem 0 0; }
+.box p:first-of-type { margin-top: 0.75rem; }
+
+.box ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+.box li { margin-bottom: 0.3rem; }
+
+.box-label {
+  display: inline-block;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
+
+.box-science {
+  background: rgba(245, 202, 195, 0.4);   /* --coral 40% 透明 */
+  border-left: 3px solid var(--salmon);
+}
+.box-science .box-label { background: var(--salmon); }
+
+.box-teach {
+  background: rgba(111, 154, 141, 0.12);  /* --sage 12% 透明 */
+  border-left: 3px solid var(--sage);
+}
+.box-teach .box-label { background: var(--sage-deep); }
+
+/* ============================================================
+   §5.2 代码块：深底 + data-compare 选项卡
+   ============================================================ */
+.codeblock {
+  margin: 1.75rem 0;
+  background: var(--code-bg);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.codeblock pre {
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+  overflow-x: auto;
+}
+
+.codeblock code {
+  font-family: var(--font-code);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--code-fg);
+  white-space: pre;
+}
+
+.codeblock figcaption {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid rgba(237, 230, 216, 0.15);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  background: var(--paper-2);
+}
+
+/* data-compare 选项卡 */
+.codeblock-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(237, 230, 216, 0.15);
+}
+
+.codeblock-tabs button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--code-fg);
+  opacity: 0.55;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.codeblock-tabs button:hover { opacity: 0.85; }
+
+.codeblock-tabs button.active {
+  opacity: 1;
+  border-bottom-color: var(--sage);
+  font-weight: 600;
+}
+
+.codeblock pre[data-pane] { display: none; }
+.codeblock pre[data-pane].active { display: block; }
+
+/* ============================================================
+   §4 / §5.3 互动演示容器 .demo-slot（桌面端破栏）
+   ============================================================ */
+.demo-slot {
+  width: min(100vw - 2rem, 62rem);
+  margin: 2.5rem calc(50% - min(50vw - 1rem, 31rem));
+  background: #F2E7D8;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.demo-slot > :first-child { margin-top: 0; }
+.demo-slot > :last-child { margin-bottom: 0; }
+
+/* ============================================================
+   演示通用部件：翻卡 / 审计清单 / 测验（供 demos.js 使用）
+   ============================================================ */
+
+/* 翻卡 .flip-card：3D 基础样式（§8 翻卡 0.5s rotateY） */
+.flip-card {
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 11rem;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+.flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flip-front { background: var(--paper-2); border: 1px solid var(--line); }
+
+.flip-back {
+  transform: rotateY(180deg);
+  color: #fff;
+}
+
+/* 四种失效模式专属色（fail-1~4 语义色） */
+.flip-card[data-fail="1"] .flip-back { background: var(--fail-1); }
+.flip-card[data-fail="2"] .flip-back { background: var(--fail-2); }
+.flip-card[data-fail="3"] .flip-back { background: var(--fail-3); }
+.flip-card[data-fail="4"] .flip-back { background: var(--fail-4); }
+.flip-card[data-fail="1"] .flip-front { border-top: 3px solid var(--fail-1); }
+.flip-card[data-fail="2"] .flip-front { border-top: 3px solid var(--fail-2); }
+.flip-card[data-fail="3"] .flip-front { border-top: 3px solid var(--fail-3); }
+.flip-card[data-fail="4"] .flip-front { border-top: 3px solid var(--fail-4); }
+
+/* 审计清单 .audit-list */
+.audit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.audit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-2);
+  margin-bottom: 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.audit-item:hover { border-color: var(--sage); }
+
+.audit-item input[type="checkbox"] {
+  margin-top: 0.3rem;
+  accent-color: var(--sage-deep);
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+}
+
+.audit-item.done {
+  background: rgba(111, 154, 141, 0.12);
+  border-color: var(--sage);
+}
+
+.audit-item.done .audit-text { color: var(--ink-soft); text-decoration: line-through; }
+
+/* 测验 .quiz：选项按钮 + 对/错反馈 */
+.quiz-question { margin-bottom: 2rem; }
+.quiz-question:last-child { margin-bottom: 0; }
+
+.quiz-stem {
+  margin: 0 0 0.85rem;
+  font-weight: 600;
+  color: var(--heading);
+  line-height: 1.6;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-option {
+  appearance: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.quiz-option:hover:not(:disabled) { border-color: var(--sage); }
+
+.quiz-option:disabled { cursor: default; }
+
+.quiz-option.correct {
+  background: rgba(111, 154, 141, 0.15);
+  border-color: var(--sage-deep);
+  color: var(--sage-deep);
+  font-weight: 600;
+}
+
+.quiz-option.wrong {
+  background: rgba(214, 75, 60, 0.1);
+  border-color: var(--fail-1);
+  color: var(--fail-1);
+}
+
+.quiz-feedback {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--sage);
+  padding-left: 0.9rem;
+}
+
+.quiz-feedback.is-wrong { border-left-color: var(--fail-1); }
+
+/* ============================================================
+   页脚
+   ============================================================ */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 2.5rem 1.5rem 3rem;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.site-footer p { margin: 0.25rem 0; }
+
+/* ============================================================
+   响应式：≤1080px 目录折叠为顶部下拉；≤640px 移动端微调
+   ============================================================ */
+@media (max-width: 1080px) {
+  .layout {
+    display: block;
+    padding: 0 1.25rem;
+  }
+
+  .article {
+    max-width: var(--content-w);
+    margin: 0 auto;
+    padding-top: 1rem;
+  }
+
+  .toc {
+    max-width: var(--content-w);
+    margin: 0 auto;
+    padding: 1rem 0 0;
+  }
+
+  .toc-inner {
+    position: static;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper-2);
+    overflow: hidden;
+  }
+
+  .toc-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--heading);
+    padding: 0.85rem 1.1rem;
+    cursor: pointer;
+  }
+
+  .toc-toggle::after {
+    content: "▾";
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+  }
+
+  .toc-inner.open .toc-toggle::after { transform: rotate(180deg); }
+
+  .toc-title { display: none; }
+
+  .toc-list {
+    display: none;
+    padding: 0 0.5rem 0.75rem;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .toc-inner.open .toc-list { display: block; }
+
+  .toc-list a { border-left: none; padding-left: 0.6rem; }
+
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* 破栏在窄屏收敛为正常内边距 */
+  .demo-slot {
+    width: auto;
+    margin: 2rem 0;
+  }
+}
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+
+  .hero { padding: 3rem 1.25rem 2.5rem; }
+  .hero-title { font-size: 1.9rem; }
+  .hero-sub { font-size: 1rem; }
+
+  .hero-stats { grid-template-columns: 1fr; }
+
+  .chapter-num { font-size: 2.2rem; }
+  .chapter-title { font-size: 1.45rem; }
+
+  .demo-slot { padding: 16px; }
+}
+
+/* 尊重系统减弱动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .chapter-head { opacity: 1; transform: none; transition: none; }
+  .flip-card-inner { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<header class="hero">
+  <h1 class="hero-title">上下文工程实战指南</h1>
+  <p class="hero-sub">从写提示词到工程化整个上下文栈——Anthropic 官方实践的教学改编版</p>
+  <p class="hero-meta">改编自 @0xRafy 发布于 2026-07-30 的 X 长文 · 面向职业院校理工科教师 · 教学科普改编</p>
+  <div class="hero-stats">
+    <div class="stat-card">
+      <span class="stat-num">800→164</span>
+      <span class="stat-label">tokens：系统提示词大删减</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">−80%</span>
+      <span class="stat-label">指令量缩减</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">0</span>
+      <span class="stat-label">编码评测损失</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num">2–3x</span>
+      <span class="stat-label">上下文工程效果提升（提示词技巧仅 5–10%）</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <main class="article">
+
+<!-- 引论 -->
+<section class="chapter" id="ch-intro">
+  <header class="chapter-head">
+    <span class="chapter-num">引</span>
+    <h2 class="chapter-title">提示词已死，上下文当立</h2>
+    <p class="chapter-sub">2026 年，最会造智能体的工程师已经不谈"怎么写提示词"，他们谈的是"上下文工程"。</p>
+  </header>
+  <div class="prose">
+    <p>2026 年 7 月 24 日，Anthropic 把 Claude Code 的系统提示词删掉了 80% 以上——从 <strong>800 个令牌（token）砍到 164 个</strong>——编码评测成绩<strong>一分没掉</strong>。</p>
+    <p>令牌（token）可以粗略理解为 AI 处理文字的最小单位，一个汉字或一个英文单词片段大约对应一到几个令牌。800 个令牌大约是一段四五百字的说明文字。</p>
+    <p>这件事传递的信息很直接：<strong>那些指令是死重。那些约束在抑制模型的能力。模型变聪明了，提示词却没跟上。</strong></p>
+    <p>提示词工程的时代结束了。2026 年，把智能体做得最好的工程师们谈论的是<strong>上下文（context）</strong>：什么数据进入模型、按什么顺序、在什么时刻。这个转变 Karpathy 给出了定义，Anthropic 用实验证明，而大多数人还没有察觉。</p>
+    <blockquote class="pull">LLM 是 CPU，上下文窗口是内存（RAM），你的工作是操作系统管理。</blockquote>
+    <p>模型对所有人都是同一个。<strong>上下文才是变量。</strong>这份报告改编自 @0xRafy 的长文《Context Engineering with Claude: the 11-Step Guide That Replaced Prompting》（2026 年 7 月 30 日发布），把"提示词思维"升级为"上下文工程"的 11 个步骤，逐步讲清楚，并且每一步都落到职业院校教师的备课、实训与指导学生用 AI 的真实场景里。</p>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>先建立一个整机级的类比：把大语言模型（LLM）想成一颗 <strong>CPU</strong>，它每次"运算"前都要从<strong>内存（RAM）</strong>里读取全部数据——这个内存就是<strong>上下文窗口</strong>，容量有限，断电（对话结束）即清空。模型本身不会"记住"任何东西，每次生成回答，都是把窗口里的内容从头读一遍再计算。你扮演的是<strong>操作系统</strong>：决定每一个时钟周期前，把哪些程序和数据装进内存、把哪些换出去。内存装错了、装太满，CPU 再强也算不出好结果。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>这份报告不是教你"把提示词写得更漂亮"，而是教你像管理一台设备的内存一样管理 AI 看到的信息。读的时候请带着三个自己的教学问题：</p>
+    <ul>
+      <li>我备课时塞给 AI 的资料，是不是把"200 页文档"整个倒进去了？</li>
+      <li>我给 AI 写的规则，有多少是半年前的旧习惯，今天还在白占位置？</li>
+      <li>学生在实训课上用 AI 总是"答非所问"，问题会不会根本不在提示词，而在上下文？</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 第 01 章 -->
+<section class="chapter" id="ch-01">
+  <header class="chapter-head">
+    <span class="chapter-num">01</span>
+    <h2 class="chapter-title">什么是上下文工程</h2>
+    <p class="chapter-sub">What context engineering actually is —— 为下一步往上下文窗口里装"恰好正确"的信息。</p>
+  </header>
+  <div class="prose">
+    <p>Andrej Karpathy 给出的定义是：上下文工程是"一门精妙的艺术与科学——为模型的下一步，往上下文窗口里填入恰好正确的信息"。</p>
+    <p>让这件事"一下点透"的类比是：<strong>LLM 是 CPU，上下文窗口是 RAM。</strong>你每发一条消息，模型并不"记得"任何事。它把整个上下文窗口从头读一遍，处理，然后生成回答。</p>
+    <p>你作为工程师的工作，就是<strong>操作系统式的内存管理</strong>：在每一次推理（inference）之前，把正确的数据装进工作内存。</p>
+    <p>提示词工程关心的是"写好一条指令"。<strong>上下文工程关心的是：在模型生成第一个令牌之前，它看到的一切东西是如何设计的。</strong></p>
+    <p>系统提示词、检索到的文档、工具描述、对话历史、技能（skills）、记忆文件、示例——所有这些构成一个完整的"上下文栈"。提示词只是其中一行，而且往往是最不重要的一行。</p>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>继续用内存类比：一台设备的内存条容量是固定的，能同时驻留的程序有限。上下文窗口同理——它能装的令牌有上限，而候选内容远不止提示词一项：<strong>系统提示词、项目说明书文件（CLAUDE.md）、技能库、工具描述、检索文档、对话历史、记忆文件</strong>，全都要抢这块"内存条"。谁常驻、谁按需加载、谁干脆不装，决定了模型这一次的"运算质量"。下面这个互动演示把这块"内存条"画了出来：你可以亲手勾选各层上下文，看它们怎么填满窗口、什么时候触发超限告警。</p>
+  </aside>
+  <div class="demo-slot" data-demo="ram-window"></div>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>把"上下文栈"翻译成熟悉的教学语言：AI 就像一位<strong>刚来报到的外聘实训指导教师</strong>。它能力很强，但对你们学校一无所知。它能干成什么样，取决于你给它准备的"工作包"：</p>
+    <ul>
+      <li><strong>系统提示词</strong> = 岗位职责书（你是谁、输出什么、边界在哪）；</li>
+      <li><strong>CLAUDE.md</strong> = 实训任务书 + 常见故障记录表（项目约定、踩过的坑）；</li>
+      <li><strong>工具描述</strong> = 每台设备的操作规程卡；</li>
+      <li><strong>检索文档</strong> = 按需借阅的图纸和手册；</li>
+      <li><strong>记忆文件</strong> = 历届项目积累的经验台账。</li>
+    </ul>
+    <p>备课动作：下次让 AI 帮你写教案前，先别急着写提示词，先列一张清单——"这位外聘教师上岗前需要看到哪几样东西？"这张清单就是你的上下文设计。</p>
+  </aside>
+</section>
+
+<!-- 第 02 章 -->
+<section class="chapter" id="ch-02">
+  <header class="chapter-head">
+    <span class="chapter-num">02</span>
+    <h2 class="chapter-title">80% 大删减</h2>
+    <p class="chapter-sub">The 80% cut —— Anthropic 亲手删掉自己系统提示词的 80%，评测零损失。</p>
+  </header>
+  <div class="prose">
+    <p>2026 年 7 月 24 日，Anthropic 的 Thariq Shihipar 发表了《The new rules of context engineering for Claude 5 generation models》（Claude 5 代模型的上下文工程新规则）。</p>
+    <p>核心结论：Claude Code 团队为 Opus 5 和 Fable 5 删掉了系统提示词的 80% 以上，<strong>编码评测零性能损失</strong>。</p>
+    <p><strong>800 个令牌砍到 164 个。</strong>那些花了好几个月层层累积起来的指令，不只是多余的——它们是有害的。Thariq 给这个做法起了个名字：<strong>"unhobbling"（解除镣铐）</strong>。</p>
+    <p>当年为防止旧模型犯错而设计的约束，如今在新模型身上变成了互相打架的指令，反而压制了能力。</p>
+    <p>旧提示词里有这样的规则："默认不写注释。永远不要写多段落的文档字符串。"新版本只有一句："写读起来像周围代码的代码：匹配它的注释密度、命名与风格。"一条规则，但更宽。具体分寸由模型从代码库自己读出来。</p>
+    <p>如果连 Anthropic 自己的系统提示词都有 80% 是死重，你的那份几乎肯定也是。</p>
+    <p>Anthropic 为此造了一个工具：Claude Code 里的 <strong>/doctor 命令</strong>。它会审计你的指令，找出那些对新模型已不再需要的规则。<strong>在加新规则之前，先跑 /doctor。</strong></p>
+  </div>
+  <figure class="codeblock" data-compare>
+    <div class="codeblock-tabs">
+      <button type="button" data-pane="before" class="active">旧做法（800 tokens）</button>
+      <button type="button" data-pane="after">新做法（164 tokens）</button>
+    </div>
+    <pre data-pane="before" class="active"><code># OLD: 800 tokens of prescriptive rules
+You are a coding assistant. When writing code:
+- Default to writing no comments
+- Never write multi-paragraph docstrings
+- Use snake_case for variables
+- Prefer list comprehensions over loops
+- Always add type hints
+- Never use print() for debugging
+- ... (30 more rules)</code></pre>
+    <pre data-pane="after"><code># NEW: 164 tokens of judgment
+You are a coding agent working in the user's repository.
+Write code that reads like the surrounding code: match
+its comment density, naming conventions, and idiom.
+Run tests after every change. If tests fail, fix the
+code, not the tests.</code></pre>
+    <figcaption>新旧系统提示词对比（点击上方标签切换）：旧版是 800 个令牌的"规定大全"，逐条钉死"不许写注释、不许用 print 调试"等 30 多条细则；新版只有 164 个令牌，只给一条判断原则——"像周围代码那样写代码"，再加一条工程纪律——"改完跑测试，测试挂了改代码而不是改测试"。规定越少，模型干得越好。</figcaption>
+  </figure>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>用工装夹具来理解"解除镣铐"：老式专用夹具把工件每个自由度都卡死，适合精度差的旧机床——机床不行，靠夹具硬扛。现在换上了高精度数控机床，旧夹具不但帮不上忙，它自身的应力反而让工件变形。<strong>旧提示词就是那套为过时机床设计的夹具</strong>：当年每条规则都在防一个真实出过的错，但模型升级后，规则之间开始互相打架（一条说"别写注释"，项目文档又说"每个公开函数都要注释"），能力被活活锁死。删掉它们，不是放松管理，而是<strong>拆掉已经失效的镣铐</strong>。下面的演示可以拖动滑杆，直观感受 800→164 的体量变化，注意那条"编码评测表现"的线——它是平的。</p>
+  </aside>
+  <div class="demo-slot" data-demo="token-cut"></div>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>这章直接对应一个每个教研室都有的东西：<strong>越写越厚的实训指导书</strong>。新教师带实训，指导书上全是"第一步必须……第二步严禁……"，因为学生基础差。等学生升到二年级、手上功夫熟了，那 30 多条细则就变成束缚——真正高手的培养靠的是"读图纸、对工艺"的判断力，而不是逐条照做。</p>
+    <ul>
+      <li><strong>备课动作：</strong>把你给 AI 写的常用提示词翻出来，逐条问自己："这条规则是在防哪次具体的出错？现在的模型/学生还会犯吗？"不再需要的，删掉。</li>
+      <li><strong>指导学生：</strong>教学生用 AI 时，让他们先写一条"判断原则"（如"代码风格与项目已有代码一致"），而不是替 AI 把每种情况都规定死。这本身就是在训练工程判断力。</li>
+      <li><strong>教研动作：</strong>如果你们用 Claude Code 做课程资源开发，先跑一次 <strong>/doctor</strong>，让它告诉你哪些指令对新模型已经过时——删规则要在加规则之前。</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 第 03 章 -->
+<section class="chapter" id="ch-03">
+  <header class="chapter-head">
+    <span class="chapter-num">03</span>
+    <h2 class="chapter-title">六大转变</h2>
+    <p class="chapter-sub">The six shifts —— 主线只有一句：多给责任，少给规定。</p>
+  </header>
+  <div class="prose">
+    <p>Thariq 的文章记录了 Anthropic 如今为 Claude 5 模型做上下文工程的六个具体变化。每一个转变，都是对六个月前"最佳实践"的反转。</p>
+    <blockquote class="pull">贯穿始终的主线：给 Claude 更多责任，更少规定。</blockquote>
+    <p>旧模型需要把每条规则都掰开揉碎写清楚。新模型在你<strong>描述目标、让它自己找路径</strong>时反而表现更好。过度规定，如今是在主动伤害性能。</p>
+    <p>六大转变分散在本报告后续各章展开，这里先给出完整预告：</p>
+    <ul>
+      <li><strong>转变一：</strong>系统提示词变薄（第 04 章）——只定义角色、输出格式与边界；</li>
+      <li><strong>转变二：</strong>CLAUDE.md + 技能库，配合渐进式披露（第 05 章）——项目上下文常驻，技能按需加载；</li>
+      <li><strong>转变三：</strong>指令搬进工具描述（第 06 章）——只在用到某个工具时才占用令牌；</li>
+      <li><strong>转变四：</strong>动态检索（第 07 章）——需要时才把相关文档拉进窗口；</li>
+      <li><strong>转变五：</strong>自动记忆（第 08 章）——从手工记经验到模型自动沉淀；</li>
+      <li><strong>转变六：</strong>更丰富的参考资料（第 11 章）——用真实样例替代文字描述。</li>
+    </ul>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>"多给责任、少给规定"在实验室管理上早有对应：带新学徒时，你把每道工序的操作都规定死，因为怕他出事；带熟练技师时，你只交代目标和验收标准——"这批件公差 ±0.02，其余你自己定工艺"。过度规定熟练工，轻则干得慢，重则他在两条矛盾的规定之间卡壳。<strong>Claude 5 就是那个已经从学徒成长为技师的工人</strong>，六大转变就是把管理方式从"学徒制"切换到"技师制"的六个具体动作。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>这条主线就是职教课改天天讲的事：<strong>从"手把手教操作"转向"给任务、给标准、让学生自己干"</strong>。用在 AI 教学上可以直接对齐：</p>
+    <ul>
+      <li><strong>布置 AI 任务时：</strong>少写"第一步做什么、第二步做什么"，多写"最终交付物长什么样、验收标准是什么"，让学生和 AI 一起规划路径；</li>
+      <li><strong>评价学生用 AI 的作业时：</strong>不要只看他提示词写得长不长，要看他有没有想清楚"目标、边界、参考样例"这三件事——这正是六大转变的内核；</li>
+      <li><strong>课程思政结合点：</strong>"该放手时放手"既是工程方法，也是育人方法——可以让学生在 AI 使用课上讨论"什么时候该给 AI 详细规定，什么时候只给目标"。</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 第 04 章 -->
+<section class="chapter" id="ch-04">
+  <header class="chapter-head">
+    <span class="chapter-num">04</span>
+    <h2 class="chapter-title">系统提示词：要薄不要厚</h2>
+    <p class="chapter-sub">System prompts: thin, not thick —— 只定义角色、输出格式和边界，其余一律搬走。</p>
+  </header>
+  <div class="prose">
+    <p>旧的建议是"把所有东西都塞进系统提示词"。新规则是：<strong>系统提示词要薄。</strong>定义角色、输出格式、边界——没有别的。</p>
+    <p>其他一切内容都搬进 CLAUDE.md、技能库或工具描述里，在那里它们可以<strong>按需加载</strong>，而不是在每一次调用上都白白消耗令牌。</p>
+    <p>Thariq 的框架可以记成一句口诀：<strong>薄提示词、厚资料、薄技能。</strong>系统提示词是最薄的一层；围绕它的上下文（CLAUDE.md、检索到的文档、代码示例）是最厚的；技能很薄，因为它们只在需要时才被加载。</p>
+    <p>旧提示词告诉 Claude 在 30 种具体情况里分别怎么做。新提示词把原则讲一遍，然后信任模型把原则应用到每一种情况。<strong>令牌更少，结果更好。</strong></p>
+    <p>实践经验值：<strong>系统提示词控制在 200 个令牌以内</strong>。每一条留在里面的规则，都在每一次调用上收费。</p>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>系统提示词为什么必须薄？回到内存类比：系统提示词是<strong>每次开机都必须常驻内存的引导程序</strong>，每次调用都要重新加载、重新计费。它每厚一分，留给本次任务真正要用的"图纸、工艺卡、参考样例"的内存就少一分。而 CLAUDE.md、技能库、检索文档是<strong>放在硬盘上的资料</strong>，用到才调进内存。所以设计的取舍很清楚：常驻的东西越薄越好，按需的资料越厚越好——引导程序里没有放操作手册的道理。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>对应到教学文档，系统提示词就是一门课的<strong>课程标准首页</strong>：课程定位、考核方式、纪律红线，一页纸讲完。具体的工艺参数、设备操作规程、往届项目案例，应该放在活页讲义和实训指导书里，用到哪章取哪章。具体动作：</p>
+    <ul>
+      <li><strong>自查：</strong>打开你常用的 AI 助手的系统提示词（或自定义指令），数一数字数，超过 200 令牌（约一百来字中文）就动手瘦身；</li>
+      <li><strong>搬迁：</strong>把"写教案必须包含学情分析"这类只在特定任务用到的规则，从常驻指令里搬到对应任务的提示语或资料文件中；</li>
+      <li><strong>带学生练：</strong>让计算机类专业学生做对比实验——同一个编程任务，一份厚提示词（30 条规则）vs 一份薄提示词（1 条原则 + 1 个参考代码），对比输出质量，亲身验证"少即是多"。</li>
+    </ul>
+  </aside>
+</section>
+
+<section class="chapter" id="ch-05">
+  <header class="chapter-head">
+    <span class="chapter-num">05</span>
+    <h2 class="chapter-title">CLAUDE.md 与技能库</h2>
+    <p class="chapter-sub">CLAUDE.md and skills — 写一次，读一辈子：项目的持久上下文</p>
+  </header>
+  <div class="prose">
+    <p><strong>CLAUDE.md 是项目的持久上下文</strong>。Claude Code 在每次会话开始时都会自动读取它：你的架构决策、命名规范、已知问题、构建命令，都写在这一个文件里。写一次，读一辈子——每个新会话不再从零开始。</p>
+    <p><strong>技能（skills）则是按需加载的可复用工作流</strong>。它与 CLAUDE.md 的区别就在于加载时机：CLAUDE.md 每次必读，技能只有在与当前任务相关时才会被载入。如果你有一个「部署到生产环境」的技能，而你正在修一个 CSS bug，这个技能就保持未加载状态。<strong>这就是渐进式披露（progressive disclosure）：给 Claude 它当前任务需要的上下文，而不是所有可能任务的上下文。</strong></p>
+    <p>最值得强调的是：<strong>「Known issues（已知问题）」部分是 CLAUDE.md 里杠杆最高的部分</strong>。你的代理已经踩过的每一个坑都写进这里，下一次会话开场就读到它——这个 bug 从此不会再犯第二次。一次写入，永久免疫。</p>
+    <figure class="codeblock">
+      <pre><code># Project: E-commerce API
+Python 3.12, FastAPI, PostgreSQL 16, Redis
+
+# Conventions
+- All responses: {data, error, meta} schema
+- Commit messages: type(scope): description
+- Tests: pytest, every endpoint needs happy + error path
+
+# Known issues
+- Auth middleware expects x-auth-token, not Authorization
+- Full test suite takes 45s. Use --filter for iteration.
+- Payment API expects idempotency key in header, not body</code></pre>
+      <figcaption>中文解说：这是一份真实的 CLAUDE.md 示例。开头写明技术栈（Python 3.12、FastAPI、PostgreSQL 16、Redis），中间是团队约定（响应结构、提交信息格式、测试要求），最后的 Known issues 才是精华——三条都是代理曾经踩过的坑：认证头名容易写错、全量测试要 45 秒应改用 --filter 迭代、支付 API 的幂等键要放请求头而不是请求体。以后每个会话都会先读到它们。</figcaption>
+    </figure>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>CLAUDE.md 很像实训车间里贴在设备旁的两张纸：一张是<strong>实训任务书</strong>——这台设备是什么型号、按什么规程操作、验收标准是什么；另一张是<strong>设备常见故障记录表</strong>——「上次谁把急停按钮当电源开关」「3 号刀补容易忘改」。新学员进门先看这两张纸，老学员踩过的坑就不用再踩一遍。而「技能库」则像挂在墙上的专用工装夹具：干这个活才取下来用，干别的活它就静静挂着，不占工作台空间。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>可以布置这样的实训作业：</p>
+    <ul>
+      <li><strong>让学生为实训设备写「AI 操作说明书」</strong>：以一台数控机床或 PLC 实训台为对象，学生编写一份给 AI 助手看的 CLAUDE.md——设备型号、安全规程、常用指令格式，以及一份「Known issues」：历届操作中出过的事故和误操作。写完后用 AI 模拟问答检验：不问文件里的内容，AI 是否就不会犯那些典型错误。</li>
+      <li><strong>把「已知问题」变成班级资产</strong>：每做一个实训项目，要求每组把调试中发现的坑补进班级共享的 CLAUDE.md，下一届学生直接用。这既是上下文工程训练，也是课程资源建设。</li>
+      <li><strong>技能按需加载的练习</strong>：让学生把「万用表排障流程」「示波器探头校准流程」分别写成独立技能文件，体会「修电路时才加载排障流程」与「每次都全部塞给 AI」的差别。</li>
+    </ul>
+  </aside>
+</section>
+
+<section class="chapter" id="ch-06">
+  <header class="chapter-head">
+    <span class="chapter-num">06</span>
+    <h2 class="chapter-title">工具描述即上下文</h2>
+    <p class="chapter-sub">Tool descriptions as context — 规则只在用到那个工具时才加载，零浪费</p>
+  </header>
+  <div class="prose">
+    <p>大多数人把工具描述当成元数据——给程序看的注释。错了。<strong>工具描述就是上下文。</strong>Claude 在决定用哪个工具、怎么用它之前，会通读每一个工具描述。描述含糊，调用就出错；描述精确，调用就准确。</p>
+    <p>Thariq 六大转变之一，就是<strong>把指令从系统提示词里搬出来，搬进工具描述里</strong>。逻辑很简单：如果一条规则只在调用某个特定工具时才适用，就把它写进那个工具的描述，而不是放在系统提示词里——后者意味着每一次调用都要为这条规则支付令牌（token），哪怕这次根本用不上那个工具。</p>
+    <p>比如「绝不执行 INSERT、UPDATE 或 DELETE」这条规则，过去写在系统提示词里，每次对话都占着窗口。现在它住进了 run_query 工具的描述里：<strong>只在这个工具可用时才加载，工具用不上时一个令牌都不浪费。</strong></p>
+    <figure class="codeblock" data-compare>
+      <div class="codeblock-tabs">
+        <button type="button" data-pane="before" class="active">含糊写法</button>
+        <button type="button" data-pane="after">精确写法</button>
+      </div>
+      <pre data-pane="before" class="active"><code># BAD: vague, rules in system prompt
+{"name": "run_query", "description": "Run a database query"}</code></pre>
+      <pre data-pane="after"><code># GOOD: precise, rules in the tool itself
+{
+    "name": "run_query",
+    "description": """Execute a read-only SQL query against
+    the PostgreSQL database. SELECT only. Never INSERT,
+    UPDATE, or DELETE. Results are returned as JSON rows.
+    Maximum 1000 rows per query. If you need more, paginate
+    with LIMIT/OFFSET. The database uses UTC timestamps."""
+}</code></pre>
+      <figcaption>中文解说：同样是 run_query 工具。BAD 版本只有一句「运行数据库查询」，所有安全规则只能堆在系统提示词里，每次调用都耗令牌，模型还不知道具体边界。GOOD 版本把规则直接写进工具本身：只读、仅限 SELECT、禁止 INSERT/UPDATE/DELETE、结果以 JSON 返回、单次最多 1000 行、超量用 LIMIT/OFFSET 分页、时间戳是 UTC。规则随工具按需加载，工具不在场时零开销。</figcaption>
+    </figure>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>想象两种车间管理风格。第一种：把<strong>所有设备的全部操作规程</strong>印成一本厚厚的手册，要求每个学员每天开工前通读一遍——车床的、铣床的、焊机的，哪怕今天只用万用表。第二种：<strong>把操作规程直接贴在设备上</strong>，万用表的表笔插孔旁就写着「禁止带电测电阻」。你拿起哪台设备，就读哪台的规程。工具描述即上下文，就是第二种：规则长在该长的地方，用时才出现。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>这个原则可以直接变成写作训练：</p>
+    <ul>
+      <li><strong>「给 AI 写工具说明书」练习</strong>：给学生一个含糊的工具描述（如「操作示波器」），让他们改写成精确版本——量程限制、探头补偿要求、哪些操作禁止带电进行。然后对比 AI 在两版描述下的回答质量，让学生直观看到「描述精确一分，调用准确一分」。</li>
+      <li><strong>对照检查实训指导书</strong>：让学生审视现有实训指导书——哪些安全规则是「所有项目通用」（该进系统提示词），哪些只在操作特定设备时适用（该贴到设备对应的工具描述里）。这本身就是一次上下文分层设计训练。</li>
+    </ul>
+  </aside>
+</section>
+
+<section class="chapter" id="ch-07">
+  <header class="chapter-head">
+    <span class="chapter-num">07</span>
+    <h2 class="chapter-title">动态上下文：检索与渐进披露</h2>
+    <p class="chapter-sub">Dynamic context — 3 块相关文档进窗口，其余 997 块留在窗外</p>
+  </header>
+  <div class="prose">
+    <p>静态上下文（系统提示词、CLAUDE.md）每次都全量加载；<strong>动态上下文则按任务需要即时加载（just-in-time）</strong>。这正是既能让上下文窗口保持精简、又能让 Claude 访问大型知识库的关键手法。</p>
+    <p>它有两条腿：</p>
+    <p><strong>一是检索（retrieval）</strong>：在需要的当下，把相关文档拉进上下文。Claude 搜索知识库，取出最相关的 3 块文档用于当前这一步——<strong>其余 997 块留在窗口之外</strong>。窗口里没有一丝赘肉，模型要的那 3 段却一段不少。</p>
+    <p><strong>二是渐进式披露（progressive disclosure）</strong>：从最小上下文起步，任务推进到哪一步，就披露到哪一步。第 1 步只加载任务描述；第 2 步加载相关技能；第 3 步才加载参考代码。每一步拿到的恰好是它需要的上下文，不多一个字。</p>
+    <p>下面这个互动演示让你亲手走一遍这个过程：切换到「渐进披露」模式逐步加载，再对比「一次性全加载」模式下窗口被占满的样子——同一个任务，两种上下文管理哲学。</p>
+  </div>
+  <div class="demo-slot" data-demo="progressive-steps"></div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>实训室里查故障有两种风格。一种是把<strong>整栋楼的设备手册、历年维修记录全搬到工作台上</strong>，1000 页资料堆成山，真正有用的那 3 页被埋在最底下。另一种是<strong>先听故障现象，再去资料柜精准抽出 3 页相关章节</strong>，用完再放回去。检索就是「按需抽页」；渐进式披露则是「先拆外壳看看，再决定要不要翻电路图」——修到哪一步，资料跟到哪一步。工作台（上下文窗口）始终干净，手边永远只有当下要用的东西。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>动态上下文可以直接改造课程资源的使用方式：</p>
+    <ul>
+      <li><strong>把课程知识库切成「可检索的块」</strong>：与其把整本教材 PDF 丢给 AI，不如指导教师把教案、故障案例、习题解析按知识点切小块、打好标签。学生提问时先让 AI 检索出 2–3 块最相关的，再作答。学生能直观体会「3 块精准命中」与「200 页一起塞进去」的回答质量差距。</li>
+      <li><strong>设计「三步排障」实训任务</strong>：模拟渐进式披露——第 1 步只给故障现象描述，让学生（或 AI）判断需要什么资料；第 2 步才发放对应的技能手册章节；第 3 步给出参考电路图。训练「按任务阶段索取信息」的工程思维，而不是一上来就把所有资料摊在桌上。</li>
+    </ul>
+  </aside>
+</section>
+
+<section class="chapter" id="ch-08">
+  <header class="chapter-head">
+    <span class="chapter-num">08</span>
+    <h2 class="chapter-title">记忆：经验、自动记忆与状态文件</h2>
+    <p class="chapter-sub">Memory — 第 1 次运行 20 分钟，第 50 次运行 30 秒</p>
+  </header>
+  <div class="prose">
+    <p><strong>记忆是随时间累积的上下文。</strong>没有它，每个会话都从零开始：代理重新发现你的规范、重新学习你的习惯、重新犯下昨天刚犯过的错误。原文给出了三种记忆机制，它们解决的问题各不相同：</p>
+    <p><strong>一是经验文件（learnings file）</strong>：一本持续记录的「踩坑与修复」日志，代理在每次会话开始时通读。它是<strong>人工维护、跨会话的经验沉淀</strong>。而且有一条明确的晋升机制：<strong>同一个错误出现满 3 次，就把它晋升为 CLAUDE.md 里的永久规则</strong>——从「经验」升格为「铁律」。</p>
+    <p><strong>二是自动记忆（auto-memory）</strong>：Thariq 六大转变之一。新一代 Claude 模型支持自动记忆整合——不再靠人手工写 learnings，模型借助 Anthropic 的 Dreaming 记忆功能，自动跨会话捕捉和沉淀上下文。这是<strong>从人工记录到自动沉淀</strong>的转变。</p>
+    <p><strong>三是状态文件（state files）</strong>：面向长程代理循环的一个 JSON 文件，记录已发生的事：尝试过什么、哪些成功、哪些失败、下一步做什么。代理每次运行时先读它——<strong>第 50 次运行从第 49 次停下的地方接着干</strong>，而不是从头再来。它记的不是「经验教训」，而是「任务进度」。</p>
+    <blockquote class="pull">复利效应：每一条经验记录都让下一次会话更快。第 1 次运行：花 20 分钟摸清你的项目；第 50 次运行：30 秒回放累积的上下文。同一个模型，不同的上下文，不同的速度。</blockquote>
+    <figure class="codeblock">
+      <pre><code># learnings.md - accumulated context
+
+- Payment API expects idempotency key in header, not body.
+  Three agents hit this independently. Now a hard rule.
+
+- PostgreSQL NOTIFY needs explicit LISTEN in connection pool.
+  Default pool settings drop the channel after 30s.
+
+- Rate limiter counts per-key, not per-IP.
+  Tests need unique API keys or they share a bucket.</code></pre>
+      <figcaption>中文解说：一份 learnings.md 示例。第一条正是「3 次晋升」机制的实例：支付 API 的幂等键要放请求头而非请求体——三个代理独立踩中同一个坑，于是升格为硬性规则写进 CLAUDE.md。第二条记录连接池默认 30 秒后丢弃 LISTEN 通道的坑；第三条提醒限流器按键而非按 IP 计数，测试必须用不同的 API key，否则共享同一个配额桶。每条都是「犯过的错 + 背后的原因」，下次会话开场即读。</figcaption>
+    </figure>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>新教师带一个新班级，头几周总在重复摸清情况：哪个学生基础弱、哪台设备有暗病、上周实验做到哪一步。有经验的教师靠三本东西。<strong>教学经验记录本</strong>（learnings 文件）：哪节课的讲法学生听不懂、哪个演示实验总出岔子，逐年累积；同类型问题连续三届都出现，就正式写进教学大纲（晋升 CLAUDE.md 永久规则）。<strong>班主任的自动记忆</strong>（自动记忆 / Dreaming）：不用刻意记，带班久了自然记得每个学生的特点——这是自动沉淀。<strong>实验进度交接单</strong>（状态文件）：上次课焊到第几块板、哪组还没验收，下次课从交接单接着走，绝不从头清点。三本各管一件事：经验、习惯、进度。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <p>三种记忆机制正好对应三类可操作的教学建设：</p>
+    <ul>
+      <li><strong>把历届学生常犯错误整理成班级 learnings.md</strong>：每次实训后，学生把本组踩的坑按「错误现象 + 原因 + 正确做法」格式追加进班级共享文件。教 AI 的同时，也沉淀了真正的课程资源；同一个错误被三届学生写到，就正式写进实训指导书的「注意事项」——这就是「3 次晋升永久规则」的教学版。</li>
+      <li><strong>用状态文件改造多课时项目</strong>：跨课时的课程设计（如两周的机电装调项目），要求每组维护一个简单的进度 JSON：已完成工序、未通过项、下次课计划。下次课开场先读交接单再动手，杜绝「老师我们上次做到哪了」。</li>
+      <li><strong>体验自动记忆</strong>：在支持记忆功能的 AI 工具上，让学生连续多轮完成一个项目，观察 AI 是否「记住」了之前的偏好和约定，讨论哪些该让它记、哪些不该记——顺带上一堂数据素养课。</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 第九章：四种失效模式 ============ -->
+<section class="chapter" id="ch-09">
+  <header class="chapter-head">
+    <span class="chapter-num">09</span>
+    <h2 class="chapter-title">四种失效模式</h2>
+    <p class="chapter-sub">Four failure modes——当 AI 输出糟糕时，问题几乎总是上下文出了四种故障之一，而不是提示词写得不好。</p>
+  </header>
+  <div class="prose">
+    <p>当 Claude 产出糟糕的输出时，绝大多数人的第一反应是改写提示词。原文作者指出：问题几乎总是出在四种上下文失效模式之一。<strong>先诊断是哪一种，可以救你免于重写一段从来都不是病根所在的提示词。</strong></p>
+
+    <p><strong>失效一：投毒（Poisoning）。</strong>坏数据混进了上下文窗口——一份被检索出来的文档过时了、与任务无关，或者事实本身就是错的。Claude 信任它读到的一切。上下文错了，输出就错。<strong>处方（Fix）：在把检索到的文档装入窗口之前，先验证它们。</strong></p>
+
+    <p><strong>失效二：分心（Distraction）。</strong>上下文太多。你把整整 200 页文档倒进了窗口，模型却在其中找不到真正要紧的那 3 段话。<strong>处方：少检索一点，但检索得更准。3 块相关的内容胜过 50 块沾边的内容。</strong></p>
+
+    <p><strong>失效三：混淆（Confusion）。</strong>指令相互打架。系统提示词说"永远不要写注释"，CLAUDE.md 却说"每个公开函数上方都要加注释"。模型要么随意挑一个执行，要么试图同时满足两条、产出胡话。这正是 Thariq 在 Anthropic 那 80% 被删除的指令中发现的问题根源。<strong>处方：审计各层指令之间的冲突。运行 /doctor。</strong></p>
+
+    <p><strong>失效四：饥饿（Starvation）。</strong>上下文缺失。你要求 Claude 遵循项目的编码风格，却从没让它看过现有代码；你要求按公司格式写报告，却从没提供过模板。<strong>处方：展示，而非描述（show, don't describe）。把真实的工件交给 Claude，而不是用文字去形容它。</strong></p>
+
+    <p>下面这套翻转卡片把四种失效模式做成了诊断工具：点击每张卡片，正面是症状，背面是病因与处方。</p>
+  </div>
+  <div class="demo-slot" data-demo="failure-cards"></div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>把模型想象成一位临时来帮忙的高级技师：投毒＝你递给他的维修手册印错了参数；分心＝你把整个图书馆搬上他的工作台；混淆＝车间主任和工艺文件下达了相反指令；饥饿＝你让他照着厂里风格干活，却锁着样品间不让他看。<strong>技师的手艺没问题，是你给他的工作条件有问题。</strong></p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <ul>
+      <li><strong>备课诊断清单：</strong>当 AI 帮你生成的教案、试卷质量差时，先按四种模式排查——参考教材章节是否过时（投毒）？是否把整本教材都粘了进去（分心）？不同文件里的要求是否打架（混淆）？是否忘了给它一份往届优秀教案做样板（饥饿）？</li>
+      <li><strong>实训课练习：</strong>让学生故意制造四种失效（粘错资料、塞入整份文档、给冲突指令、不给样例），观察 AI 输出的退化，再逐一修复。这比讲十遍"上下文很重要"更直观。</li>
+      <li><strong>课程资源建设：</strong>为每门课维护一份"可信资料目录"，喂给 AI 前对照检查，把"投毒"挡在窗口之外。</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 第十章：上下文审计 ============ -->
+<section class="chapter" id="ch-10">
+  <header class="chapter-head">
+    <span class="chapter-num">10</span>
+    <h2 class="chapter-title">上下文审计</h2>
+    <p class="chapter-sub">The context audit——为 Claude 3 / Claude 4 时代建立的上下文栈，都背着一笔"遗产债务"。</p>
+  </header>
+  <div class="prose">
+    <p>如果你手头有一份 CLAUDE.md、一段系统提示词，或一个技能库，是在 Claude 3 或 Claude 4 时代搭建的，那么它正背着遗产包袱。<strong>那些曾经用来防止模型犯最糟错误的指令，如今正在为更强大的新模型制造相互冲突的指引。</strong></p>
+
+    <p>审计流程很直接：把上下文栈里所有写着"verify（核实）""double-check（再检查一遍）""re-verify（重新核实）""make sure to（务必）""always remember to（永远记得）"的指令，逐条拎出来。</p>
+
+    <p>对每一条只问一个问题：<strong>Claude 5 还需要这条规则吗，还是它默认就会这么做？</strong>如果答案是"默认就会"，删掉它。这条规则在白白消耗令牌（token），还在制造冲突的可能，收益却是零。</p>
+
+    <figure class="codeblock">
+      <pre><code># Context audit checklist
+
+1. Run /doctor in Claude Code
+2. Count total tokens in your static context
+   (system prompt + CLAUDE.md + always-loaded skills)
+3. For each rule ask: does Opus 5 do this by default?
+   If yes: delete it
+4. Check for conflicts between layers
+   (system prompt says X, CLAUDE.md says not-X)
+5. Move tool-specific rules into tool descriptions
+6. Replace prescriptive rules with judgment principles
+   "never write comments" -> "match surrounding style"
+7. Replace markdown specs with real artifacts
+   description of format -> actual example file</code></pre>
+      <figcaption>中文解说：原文给出的 7 步上下文审计清单——先在 Claude Code 里运行 /doctor；清点静态上下文（系统提示词＋CLAUDE.md＋常驻技能）的总令牌数；逐条追问"新模型默认就会吗？会就删"；排查层与层之间的指令冲突；把工具专属规则挪进工具描述；把"不许写注释"式的硬规定换成"与周边代码风格一致"式的判断原则；把格式说明文字替换成真实的样例文件。</figcaption>
+    </figure>
+
+    <p>下面的互动清单把这 7 步做成了可勾选的审计工作台，可以边审计边对照打勾。</p>
+  </div>
+  <div class="demo-slot" data-demo="audit-checklist"></div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>上下文审计就像车间每年的工艺文件清理：旧设备时代立下的"每道工序后必须人工复检三遍"，在换上数控设备后不但多余，还会让操作工无所适从。<strong>设备升级了，操作规程必须重审</strong>——否则新旧指令并存，工人（模型）只能猜哪条算数。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <ul>
+      <li><strong>期末教研动作：</strong>每学期末对照 7 步清单审计一次自己在用的 AI 辅助备课配置，把"务必逐字核对""一定要再检查"这类为旧模型写的叮嘱清理掉。</li>
+      <li><strong>指导学生：</strong>教学生把自己写给 AI 的"使用说明"当作技术文档来维护——定期清点字数（令牌数）、查冲突、删冗余，这是可迁移的工程文档管理能力。</li>
+      <li><strong>课程资源建设：</strong>给课程组的共享 AI 配置建立"审计记录表"，每次删减注明理由，让上下文栈像代码仓库一样可追溯。</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 第十一章：更丰富的参考资料 ============ -->
+<section class="chapter" id="ch-11">
+  <header class="chapter-head">
+    <span class="chapter-num">11</span>
+    <h2 class="chapter-title">更丰富的参考资料：展示而非描述</h2>
+    <p class="chapter-sub">Richer references——别再用文字描述你要的格式，把真实工件直接摆给模型看。</p>
+  </header>
+  <div class="prose">
+    <p>这是 Thariq 六大转变中的最后一个：<strong>用更丰富的参考资料，替换掉简单的 markdown 规格说明。</strong></p>
+
+    <p>与其用文字描述输出格式，不如把真实工件展示给 Claude 看。与其在提示词里写测试标准，不如直接指向测试套件；与其解释代码风格，不如让 Claude 自己去读代码库。</p>
+
+    <p>这正是 Karpathy 提出的 Software 3.0 在实践中的样子：<strong>上下文窗口就是程序。</strong>你装载进去的代码、测试与评分标准（rubric）就是你的源代码，LLM 负责解释执行它们。</p>
+
+    <p><strong>一个真实样例胜过十段格式说明。</strong>模型从样例中做模式匹配——这比起解析你那段"我想要什么"的散文描述，更快、更便宜、也更准确。</p>
+
+    <figure class="codeblock" data-compare>
+      <div class="codeblock-tabs">
+        <button type="button" data-pane="before" class="active">描述格式</button>
+        <button type="button" data-pane="after">展示格式</button>
+      </div>
+      <pre data-pane="before" class="active"><code># BEFORE: describing the format
+Write a report with an executive summary (2 paragraphs),
+three findings (each with a heading, 2-3 paragraphs,
+and a supporting data point), and a conclusion with
+three actionable recommendations.</code></pre>
+      <pre data-pane="after"><code># AFTER: showing the format
+Here is a report we published last quarter that matches
+the format and quality bar we want:
+
+[actual report pasted or @-mentioned]
+
+Write the new report in the same format, tone, and
+depth. Match it, don't describe it.</code></pre>
+      <figcaption>中文解说：左侧"描述格式"用文字规定报告要有执行摘要、三条发现、结论建议——模型得先解析这段散文；右侧"展示格式"直接把上一季度的真实报告贴进上下文，让模型"照着它写，别描述它"。点击标签可切换对比。</figcaption>
+    </figure>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>这像极了带徒弟：你花半小时口述"合格的零件检测报告长什么样"，不如把一份去年的优秀报告拍在他桌上说"照这个做"。<strong>人能看样例学样，模型也一样——而且学得比人还快。</strong>文字描述是间接传达，样例是直接传达。</p>
+  </aside>
+  <aside class="box box-teach">
+    <span class="box-label">职教教学转化</span>
+    <ul>
+      <li><strong>备课：</strong>让 AI 出试卷时，别再写"选择题四选一、难度梯度递增"，直接贴一份往年真题试卷，要求"同格式、同难度、同覆盖面出题"。</li>
+      <li><strong>实训项目：</strong>指导学生用 AI 写实训报告时，把往届优秀报告脱敏后作为样例喂给 AI，再让它按学生实测数据生成新报告。</li>
+      <li><strong>课程资源建设：</strong>为每门课建立"样例库"——优秀教案、规范图纸、标准工单——凡是想让 AI 产出的东西，库里先存一份真品。</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 五大常见错误 ============ -->
+<section class="chapter" id="ch-mistakes">
+  <header class="chapter-head">
+    <span class="chapter-num">误</span>
+    <h2 class="chapter-title">五个常见错误</h2>
+    <p class="chapter-sub">Five context engineering mistakes——五张"✗"警示牌，每张都配后果与纠正动作。</p>
+  </header>
+  <div class="prose">
+    <ul>
+      <li>✗ <strong>把系统提示词塞爆（Stuffing the system prompt）。</strong>后果：系统提示词里的每条规则，在<strong>每一次</strong>调用上都要消耗令牌。纠正：把工具专属的规则挪进工具描述，把项目规则挪进 CLAUDE.md，让系统提示词保持在 200 tokens 以内。</li>
+      <li>✗ <strong>只描述、不展示（Describing instead of showing）。</strong>后果：三段解释输出格式的文字，永远输给一份贴进上下文的真实样例。纠正：展示工件，把实物摆出来。</li>
+      <li>✗ <strong>从不审计（Never auditing）。</strong>后果：上下文像技术债一样累积——为 Claude 3 写的规则，还在 Claude 5 上跑着。纠正：运行 /doctor，删掉模型已经不再需要的规则。</li>
+      <li>✗ <strong>一上来全加载（Loading everything upfront）。</strong>后果：每次调用都装进 50 个技能文件，模型反而找不到相关的那一个。纠正：用渐进式披露——按当前任务按需加载技能。</li>
+      <li>✗ <strong>各层指令打架（Conflicting layers）。</strong>后果：系统提示词说一套，CLAUDE.md 说另一套，工具描述说第三套——模型要么任选其一，要么三套都试。纠正：先审计冲突，再添加新指令。</li>
+    </ul>
+  </div>
+  <aside class="box box-science">
+    <span class="box-label">科普时间</span>
+    <p>五个错误其实是同一个病根：<strong>把上下文当成"写得越多越好"的纸条堆，而不是"按需装载"的内存条。</strong>纸条堆只会越堆越乱；内存管理讲究的是——该在的在，不该在的不在，过期的清掉。</p>
+  </aside>
+</section>
+
+<!-- ============ 结语 ============ -->
+<section class="chapter" id="ch-conclusion">
+  <header class="chapter-head">
+    <span class="chapter-num">结</span>
+    <h2 class="chapter-title">结语：变量从来不是提示词</h2>
+    <p class="chapter-sub">Conclusion——提示词从来不是变量，上下文才是。</p>
+  </header>
+  <div class="prose">
+    <p><strong>提示词从来不是变量。上下文才是。</strong></p>
+
+    <p>过去两年，整个 AI 行业都在优化提示词。"逐步思考。""你是一位资深工程师。""请简洁作答。"这些技巧能把指针拨动 5–10%；而上下文工程，拨动的是 2–3 倍。</p>
+
+    <p><strong>Karpathy 定义了它，Anthropic 用删掉自家 80% 指令的方式证明了它。</strong>模型对所有人都是同一个，上下文才是那个变量。系统提示词、CLAUDE.md、技能、工具描述、检索文档、记忆、样例、状态文件——这一整套，才是你的程序。LLM 只是负责解释执行它。</p>
+
+    <p>想通这一层的工程师，正在造出真正能用的智能体（agent）；<strong>还在埋头改提示词的人，是在调试错误的层。</strong></p>
+
+    <blockquote class="pull">LLM 是 CPU，上下文窗口是内存（RAM）。你的工作不是写出更好的指令——而是在正确的时刻，把正确的数据装进内存。</blockquote>
+  </div>
+</section>
+
+<!-- ============ 随堂小测 ============ -->
+<section class="chapter" id="ch-quiz">
+  <header class="chapter-head">
+    <span class="chapter-num">测</span>
+    <h2 class="chapter-title">随堂小测</h2>
+    <p class="chapter-sub">5 道单选题，给读完这份报告的老师一次"自检"——也像极了我们给学生设计的课堂反馈。</p>
+  </header>
+  <div class="prose">
+    <p>读到这里，您已经完整走完了从"写提示词"到"工程化上下文"的 11 步。作为教师，我们都深知一个道理：<strong>不经过检测的学习，留存率往往不如人意。</strong>下面 5 道单选题取自全文的关键论断——800→164 tokens 的删减、四种失效模式的诊断、"展示而非描述"的原则都在其中。建议您先凭理解作答，再回看解析；也可以把它当作素材，改造成您课堂上让学生自测"AI 使用素养"的小练习。</p>
+  </div>
+  <div class="demo-slot" data-demo="quiz"></div>
+</section>
+
+  </main>
+
+  <aside class="toc">
+    <nav class="toc-inner" id="toc-inner">
+      <button type="button" class="toc-toggle" id="toc-toggle" aria-expanded="false">目录</button>
+      <p class="toc-title">目录</p>
+      <ul class="toc-list">
+        <li><a href="#ch-intro">引 · 提示词已死，上下文当立</a></li>
+        <li><a href="#ch-01">01 · 什么是上下文工程</a></li>
+        <li><a href="#ch-02">02 · 80% 大删减</a></li>
+        <li><a href="#ch-03">03 · 六大转变</a></li>
+        <li><a href="#ch-04">04 · 系统提示词：要薄不要厚</a></li>
+        <li><a href="#ch-05">05 · CLAUDE.md 与技能库</a></li>
+        <li><a href="#ch-06">06 · 工具描述即上下文</a></li>
+        <li><a href="#ch-07">07 · 动态上下文：检索与渐进披露</a></li>
+        <li><a href="#ch-08">08 · 记忆：经验、自动记忆与状态文件</a></li>
+        <li><a href="#ch-09">09 · 四种失效模式</a></li>
+        <li><a href="#ch-10">10 · 上下文审计</a></li>
+        <li><a href="#ch-11">11 · 更丰富的参考资料：展示而非描述</a></li>
+        <li><a href="#ch-mistakes">误 · 五个常见错误</a></li>
+        <li><a href="#ch-conclusion">结 · 结语：变量从来不是提示词</a></li>
+        <li><a href="#ch-quiz">测 · 随堂小测</a></li>
+      </ul>
+    </nav>
+  </aside>
+</div>
+
+<footer class="site-footer">
+  <p>原文：Context Engineering with Claude: the 11-Step Guide That Replaced Prompting — <a href="https://x.com/0xrafy/status/2082813532538634552">https://x.com/0xrafy/status/2082813532538634552</a></p>
+  <p>声明：本报告为教学科普改编，数据与论断以原文为准。</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- (1) 顶部滚动进度条 ---------- */
+  var progress = document.getElementById("progress");
+  function updateProgress() {
+    var doc = document.documentElement;
+    var total = doc.scrollHeight - window.innerHeight;
+    var ratio = total > 0 ? (window.scrollY || doc.scrollTop) / total : 0;
+    progress.style.width = Math.min(100, Math.max(0, ratio * 100)) + "%";
+  }
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  window.addEventListener("resize", updateProgress);
+  updateProgress();
+
+  /* ---------- (2) 目录 scroll-spy（IntersectionObserver） ---------- */
+  var tocLinks = Array.prototype.slice.call(
+    document.querySelectorAll(".toc-list a[href^='#']")
+  );
+  var linkById = {};
+  tocLinks.forEach(function (a) {
+    linkById[a.getAttribute("href").slice(1)] = a;
+  });
+
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      tocLinks.forEach(function (a) { a.classList.remove("active"); });
+      var link = linkById[entry.target.id];
+      if (link) link.classList.add("active");
+    });
+  }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+
+  function observeSections() {
+    Object.keys(linkById).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  observeSections();
+
+  /* ---------- (3) codeblock[data-compare] 选项卡切换（全局事件委托，动态内容亦生效） ---------- */
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target.closest
+      ? ev.target.closest(".codeblock[data-compare] .codeblock-tabs button[data-pane]")
+      : null;
+    if (!btn) return;
+    var figure = btn.closest(".codeblock");
+    var pane = btn.getAttribute("data-pane");
+    figure.querySelectorAll(".codeblock-tabs button[data-pane]").forEach(function (b) {
+      b.classList.toggle("active", b === btn);
+    });
+    figure.querySelectorAll("pre[data-pane]").forEach(function (pre) {
+      pre.classList.toggle("active", pre.getAttribute("data-pane") === pane);
+    });
+  });
+
+  /* ---------- (4) 移动端目录折叠展开 ---------- */
+  var tocToggle = document.getElementById("toc-toggle");
+  var tocInner = document.getElementById("toc-inner");
+  if (tocToggle && tocInner) {
+    tocToggle.addEventListener("click", function () {
+      var open = tocInner.classList.toggle("open");
+      tocToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    /* 移动端点击目录项后自动收起 */
+    tocInner.addEventListener("click", function (ev) {
+      if (ev.target.closest && ev.target.closest("a") && tocInner.classList.contains("open")) {
+        tocInner.classList.remove("open");
+        tocToggle.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  /* ---------- (5) 章节标题一次性 fade-up（§8：仅触发一次） ---------- */
+  var fadeObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        fadeObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  function observeChapterHeads() {
+    document.querySelectorAll(".chapter-head").forEach(function (head) {
+      if (!head.classList.contains("is-visible")) fadeObserver.observe(head);
+    });
+  }
+  observeChapterHeads();
+
+  /* 片段若为动态注入，重新扫描目录锚点与章节标题 */
+  window.CEShell = {
+    refresh: function () {
+      observeSections();
+      observeChapterHeads();
+      updateProgress();
+    }
+  };
+})();
+</script>
+
+<script>
+/* ============================================================================
+ * demos.js — 《上下文工程》互动报告 · 六个互动演示模块（零依赖原生 JS）
+ * ----------------------------------------------------------------------------
+ * 模块清单（按 data-demo 值分发）：
+ *   1. ram-window        (ch-01) 上下文窗口 = 内存条：七层复选框 + Canvas 分层填充
+ *                                + 实时 token 计数 + 溢出红色告警
+ *   2. token-cut         (ch-02) 800→164 tokens 双向滑杆对比 + 动画计数
+ *                                + "评测表现：不变（零损失）"参考线 + 自动播放
+ *   3. progressive-steps (ch-07) 渐进披露三步步进器 vs 一次性全加载溢出对比
+ *   4. failure-cards     (ch-09) 四种失效模式 3D 翻卡（fail-1~4 色，点击翻面）
+ *   5. audit-checklist   (ch-10) 7 项上下文审计清单 + 进度条 + 完成祝贺语 + 重置
+ *   6. quiz              (ch-quiz) 5 道单选随堂测，即时反馈 + 计分 + 重新作答
+ *
+ * 挂载 API：
+ *   window.CEDemos.mount(root)
+ *     — 扫描 root.querySelectorAll('[data-demo]')，按 data-demo 值分发到对应模块。
+ *     — 容器（.demo-slot）由外壳提供；本文件只向容器内部注入 DOM/Canvas 与行为。
+ *     — 重复调用安全：已挂载的容器会被跳过（data-ced-mounted 标记）。
+ *
+ * 依赖的 CSS 类 / 约定：
+ *   — 外壳提供 .demo-slot 容器（破栏宽度、底色 #F2E7D8、边框、圆角、padding）。
+ *   — 本文件首次 mount 时向 <head> 注入一次 <style id="ced-demos-style">，
+ *     模块内部类名一律以 ced- 前缀，避免与外壳冲突。
+ *   — 颜色硬编码自 design.md §2：
+ *       paper #F7EDE2 / paper-2 #FBF6EE / ink #2E2A33 / ink-soft #5B5560
+ *       heading #3D3252 / sage #6F9A8D / sage-deep #2F6B57 / coral #F5CAC3
+ *       salmon #D9776A / amber #C9932B / fail-1 #D64B3C / fail-2 #3F7FBF
+ *       fail-3 #C9932B / fail-4 #7A5FA8 / line #E3D8C8
+ *   — Canvas 演示：60fps rAF 循环、devicePixelRatio 上限 2、
+ *     IntersectionObserver 离屏暂停。
+ *   — 无 import、无外部库、无网络请求，可整体内联进单文件 index.html。
+ * ========================================================================== */
+(function () {
+  'use strict';
+
+  /* ---------- design.md §2 色值（硬编码） ---------- */
+  var C = {
+    paper:    '#F7EDE2',
+    paper2:   '#FBF6EE',
+    demoBg:   '#F2E7D8',
+    ink:      '#2E2A33',
+    inkSoft:  '#5B5560',
+    heading:  '#3D3252',
+    sage:     '#6F9A8D',
+    sageDeep: '#2F6B57',
+    coral:    '#F5CAC3',
+    salmon:   '#D9776A',
+    amber:    '#C9932B',
+    fail1:    '#D64B3C',
+    fail2:    '#3F7FBF',
+    fail3:    '#C9932B',
+    fail4:    '#7A5FA8',
+    line:     '#E3D8C8'
+  };
+
+  var FONT_BODY = '-apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
+  var FONT_SERIF = '"Noto Serif SC", "Source Han Serif SC", "Songti SC", serif';
+
+  /* ---------- 注入一次模块内部样式（类名统一 ced- 前缀） ---------- */
+  function ensureStyle() {
+    if (document.getElementById('ced-demos-style')) return;
+    var st = document.createElement('style');
+    st.id = 'ced-demos-style';
+    st.textContent = [
+      '.ced-demo{font-family:' + FONT_BODY + ';color:' + C.ink + ';line-height:1.6}',
+      '.ced-demo *{box-sizing:border-box}',
+      '.ced-h{margin:0 0 12px;font-family:' + FONT_SERIF + ';font-size:1.05rem;font-weight:700;color:' + C.heading + '}',
+      '.ced-note{font-size:.85rem;color:' + C.inkSoft + ';margin:10px 0 0}',
+      '.ced-row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}',
+      '.ced-btn{appearance:none;border:1px solid ' + C.sageDeep + ';background:' + C.sageDeep + ';color:#FBF6EE;',
+      '  font-family:inherit;font-size:.85rem;padding:7px 16px;border-radius:999px;cursor:pointer;',
+      '  transition:background .18s ease,color .18s ease,border-color .18s ease}',
+      '.ced-btn:hover{background:' + C.sage + ';border-color:' + C.sage + '}',
+      '.ced-btn[disabled]{opacity:.45;cursor:default}',
+      '.ced-btn-ghost{background:transparent;color:' + C.sageDeep + '}',
+      '.ced-btn-ghost:hover{background:rgba(111,154,141,.14);color:' + C.sageDeep + '}',
+      '.ced-btn-ghost.active{background:' + C.sageDeep + ';color:#FBF6EE}',
+
+      /* ram-window */
+      '.ced-ram-controls{flex:0 0 264px;display:flex;flex-direction:column;gap:6px}',
+      '.ced-ram-item{display:flex;align-items:center;gap:8px;font-size:.85rem;padding:5px 8px;',
+      '  border:1px solid ' + C.line + ';border-radius:8px;background:' + C.paper2 + ';cursor:pointer}',
+      '.ced-ram-item input{accent-color:' + C.sageDeep + ';margin:0}',
+      '.ced-ram-item .ced-ram-tokens{margin-left:auto;font-variant-numeric:tabular-nums;color:' + C.inkSoft + ';font-size:.78rem;white-space:nowrap}',
+      '.ced-ram-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;flex:0 0 auto}',
+      '.ced-ram-skillstep{display:flex;align-items:center;gap:6px;margin-left:auto}',
+      '.ced-ram-skillstep button{width:20px;height:20px;line-height:1;padding:0;border-radius:6px;',
+      '  border:1px solid ' + C.line + ';background:#fff;color:' + C.ink + ';cursor:pointer;font-size:.8rem}',
+      '.ced-ram-canvaswrap{flex:1 1 320px;min-width:280px}',
+      '.ced-ram-canvaswrap canvas{display:block;width:100%;height:130px}',
+      '.ced-ram-count{margin-top:8px;font-size:.95rem;font-weight:600;color:' + C.heading + ';font-variant-numeric:tabular-nums}',
+      '.ced-ram-alert{display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:' + C.fail1 + ';',
+      '  color:#FBF6EE;font-size:.88rem;font-weight:600}',
+      '.ced-ram-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:.75rem;color:' + C.inkSoft + '}',
+      '.ced-ram-legend span{display:inline-flex;align-items:center;gap:5px}',
+
+      /* token-cut */
+      '.ced-tc-counter{text-align:center;margin:4px 0 14px}',
+      '.ced-tc-num{font-family:' + FONT_SERIF + ';font-size:2.6rem;font-weight:700;color:' + C.heading + ';font-variant-numeric:tabular-nums;line-height:1.1}',
+      '.ced-tc-num small{font-size:1rem;color:' + C.inkSoft + ';font-weight:400;font-family:' + FONT_BODY + '}',
+      '.ced-tc-pct{display:inline-block;margin-left:10px;font-size:.85rem;font-weight:700;color:' + C.fail1 + ';vertical-align:middle}',
+      '.ced-tc-track{display:flex;height:44px;border-radius:8px;overflow:hidden;border:1px solid ' + C.line + ';background:' + C.paper2 + '}',
+      '.ced-tc-kept{background:' + C.sage + ';transition:width .18s ease}',
+      '.ced-tc-cut{background:' + C.fail1 + ';transition:width .18s ease}',
+      '.ced-tc-labels{display:flex;justify-content:space-between;font-size:.8rem;color:' + C.inkSoft + ';margin-top:8px;gap:12px;flex-wrap:wrap}',
+      '.ced-tc-labels b{color:' + C.heading + '}',
+      '.ced-tc-slider{width:100%;margin:16px 0 4px;accent-color:' + C.sageDeep + '}',
+      '.ced-tc-perf{margin-top:18px;position:relative;padding-top:14px;text-align:center}',
+      '.ced-tc-perf::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:' + C.sageDeep + ';border-radius:2px}',
+      '.ced-tc-perf span{display:inline-block;font-size:.85rem;font-weight:600;color:' + C.sageDeep + ';background:' + C.demoBg + ';padding:0 10px;position:relative;top:-1px}',
+
+      /* progressive-steps */
+      '.ced-ps-modes{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}',
+      '.ced-ps-track{height:40px;border-radius:8px;border:1px solid ' + C.line + ';background:' + C.paper2 + ';',
+      '  overflow:hidden;display:flex;position:relative;transition:background .18s ease}',
+      '.ced-ps-track.ced-overflow{background:' + C.fail1 + '}',
+      '.ced-ps-seg{height:100%;transition:width .2s ease}',
+      '.ced-ps-overflowtxt{position:absolute;inset:0;display:none;align-items:center;justify-content:center;',
+      '  color:#FBF6EE;font-weight:700;font-size:.88rem;padding:0 10px;text-align:center}',
+      '.ced-ps-track.ced-overflow .ced-ps-overflowtxt{display:flex}',
+      '.ced-ps-count{margin-top:8px;font-size:.95rem;font-weight:600;color:' + C.heading + ';font-variant-numeric:tabular-nums}',
+      '.ced-ps-count.ced-over{color:' + C.fail1 + '}',
+      '.ced-ps-steps{display:flex;gap:8px;margin:16px 0 4px;flex-wrap:wrap}',
+      '.ced-ps-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:.78rem;color:' + C.inkSoft + '}',
+      '.ced-ps-legend span{display:inline-flex;align-items:center;gap:5px}',
+      '.ced-ps-conclusion{margin-top:14px;padding:10px 14px;border-left:3px solid ' + C.sage + ';',
+      '  background:rgba(111,154,141,.12);border-radius:0 8px 8px 0;font-size:.88rem;color:' + C.ink + '}',
+
+      /* failure-cards */
+      '.ced-fc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}',
+      '.ced-flip{perspective:1000px;height:264px;cursor:pointer;outline:none}',
+      '.ced-flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}',
+      '.ced-flip.ced-flipped .ced-flip-inner{transform:rotateY(180deg)}',
+      '.ced-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;',
+      '  border-radius:12px;padding:18px;display:flex;flex-direction:column;overflow:hidden}',
+      '.ced-face-front{color:#FBF6EE;justify-content:center;text-align:center}',
+      '.ced-face-front .ced-fc-cn{font-family:' + FONT_SERIF + ';font-size:1.5rem;font-weight:700;line-height:1.3}',
+      '.ced-face-front .ced-fc-en{font-size:.85rem;opacity:.85;margin-top:4px;letter-spacing:.03em}',
+      '.ced-face-front .ced-fc-symptom{margin-top:14px;font-size:.88rem;background:rgba(255,255,255,.16);',
+      '  border-radius:8px;padding:8px 10px}',
+      '.ced-face-front .ced-fc-hint{margin-top:12px;font-size:.72rem;opacity:.7}',
+      '.ced-face-back{transform:rotateY(180deg);background:' + C.paper2 + ';border:1px solid ' + C.line + ';font-size:.82rem}',
+      '.ced-face-back h4{margin:0 0 4px;font-size:.8rem;letter-spacing:.05em}',
+      '.ced-face-back p{margin:0 0 10px;line-height:1.55}',
+      '.ced-fc-cause{color:' + C.inkSoft + '}',
+      '.ced-fc-fix-h{color:' + C.sageDeep + '}',
+
+      /* audit-checklist */
+      '.ced-ac-progress{height:10px;border-radius:999px;background:' + C.paper2 + ';border:1px solid ' + C.line + ';overflow:hidden}',
+      '.ced-ac-fill{height:100%;width:0;background:' + C.sage + ';transition:width .2s ease}',
+      '.ced-ac-count{font-size:.85rem;color:' + C.inkSoft + ';margin:8px 0 12px;font-variant-numeric:tabular-nums}',
+      '.ced-ac-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}',
+      '.ced-ac-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid ' + C.line + ';',
+      '  border-radius:8px;background:' + C.paper2 + ';cursor:pointer;transition:background .18s ease;font-size:.88rem}',
+      '.ced-ac-item:hover{background:#fff}',
+      '.ced-ac-item input{accent-color:' + C.sageDeep + ';margin-top:3px;flex:0 0 auto}',
+      '.ced-ac-item.ced-done{background:rgba(111,154,141,.12);border-color:' + C.sage + '}',
+      '.ced-ac-item.ced-done .ced-ac-text{color:' + C.sageDeep + '}',
+      '.ced-ac-item code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.82em;',
+      '  background:' + C.heading + ';color:#EDE6D8;border-radius:4px;padding:1px 5px}',
+      '.ced-ac-num{font-weight:700;color:' + C.sageDeep + ';flex:0 0 auto}',
+      '.ced-ac-congrats{display:none;margin-top:14px;padding:12px 16px;border-radius:8px;background:' + C.sageDeep + ';',
+      '  color:#FBF6EE;font-weight:700;font-size:.95rem;text-align:center}',
+      '.ced-ac-actions{margin-top:14px;text-align:right}',
+
+      /* quiz */
+      '.ced-q{border:1px solid ' + C.line + ';border-radius:10px;background:' + C.paper2 + ';padding:16px;margin-bottom:14px}',
+      '.ced-q-title{margin:0 0 10px;font-size:.95rem;font-weight:700;color:' + C.heading + '}',
+      '.ced-q-title .ced-q-no{display:inline-block;margin-right:8px;color:' + C.sageDeep + '}',
+      '.ced-q-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}',
+      '.ced-q-opt{appearance:none;text-align:left;font-family:inherit;font-size:.85rem;padding:9px 12px;cursor:pointer;',
+      '  border:1px solid ' + C.line + ';border-radius:8px;background:#fff;color:' + C.ink + ';',
+      '  transition:background .18s ease,border-color .18s ease,color .18s ease}',
+      '.ced-q-opt:hover:not([disabled]){border-color:' + C.sage + '}',
+      '.ced-q-opt[disabled]{cursor:default}',
+      '.ced-q-opt.ced-right{background:' + C.sage + ';border-color:' + C.sageDeep + ';color:#fff;font-weight:600}',
+      '.ced-q-opt.ced-wrong{background:' + C.fail1 + ';border-color:' + C.fail1 + ';color:#fff;font-weight:600}',
+      '.ced-q-fb{display:none;margin-top:10px;font-size:.83rem;line-height:1.6;padding:9px 12px;border-radius:8px}',
+      '.ced-q-fb.ced-show{display:block}',
+      '.ced-q-fb.ced-ok{background:rgba(111,154,141,.14);color:' + C.sageDeep + ';border-left:3px solid ' + C.sageDeep + '}',
+      '.ced-q-fb.ced-bad{background:rgba(214,75,60,.10);color:' + C.fail1 + ';border-left:3px solid ' + C.fail1 + '}',
+      '.ced-q-score{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;',
+      '  margin-top:6px;padding-top:12px;border-top:1px solid ' + C.line + ';font-size:.9rem;font-weight:600;color:' + C.heading + '}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  /* ---------- 小工具 ---------- */
+  function h(tag, cls, text) {
+    var el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text != null) el.textContent = text;
+    return el;
+  }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+  /* ================================================================
+   * 1. ram-window —— 上下文窗口 = 内存条（Canvas 分层填充 + 溢出告警）
+   * ================================================================ */
+  function mountRamWindow(root) {
+    var CAP = 8000;
+    var layers = [
+      { name: '系统提示词', tokens: 164,  color: C.sageDeep, checked: true,
+        tip: '每次调用都加载——越薄越好，建议控制在 200 tokens 以内' },
+      { name: 'CLAUDE.md（项目说明书）', tokens: 1200, color: C.sage, checked: true,
+        tip: '每次会话开始自动读取的项目说明书：架构决策、命名约定、已知问题' },
+      { name: '技能文件', tokens: 0, perToken: 400, color: C.amber, checked: false, skill: true,
+        tip: '按需加载的复用工作流，每项约 400 tokens——只有与当前任务相关时才载入' },
+      { name: '工具描述', tokens: 300, color: C.fail2, checked: true,
+        tip: 'Claude 在选择工具前会通读所有工具描述——它们也是上下文' },
+      { name: '检索文档（3 块 × 500）', tokens: 1500, color: C.fail4, checked: false,
+        tip: '任务需要时才检索：3 块相关内容进窗，其余 997 块留在窗外' },
+      { name: '对话历史', tokens: 2000, color: C.salmon, checked: true,
+        tip: '多轮对话不断累积，长期占用窗口——越聊越满' },
+      { name: '记忆文件（learnings）', tokens: 600, color: C.heading, checked: false,
+        tip: '跨会话累积的经验记录：bug 与修复的运行日志，每次会话开始读取' }
+    ];
+    var skillCount = 0; // 技能 0–5 项，每项 400 tokens，默认不勾（0 项）
+
+    var wrap = h('div', 'ced-demo');
+    wrap.appendChild(h('p', 'ced-h', '上下文窗口 = 内存条：勾选要装入的上下文层'));
+
+    var row = h('div', 'ced-row');
+    var controls = h('div', 'ced-ram-controls');
+    var itemEls = [];
+
+    layers.forEach(function (layer, i) {
+      var label = h('label', 'ced-ram-item');
+      label.title = layer.tip;
+      var sw = h('span', 'ced-ram-swatch');
+      sw.style.background = layer.color;
+      label.appendChild(sw);
+
+      if (layer.skill) {
+        label.appendChild(h('span', null, layer.name));
+        var step = h('span', 'ced-ram-skillstep');
+        var minus = h('button', null, '−'); minus.type = 'button';
+        var cnt = h('span', null, '0 项'); cnt.style.minWidth = '34px'; cnt.style.textAlign = 'center';
+        cnt.style.fontVariantNumeric = 'tabular-nums'; cnt.style.fontSize = '.78rem'; cnt.style.color = C.inkSoft;
+        var plus = h('button', null, '＋'); plus.type = 'button';
+        var tok = h('span', 'ced-ram-tokens', '0');
+        minus.addEventListener('click', function (e) { e.preventDefault(); if (skillCount > 0) { skillCount--; sync(); } });
+        plus.addEventListener('click', function (e) { e.preventDefault(); if (skillCount < 5) { skillCount++; sync(); } });
+        step.appendChild(minus); step.appendChild(cnt); step.appendChild(plus);
+        label.appendChild(step); label.appendChild(tok);
+        itemEls.push({ layer: layer, cnt: cnt, tok: tok });
+      } else {
+        var cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.checked = layer.checked;
+        cb.addEventListener('change', function () { layer.checked = cb.checked; sync(); });
+        label.appendChild(cb);
+        label.appendChild(h('span', null, layer.name));
+        label.appendChild(h('span', 'ced-ram-tokens', fmt(layer.tokens)));
+      }
+      controls.appendChild(label);
+    });
+
+    var cwrap = h('div', 'ced-ram-canvaswrap');
+    var canvas = document.createElement('canvas');
+    cwrap.appendChild(canvas);
+    var count = h('div', 'ced-ram-count');
+    var alert = h('div', 'ced-ram-alert', '上下文溢出：模型将丢失最早的信息');
+    var legend = h('div', 'ced-ram-legend');
+    layers.forEach(function (layer) {
+      var item = h('span');
+      var sw = h('span', 'ced-ram-swatch'); sw.style.background = layer.color;
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(layer.name));
+      legend.appendChild(item);
+    });
+    cwrap.appendChild(count); cwrap.appendChild(alert); cwrap.appendChild(legend);
+
+    row.appendChild(controls); row.appendChild(cwrap);
+    wrap.appendChild(row);
+    wrap.appendChild(h('p', 'ced-note', '窗口容量 8,000 tokens——勾选左侧上下文层，观察内存条如何被填满。'));
+    root.appendChild(wrap);
+
+    /* --- 目标值与动画状态 --- */
+    function targets() {
+      return layers.map(function (layer) {
+        if (layer.skill) return skillCount * layer.perToken;
+        return layer.checked ? layer.tokens : 0;
+      });
+    }
+    function total() {
+      return targets().reduce(function (a, b) { return a + b; }, 0);
+    }
+
+    var cur = layers.map(function () { return 0; });
+    var ctx = canvas.getContext('2d');
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var visible = false, running = false, raf = 0;
+
+    function resize() {
+      var w = cwrap.clientWidth || 320;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(130 * dpr);
+      canvas.style.height = '130px';
+    }
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () { resize(); }).observe(cwrap);
+    } else {
+      window.addEventListener('resize', resize);
+    }
+    resize();
+
+    function roundRect(x, y, w, hgt, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + hgt, r);
+      ctx.arcTo(x + w, y + hgt, x, y + hgt, r);
+      ctx.arcTo(x, y + hgt, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function draw() {
+      var W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      var pad = 10 * dpr, barY = 34 * dpr, barH = 46 * dpr, barW = W - pad * 2;
+      var t = 0, i;
+      for (i = 0; i < cur.length; i++) t += cur[i];
+
+      /* 轨道 */
+      roundRect(pad, barY, barW, barH, 8 * dpr);
+      ctx.fillStyle = C.paper2; ctx.fill();
+      ctx.lineWidth = 1 * dpr; ctx.strokeStyle = C.line; ctx.stroke();
+
+      if (t > CAP) {
+        /* 溢出：整窗变 fail-1 红 */
+        roundRect(pad, barY, barW, barH, 8 * dpr);
+        ctx.fillStyle = C.fail1; ctx.fill();
+        ctx.fillStyle = '#FBF6EE';
+        ctx.font = '700 ' + (13 * dpr) + 'px ' + FONT_BODY;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('上下文溢出：模型将丢失最早的信息', pad + barW / 2, barY + barH / 2);
+      } else {
+        /* 分层填充 */
+        ctx.save();
+        roundRect(pad, barY, barW, barH, 8 * dpr);
+        ctx.clip();
+        var x = pad;
+        for (i = 0; i < layers.length; i++) {
+          var wpx = (cur[i] / CAP) * barW;
+          if (wpx > 0.5) {
+            ctx.fillStyle = layers[i].color;
+            ctx.fillRect(x, barY, wpx, barH);
+            x += wpx;
+          }
+        }
+        ctx.restore();
+      }
+
+      /* 顶部刻度文字 */
+      ctx.fillStyle = C.inkSoft;
+      ctx.font = (10.5 * dpr) + 'px ' + FONT_BODY;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('0', pad, barY - 8 * dpr);
+      ctx.textAlign = 'right';
+      ctx.fillText('容量 ' + fmt(CAP) + ' tokens', pad + barW, barY - 8 * dpr);
+    }
+
+    function frame() {
+      var tg = targets(), done = true, i;
+      for (i = 0; i < cur.length; i++) {
+        var d = tg[i] - cur[i];
+        if (Math.abs(d) > 0.5) { cur[i] += d * 0.18; done = false; }
+        else cur[i] = tg[i];
+      }
+      draw();
+      if (visible && !done) raf = requestAnimationFrame(frame);
+      else { running = false; if (visible && !done) start(); }
+    }
+    function start() {
+      if (running || !visible) return;
+      running = true;
+      raf = requestAnimationFrame(frame);
+    }
+
+    function sync() {
+      /* 技能步进器文字 */
+      itemEls.forEach(function (rec) {
+        if (rec.layer.skill) {
+          rec.cnt.textContent = skillCount + ' 项';
+          rec.tok.textContent = fmt(skillCount * rec.layer.perToken);
+        }
+      });
+      var t = total();
+      if (t > CAP) {
+        count.textContent = '已用 ' + fmt(t) + ' / ' + fmt(CAP) + ' tokens · 超出 ' + fmt(t - CAP);
+        count.style.color = C.fail1;
+        alert.style.display = 'block';
+      } else {
+        count.textContent = '已用 ' + fmt(t) + ' / ' + fmt(CAP) + ' tokens · 剩余 ' + fmt(CAP - t);
+        count.style.color = C.heading;
+        alert.style.display = 'none';
+      }
+      start();
+    }
+
+    /* IntersectionObserver 离屏暂停 */
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        visible = entries[0].isIntersecting;
+        if (visible) start();
+        else { visible = false; running = false; cancelAnimationFrame(raf); }
+      }, { threshold: 0.05 }).observe(canvas);
+    } else {
+      visible = true;
+    }
+
+    sync();
+    draw();
+  }
+
+  /* ================================================================
+   * 2. token-cut —— 800 → 164 tokens 滑杆对比 + 自动播放
+   * ================================================================ */
+  function mountTokenCut(root) {
+    var OLD = 800, NEW = 164;
+    var t = 0; // 0=旧提示词，1=新提示词
+    var playing = false;
+
+    var wrap = h('div', 'ced-demo');
+    wrap.appendChild(h('p', 'ced-h', '80% 大删减：拖动滑杆，从旧提示词过渡到新提示词'));
+
+    var counter = h('div', 'ced-tc-counter');
+    var num = h('div', 'ced-tc-num');
+    var numVal = h('span', null, '800');
+    var numUnit = h('small', null, ' tokens');
+    var pct = h('span', 'ced-tc-pct', '−0%');
+    num.appendChild(numVal); num.appendChild(numUnit); num.appendChild(pct);
+    counter.appendChild(num);
+    counter.appendChild(h('div', null, '当前系统提示词体量')).style.cssText = 'font-size:.8rem;color:' + C.inkSoft;
+    wrap.appendChild(counter);
+
+    var track = h('div', 'ced-tc-track');
+    track.title = '灰绿 = 保留下来的指令；红色 = 删掉的死重指令';
+    var kept = h('div', 'ced-tc-kept');
+    var cut = h('div', 'ced-tc-cut');
+    kept.style.width = '100%'; cut.style.width = '0%';
+    track.appendChild(kept); track.appendChild(cut);
+    wrap.appendChild(track);
+
+    var labels = h('div', 'ced-tc-labels');
+    var lbL = h('span', null, '旧提示词 · 800 tokens（30+ 条硬性规定）');
+    var lbR = h('span', null, '新提示词 · 164 tokens（一条判断原则）');
+    labels.appendChild(lbL); labels.appendChild(lbR);
+    wrap.appendChild(labels);
+
+    var slider = document.createElement('input');
+    slider.type = 'range'; slider.min = '0'; slider.max = '100'; slider.value = '0';
+    slider.className = 'ced-tc-slider';
+    slider.setAttribute('aria-label', '删减进度：从旧提示词 800 tokens 到新提示词 164 tokens');
+    wrap.appendChild(slider);
+
+    var btnRow = h('div', null);
+    btnRow.style.cssText = 'display:flex;gap:10px;justify-content:center;margin-top:10px';
+    var playBtn = h('button', 'ced-btn', '▶ 自动播放删减过程');
+    playBtn.type = 'button';
+    playBtn.title = '1.5 秒内从 800 tokens 平滑降到 164 tokens';
+    btnRow.appendChild(playBtn);
+    wrap.appendChild(btnRow);
+
+    var perf = h('div', 'ced-tc-perf');
+    perf.appendChild(h('span', null, '编码评测表现：不变（零损失）'));
+    wrap.appendChild(perf);
+    wrap.appendChild(h('p', 'ced-note', '2026 年 7 月 24 日，Anthropic 删除 Claude Code 系统提示词的 80%——800 tokens 降到 164，编码评测零损失。'));
+    root.appendChild(wrap);
+
+    function render() {
+      var val = Math.round(OLD - (OLD - NEW) * t);
+      numVal.textContent = fmt(val);
+      pct.textContent = '−' + Math.round((1 - val / OLD) * 100) + '%';
+      kept.style.width = (val / OLD * 100) + '%';
+      cut.style.width = ((OLD - val) / OLD * 100) + '%';
+      lbL.style.opacity = t < 0.5 ? '1' : '.45';
+      lbR.style.opacity = t > 0.5 ? '1' : '.45';
+      lbR.style.fontWeight = t === 1 ? '700' : '400';
+      slider.value = String(Math.round(t * 100));
+    }
+    slider.addEventListener('input', function () {
+      if (playing) return;
+      t = Number(slider.value) / 100;
+      render();
+    });
+    playBtn.addEventListener('click', function () {
+      if (playing) return;
+      playing = true;
+      playBtn.disabled = true;
+      slider.disabled = true;
+      t = 0; render();
+      var startT = null;
+      function step(ts) {
+        if (startT == null) startT = ts;
+        var p = Math.min((ts - startT) / 1500, 1); // 1.5 秒
+        t = easeInOut(p);
+        render();
+        if (p < 1) requestAnimationFrame(step);
+        else {
+          t = 1; render();
+          playing = false;
+          playBtn.disabled = false;
+          slider.disabled = false;
+          playBtn.textContent = '↺ 重新播放';
+        }
+      }
+      requestAnimationFrame(step);
+    });
+    render();
+  }
+
+  /* ================================================================
+   * 3. progressive-steps —— 渐进披露 vs 一次性全加载
+   * ================================================================ */
+  function mountProgressiveSteps(root) {
+    var CAP = 8000;
+    var steps = [
+      { label: '第 1 步 · 仅载任务描述', tokens: 200, color: C.sageDeep,
+        tip: '从最小上下文开始：只给模型当前任务的描述' },
+      { label: '第 2 步 · 按需载入相关技能', tokens: 400, color: C.sage,
+        tip: '任务展开后，只载入与当前任务相关的那一项技能，其余留在窗外' },
+      { label: '第 3 步 · 载入参考代码', tokens: 800, color: C.amber,
+        tip: '需要模仿风格时，载入真实的参考代码——展示而非描述' }
+    ];
+    var mode = 'progressive'; // 'progressive' | 'all'
+    var step = 0;             // 0–3
+
+    var wrap = h('div', 'ced-demo');
+    wrap.appendChild(h('p', 'ced-h', '动态上下文：渐进披露 vs 一次性全加载'));
+
+    var modes = h('div', 'ced-ps-modes');
+    var bProg = h('button', 'ced-btn ced-btn-ghost active', '渐进披露');
+    var bAll = h('button', 'ced-btn ced-btn-ghost', '一次性全加载');
+    bProg.type = bAll.type = 'button';
+    bProg.title = '从最小上下文开始，任务需要什么才载入什么';
+    bAll.title = '把所有可能用到的内容（含 50 个技能文件共 20,000 tokens）一次性倒进窗口';
+    modes.appendChild(bProg); modes.appendChild(bAll);
+    wrap.appendChild(modes);
+
+    var track = h('div', 'ced-ps-track');
+    var segs = steps.map(function (s) {
+      var d = h('div', 'ced-ps-seg');
+      d.style.background = s.color; d.style.width = '0%';
+      track.appendChild(d);
+      return d;
+    });
+    var extraSeg = h('div', 'ced-ps-seg'); // 全加载模式的 50 个技能文件
+    extraSeg.style.background = C.fail4; extraSeg.style.width = '0%';
+    track.appendChild(extraSeg);
+    var overTxt = h('div', 'ced-ps-overflowtxt', '上下文溢出：50 个技能文件共 20,000 tokens 全部倒入，模型找不到真正需要的 3 块内容');
+    track.appendChild(overTxt);
+    wrap.appendChild(track);
+
+    var count = h('div', 'ced-ps-count');
+    wrap.appendChild(count);
+
+    var stepsRow = h('div', 'ced-ps-steps');
+    var stepBtns = steps.map(function (s, i) {
+      var b = h('button', 'ced-btn ced-btn-ghost', s.label);
+      b.type = 'button'; b.title = s.tip;
+      b.addEventListener('click', function () { step = i + 1; render(); });
+      stepsRow.appendChild(b);
+      return b;
+    });
+    var bReset = h('button', 'ced-btn ced-btn-ghost', '重置');
+    bReset.type = 'button';
+    bReset.addEventListener('click', function () { step = 0; render(); });
+    stepsRow.appendChild(bReset);
+    wrap.appendChild(stepsRow);
+
+    var legend = h('div', 'ced-ps-legend');
+    steps.forEach(function (s) {
+      var item = h('span');
+      var sw = h('span', 'ced-ram-swatch'); sw.style.background = s.color;
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(s.label.split('· ')[1] + '（' + fmt(s.tokens) + '）'));
+      legend.appendChild(item);
+    });
+    var itemX = h('span');
+    var swX = h('span', 'ced-ram-swatch'); swX.style.background = C.fail4;
+    itemX.appendChild(swX);
+    itemX.appendChild(document.createTextNode('50 个技能文件（20,000）'));
+    legend.appendChild(itemX);
+    wrap.appendChild(legend);
+
+    var conclusion = h('div', 'ced-ps-conclusion');
+    wrap.appendChild(conclusion);
+    root.appendChild(wrap);
+
+    function render() {
+      bProg.classList.toggle('active', mode === 'progressive');
+      bAll.classList.toggle('active', mode === 'all');
+      var isProg = mode === 'progressive';
+      stepsRow.style.display = isProg ? 'flex' : 'none';
+
+      if (isProg) {
+        track.classList.remove('ced-overflow');
+        var used = 0;
+        segs.forEach(function (d, i) {
+          var on = i < step;
+          d.style.width = on ? (steps[i].tokens / CAP * 100) + '%' : '0%';
+          if (on) used += steps[i].tokens;
+          stepBtns[i].classList.toggle('active', on);
+        });
+        extraSeg.style.width = '0%';
+        count.classList.remove('ced-over');
+        count.textContent = '已加载 ' + fmt(used) + ' / ' + fmt(CAP) + ' tokens · 剩余 ' + fmt(CAP - used) +
+          (step === 3 ? ' —— 每一步只拿到自己需要的上下文' : '');
+        conclusion.textContent = '对比结论：渐进披露——3 块相关内容进窗，997 块留在窗外，三步合计仅 1,400 tokens；' +
+          '一次性全加载——20,000+ tokens 灌进窗口直接溢出。检索更少、更精准，3 块相关内容胜过 50 块沾边内容。';
+      } else {
+        /* 一次性全加载：任务 200 + 50 技能文件 20000 + 参考代码 800 = 21000，溢出 */
+        track.classList.add('ced-overflow');
+        var totalAll = 21000;
+        segs[0].style.width = (200 / totalAll * 100) + '%';
+        extraSeg.style.width = (20000 / totalAll * 100) + '%';
+        segs[2].style.width = (800 / totalAll * 100) + '%';
+        stepBtns.forEach(function (b) { b.classList.remove('active'); });
+        count.classList.add('ced-over');
+        count.textContent = '试图装入 ' + fmt(totalAll) + ' / ' + fmt(CAP) + ' tokens · 超出 ' + fmt(totalAll - CAP) + ' —— 窗口溢出';
+        conclusion.textContent = '对比结论：一次性全加载把 50 个技能文件（20,000 tokens）全部倒入窗口，真正需要的内容被淹没；' +
+          '渐进披露只让 3 块相关内容进窗，997 块留在窗外——同一个模型，上下文不同，结果天差地别。';
+      }
+    }
+    bProg.addEventListener('click', function () { mode = 'progressive'; render(); });
+    bAll.addEventListener('click', function () { mode = 'all'; render(); });
+    render();
+  }
+
+  /* ================================================================
+   * 4. failure-cards —— 四种失效模式 3D 翻卡
+   * ================================================================ */
+  function mountFailureCards(root) {
+    var cards = [
+      { cn: '投毒', en: 'Poisoning', color: C.fail1, symptom: 'AI 的回答突然出错',
+        cause: '上下文窗口里混进了坏数据：检索到的文档过时、无关或事实错误。Claude 信任它读到的一切——上下文错了，输出就错了。',
+        fix: '处方：载入之前先校验检索到的文档。' },
+      { cn: '分心', en: 'Distraction', color: C.fail2, symptom: 'AI 抓不住重点',
+        cause: '上下文太多：把 200 页文档一股脑塞进窗口，模型找不到真正重要的那 3 段话。',
+        fix: '处方：更少、更精准地检索——3 块相关内容胜过 50 块沾边内容。' },
+      { cn: '混淆', en: 'Confusion', color: C.fail3, symptom: 'AI 的回答自相矛盾',
+        cause: '指令互相冲突：系统提示词说"永远不要写注释"，CLAUDE.md 却说"每个公开函数上方都要加注释"。模型只能任选其一或两头讨好。Thariq 在被删掉的 80% 指令里发现的大多是这类。',
+        fix: '处方：审计各层之间的冲突——运行 /doctor。' },
+      { cn: '饥饿', en: 'Starvation', color: C.fail4, symptom: 'AI 的回答不得要领',
+        cause: '缺少上下文：让 Claude 模仿项目代码风格，却没给它看现有代码；要公司格式的报告，却没提供模板。',
+        fix: '处方：展示而非描述——把真实工件直接交给 Claude，而不是用文字描述它。' }
+    ];
+
+    var wrap = h('div', 'ced-demo');
+    wrap.appendChild(h('p', 'ced-h', '四种上下文失效模式：点击卡片翻面，查看病因与处方'));
+    var grid = h('div', 'ced-fc-grid');
+
+    cards.forEach(function (c) {
+      var flip = h('div', 'ced-flip');
+      flip.setAttribute('role', 'button');
+      flip.setAttribute('tabindex', '0');
+      flip.setAttribute('aria-label', c.cn + '（' + c.en + '）：点击查看病因与处方');
+
+      var inner = h('div', 'ced-flip-inner');
+      var front = h('div', 'ced-face ced-face-front');
+      front.style.background = c.color;
+      front.appendChild(h('div', 'ced-fc-cn', c.cn));
+      front.appendChild(h('div', 'ced-fc-en', c.en));
+      front.appendChild(h('div', 'ced-fc-symptom', '症状：' + c.symptom));
+      front.appendChild(h('div', 'ced-fc-hint', '点击翻面 · 查看病因与处方'));
+
+      var back = h('div', 'ced-face ced-face-back');
+      back.style.borderTop = '3px solid ' + c.color;
+      var hCause = h('h4', null, '病因');
+      hCause.style.color = c.color;
+      back.appendChild(hCause);
+      back.appendChild(h('p', 'ced-fc-cause', c.cause));
+      back.appendChild(h('h4', 'ced-fc-fix-h', '处方 Fix'));
+      back.appendChild(h('p', null, c.fix));
+
+      inner.appendChild(front); inner.appendChild(back);
+      flip.appendChild(inner);
+      function toggle() { flip.classList.toggle('ced-flipped'); }
+      flip.addEventListener('click', toggle);
+      flip.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+      grid.appendChild(flip);
+    });
+
+    wrap.appendChild(grid);
+    wrap.appendChild(h('p', 'ced-note', '当 Claude 产出变差，问题几乎总在这四种上下文失效之一——先诊断是哪一种，而不是急着重写提示词。'));
+    root.appendChild(wrap);
+  }
+
+  /* ================================================================
+   * 5. audit-checklist —— 上下文审计 7 项清单
+   * ================================================================ */
+  function mountAuditChecklist(root) {
+    var items = [
+      '在 Claude Code 中运行 /doctor',
+      '统计静态上下文的总 token 数（系统提示词 + CLAUDE.md + 常驻技能）',
+      '对每条规则追问：Opus 5 是否已经默认做到了？是——就删掉它',
+      '检查各层之间的冲突（系统提示词说 X，CLAUDE.md 却说非 X）',
+      '把只与某个工具相关的规则，移进该工具的描述里',
+      '把硬性规定改写为判断原则——"永远不要写注释" → "与周围代码的风格保持一致"',
+      '用真实工件替代 markdown 规格说明——格式描述 → 实际的示例文件'
+    ];
+
+    var wrap = h('div', 'ced-demo');
+    wrap.appendChild(h('p', 'ced-h', '上下文审计清单：逐项勾选，给你的上下文栈瘦身'));
+
+    var prog = h('div', 'ced-ac-progress');
+    var fill = h('div', 'ced-ac-fill');
+    prog.appendChild(fill);
+    wrap.appendChild(prog);
+    var count = h('div', 'ced-ac-count', '已完成 0 / 7');
+    wrap.appendChild(count);
+
+    var list = h('ul', 'ced-ac-list');
+    var boxes = [];
+    items.forEach(function (text, i) {
+      var li = h('li', 'ced-ac-item');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      var num = h('span', 'ced-ac-num', String(i + 1) + '.');
+      var txt = h('span', 'ced-ac-text');
+      /* 保留 /doctor 命令名的等宽样式 */
+      txt.innerHTML = text.replace('/doctor', '<code>/doctor</code>');
+      li.appendChild(cb); li.appendChild(num); li.appendChild(txt);
+      li.addEventListener('click', function (e) {
+        if (e.target !== cb) { cb.checked = !cb.checked; }
+        update();
+      });
+      boxes.push({ cb: cb, li: li });
+      list.appendChild(li);
+    });
+    wrap.appendChild(list);
+
+    var congrats = h('div', 'ced-ac-congrats', '审计完成——你的上下文栈已瘦身');
+    wrap.appendChild(congrats);
+
+    var actions = h('div', 'ced-ac-actions');
+    var resetBtn = h('button', 'ced-btn ced-btn-ghost', '重置');
+    resetBtn.type = 'button';
+    resetBtn.addEventListener('click', function () {
+      boxes.forEach(function (b) { b.cb.checked = false; });
+      update();
+    });
+    actions.appendChild(resetBtn);
+    wrap.appendChild(actions);
+    wrap.appendChild(h('p', 'ced-note', '为 Claude 3 / Claude 4 时代写的规则，今天可能只是在消耗 token、制造冲突——逐条追问，删到不能再删。'));
+    root.appendChild(wrap);
+
+    function update() {
+      var done = 0;
+      boxes.forEach(function (b) {
+        b.li.classList.toggle('ced-done', b.cb.checked);
+        if (b.cb.checked) done++;
+      });
+      fill.style.width = (done / items.length * 100) + '%';
+      count.textContent = '已完成 ' + done + ' / ' + items.length;
+      congrats.style.display = done === items.length ? 'block' : 'none';
+    }
+    update();
+  }
+
+  /* ================================================================
+   * 6. quiz —— 5 道单选随堂测
+   * ================================================================ */
+  function mountQuiz(root) {
+    var questions = [
+      { q: '2026 年 7 月，Anthropic 把 Claude Code 的系统提示词从 800 tokens 削减到了多少？',
+        opts: ['80 tokens', '164 tokens', '200 tokens', '400 tokens'],
+        answer: 1,
+        why: '原文：2026 年 7 月 24 日，Anthropic 把系统提示词从 800 tokens 砍到 164 tokens——删掉 80% 以上，编码评测零损失。' },
+      { q: '按原文的类比："LLM 是 CPU，上下文窗口是？"',
+        opts: ['硬盘（Disk）', '显卡（GPU）', '内存（RAM）', '操作系统（OS）'],
+        answer: 2,
+        why: '原文：LLM 是 CPU，上下文窗口是 RAM，你的工作是操作系统管理——在每次推理前把正确的数据装入工作内存。' },
+      { q: '下列哪一项不属于原文提出的四种上下文失效模式？',
+        opts: ['投毒（Poisoning）', '幻觉（Hallucination）', '混淆（Confusion）', '饥饿（Starvation）'],
+        answer: 1,
+        why: '原文列出的四种失效模式是：投毒、分心、混淆、饥饿——"幻觉"不在其中；先诊断失效模式，再动手修。' },
+      { q: '一条规则只在调用某个特定工具时才适用，按原文它应该写在哪里？',
+        opts: ['系统提示词里', 'CLAUDE.md 里', '该工具的描述里', '对话历史里'],
+        answer: 2,
+        why: '原文：只与某个工具相关的规则应放进该工具的描述——只在工具可用时加载，不像系统提示词那样每次调用都消耗 token。' },
+      { q: '按原文的经验法则，同一个错误出现几次之后，应把它晋升为 CLAUDE.md 里的永久规则？',
+        opts: ['1 次', '3 次', '5 次', '10 次'],
+        answer: 1,
+        why: '原文 learnings 机制：错误先记入 learnings 文件，当它第三次出现时，就晋升为 CLAUDE.md 里的永久规则。' }
+    ];
+
+    var wrap = h('div', 'ced-demo');
+    wrap.appendChild(h('p', 'ced-h', '随堂小测：5 道单选，检验你的上下文工程理解'));
+    var qEls = [];
+
+    questions.forEach(function (q, qi) {
+      var box = h('div', 'ced-q');
+      var title = h('p', 'ced-q-title');
+      title.appendChild(h('span', 'ced-q-no', '第 ' + (qi + 1) + ' 题'));
+      title.appendChild(document.createTextNode(q.q));
+      box.appendChild(title);
+
+      var opts = h('div', 'ced-q-opts');
+      var fb = h('div', 'ced-q-fb');
+      var optBtns = q.opts.map(function (opt, oi) {
+        var b = h('button', 'ced-q-opt', opt);
+        b.type = 'button';
+        b.addEventListener('click', function () {
+          if (box.dataset.done) return;
+          box.dataset.done = '1';
+          var right = oi === q.answer;
+          optBtns.forEach(function (bb, bi) {
+            bb.disabled = true;
+            if (bi === q.answer) bb.classList.add('ced-right');
+          });
+          if (!right) b.classList.add('ced-wrong');
+          fb.className = 'ced-q-fb ced-show ' + (right ? 'ced-ok' : 'ced-bad');
+          fb.textContent = (right ? '✓ 回答正确。' : '✗ 回答错误。正确答案：' + q.opts[q.answer] + '。') + q.why;
+          box.dataset.right = right ? '1' : '0';
+          updateScore();
+        });
+        opts.appendChild(b);
+        return b;
+      });
+      box.appendChild(opts);
+      box.appendChild(fb);
+      wrap.appendChild(box);
+      qEls.push({ box: box, optBtns: optBtns, fb: fb });
+    });
+
+    var scoreRow = h('div', 'ced-q-score');
+    var scoreTxt = h('span', null, '已答 0 / 5 · 答对 0');
+    var retry = h('button', 'ced-btn', '重新作答');
+    retry.type = 'button';
+    retry.addEventListener('click', function () {
+      qEls.forEach(function (rec) {
+        delete rec.box.dataset.done;
+        delete rec.box.dataset.right;
+        rec.optBtns.forEach(function (b) {
+          b.disabled = false;
+          b.classList.remove('ced-right', 'ced-wrong');
+        });
+        rec.fb.className = 'ced-q-fb';
+        rec.fb.textContent = '';
+      });
+      updateScore();
+    });
+    scoreRow.appendChild(scoreTxt);
+    scoreRow.appendChild(retry);
+    wrap.appendChild(scoreRow);
+    root.appendChild(wrap);
+
+    function updateScore() {
+      var answered = 0, right = 0;
+      qEls.forEach(function (rec) {
+        if (rec.box.dataset.done) {
+          answered++;
+          if (rec.box.dataset.right === '1') right++;
+        }
+      });
+      scoreTxt.textContent = '已答 ' + answered + ' / 5 · 答对 ' + right +
+        (answered === 5 ? (right === 5 ? ' —— 满分！上下文工程已入门' : ' —— 翻回对应章节再读一遍') : '');
+    }
+    updateScore();
+  }
+
+  /* ---------- 分发与挂载 ---------- */
+  var registry = {
+    'ram-window': mountRamWindow,
+    'token-cut': mountTokenCut,
+    'progressive-steps': mountProgressiveSteps,
+    'failure-cards': mountFailureCards,
+    'audit-checklist': mountAuditChecklist,
+    'quiz': mountQuiz
+  };
+
+  function mount(root) {
+    ensureStyle();
+    var scope = root || document;
+    var slots = scope.querySelectorAll('[data-demo]');
+    Array.prototype.forEach.call(slots, function (el) {
+      if (el.dataset.cedMounted) return;
+      var fn = registry[el.dataset.demo];
+      if (!fn) return;
+      el.dataset.cedMounted = '1';
+      fn(el);
+    });
+  }
+
+  window.CEDemos = { mount: mount };
+})();
+</script>
+<script>window.CEDemos && CEDemos.mount(document)</script>
+
+</body>
+</html>
