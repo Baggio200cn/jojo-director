@@ -1349,6 +1349,17 @@ def _load_rules(domain: str) -> list[dict]:
     return rules
 
 
+def _rule_applies(rule: dict, scene_text: str) -> bool:
+    """规则动态装载（治"分心"失效）：带 applies_when 关键词的规则只在场景文本
+    命中时才进考卷——静物美学镜不装光路几何规则，判官注意力留给相关条款。
+    无 applies_when 字段的规则永远装载（通用规则不受影响）。"""
+    kws = rule.get("applies_when") or []
+    if not kws:
+        return True
+    t = (scene_text or "").lower()
+    return any(str(k).lower() in t for k in kws)
+
+
 def _load_ref_rules(domain: str, cap: int = 9) -> list[dict]:
     """保真对照规则：通用层+学科层，从规则包读取（判卷注意力有限，总量封顶）。"""
     rules: list[dict] = []
@@ -1461,9 +1472,14 @@ async def _run_qc(node: dict) -> dict:
         checklist += [{"id": f"AST-{i+1}", "name": a, "severity": "warning",
                        "check": a, "on_fail": ""} for i, a in enumerate(assertions)]
     else:
+        # 场景文本 = 断言 + 原提示词 + 帧要素 + 编辑指令，用于规则动态装载
+        _tin = db.jloads(target["inputs"])
+        _scene = " ".join(assertions) + " " + str(_tin.get("prompt") or "") \
+            + " " + str(_tin.get("edit_delta") or "") \
+            + " " + " ".join(str(x) for x in (inputs.get("frame_elements") or []))
         checklist = [{"id": r["id"], "name": r["name"], "severity": r["severity"],
                       "check": r["check"], "on_fail": r.get("on_fail", "")}
-                     for r in rules]
+                     for r in rules if _rule_applies(r, _scene)]
         checklist += [{"id": f"AST-{i+1}", "name": a, "severity": "blocker",
                        "check": a, "on_fail": "改提示词重跑或转 code_render"}
                       for i, a in enumerate(assertions)]
