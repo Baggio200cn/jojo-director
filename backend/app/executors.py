@@ -184,7 +184,31 @@ def _lint_prompts(sb: dict) -> list[str]:
                     text = re.sub(pat, str(rule["use"]), text, flags=re.I)
                     notes.append(f"镜头{shot.get('index')}: {rule['find']}→{rule['use']}")
             shot[key] = text
+            w = _negative_lint(text)
+            if w:
+                notes.append(f"镜头{shot.get('index')}: {w}")
     return notes
+
+
+# 否定式召唤检测：提示词里 no/without/不要 后面跟的名词照样会被模型画出来
+_NEG_PAT = re.compile(
+    r"\b(?:no|not|without|never)\s+([a-z][a-z\s]{2,30}?)(?=[,.;]|$)|"
+    r"(?:不要|不得|禁止|去掉|没有|勿)([一-龥]{2,12})", re.I)
+
+
+# 文字抑制类否定词实测有效（v4 全片零乱码），不告警；实物名词的否定才会召唤
+_NEG_SAFE = re.compile(r"^(text|letters?|numbers?|labels?|words?|captions?|annotations?|"
+                       r"watermarks?|logos?|arrows?|diagrams?|markings?|文字|字|标注|水印)\b", re.I)
+
+
+def _negative_lint(text: str) -> str:
+    """检出否定式描述并给出警告（不自动改写——正确改法是删掉整句改为正向描述）。"""
+    hits = ["".join(m.groups("")).strip() for m in _NEG_PAT.finditer(text or "")]
+    hits = [h for h in hits if h and not _NEG_SAFE.match(h)][:3]
+    if not hits:
+        return ""
+    return ("⚠否定式召唤风险：提示词提到“" + "、".join(hits)
+            + "”——否定句里的实物名词照样会被画出来，请删除否定句并只正向描述想要的画面")
 
 
 async def _coach(tgt_in: dict, fails: list, is_pair: bool) -> str:
@@ -508,11 +532,12 @@ async def _run_video(node: dict) -> dict:
                     ]},
                 ])
                 if not pr.get("consistent", True):
-                    raise ValueError(
-                        "配对预检不通过（首尾帧不属于同一场景/风格，直接生成必然穿帮）："
-                        + str(pr.get("reason", ""))[:160]
-                        + "。修正建议：" + str(pr.get("fix", ""))[:200]
-                        + "。统一两帧并复检后再跑视频。")
+                    # 既定政策：配对失败不整体失败，自动降级单帧驱动（尾帧弃用），事由记入输出
+                    _fallback_note = ("配对预检不通过，已自动降级为单帧驱动（尾帧未采用）："
+                                      + str(pr.get("reason", ""))[:160])
+                    inputs["last_frame_node"] = ""
+                    inputs["last_frame_url"] = ""
+                    inputs["_pair_fallback_note"] = _fallback_note
     # 提示词缺省时自动接力：上游参考视频节点的运动特征卡
     if not (inputs.get("prompt") or "").strip():
         for up in _upstream_nodes(node):
@@ -569,7 +594,10 @@ async def _run_video(node: dict) -> dict:
                 "status": "succeeded", "finished_at": db.now(),
                 "output_tokens": data.get("usage", {}).get("completion_tokens", 0),
             })
-            return {"asset_id": asset_id, "asset_url": f"/assets/{filename}"}
+            out = {"asset_id": asset_id, "asset_url": f"/assets/{filename}"}
+            if inputs.get("_pair_fallback_note"):
+                out["note"] = inputs["_pair_fallback_note"]
+            return out
         if status in ("failed", "cancelled"):
             raise RuntimeError(f"视频任务{status}: {data.get('error', '')}")
         await asyncio.sleep(5)
