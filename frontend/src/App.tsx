@@ -1074,6 +1074,10 @@ export default function App() {
             <div className="plus">＋</div>
             <div className="pname">新建空白项目</div>
           </div>
+          <div className="proj-card" onClick={() => window.open('/agents-md-course/', '_blank')}>
+            <div className="ph">📖</div>
+            <div className="pname">教师研修报告 · AGENTS.md 七条军规</div>
+          </div>
           {projects.slice(0, 11).map(p => (
             <div key={p.id} className="proj-card"
               onClick={async () => { await switchProject(p.id); setView('canvas') }}>
