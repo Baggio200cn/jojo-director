@@ -16,3 +16,10 @@ __pycache__/
 *.log
 *_log.txt
 backend/tests/report_*.json
+
+# 本地运行环境与大文件（不入库）
+backend/venv/
+models/
+frontend/dist_old/
+frontend/dist_bak_*/
+*.smoke.bak
