@@ -29,13 +29,9 @@ PROMPT = """你是科学实验视频质检规则的归纳助手。下面是某�
 请归纳出最多 5 条新的质检规则草稿，要求：
 - 每条规则是"什么情况算不合格"的可执行判断，具体到可见画面特征
 - 不与常识重复，不抄正例原文，从反例的教训中提炼
-- 输出严格 YAML：
-rules:
-  - id: DRAFT-XX
-    severity: high|medium|low
-    check: |
-      （判断描述）
-    from: ["来源样例id"]
+- 输出严格 JSON（不要 markdown 代码块）：
+{"rules": [{"id": "DRAFT-XX", "severity": "high|medium|low",
+            "check": "判断描述", "from": ["来源样例id"]}]}
 
 【正例】
 {positives}
@@ -43,7 +39,7 @@ rules:
 【反例/误判记录】
 {negatives}
 
-只输出 YAML，不要任何解释。"""
+只输出 JSON，不要任何解释。"""
 
 
 def _collect(domain: str) -> tuple[list[dict], list[dict]]:
@@ -98,12 +94,16 @@ async def induce(domain: str) -> dict:
         positives=json.dumps(pos, ensure_ascii=False, indent=1),
         negatives=json.dumps(neg, ensure_ascii=False, indent=1))
     r = await ark.chat(config.route("script")["model"],
-                       [{"role": "user", "content": prompt}], max_tokens=2000)
-    text = r["text"].strip().removeprefix("```yaml").removeprefix("```").removesuffix("```")
+                       [{"role": "user", "content": prompt}],
+                       json_mode=True, max_tokens=4000)
+    text = r["text"].strip().removeprefix("```json").removeprefix("```").removesuffix("```")
+    if not text:
+        return {"domain": domain, "added": 0,
+                "reason": f"模型输出为空（reasoning {len(r.get('reasoning', ''))} 字符）"}
     try:
-        draft = yaml.safe_load(text) or {}
-    except yaml.YAMLError as e:
-        return {"domain": domain, "added": 0, "reason": f"模型输出非YAML: {e}"}
+        draft = json.loads(text)
+    except json.JSONDecodeError as e:
+        return {"domain": domain, "added": 0, "reason": f"模型输出非JSON: {e}"}
     added = _merge_drafts(draft.get("rules", []), domain)
     return {"domain": domain, "added": added,
             "tokens": r["input_tokens"] + r["output_tokens"]}
