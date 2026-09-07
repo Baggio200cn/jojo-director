@@ -53,9 +53,12 @@ check("embedding 路由已配置", embeddings.available())
 
 # ── 2. upsert + 相似检索 ──
 async def _seed():
-    with db._conn() as c:  # 幂等：清掉上次跑的残留
-        c.execute("DELETE FROM assets WHERE id LIKE 'asset_t0000000%'")
-        c.execute("DELETE FROM embeddings WHERE ref_id LIKE 'asset_t0000000%'")
+    with db._conn() as c:  # 幂等：清掉上次跑的残留（固定样例 + 历史投稿用例）
+        c.execute("DELETE FROM embeddings WHERE ref_id IN "
+                  "(SELECT id FROM assets WHERE id LIKE 'asset_t0000000%' "
+                  "OR meta LIKE '%refraction lab recording%')")
+        c.execute("DELETE FROM assets WHERE id LIKE 'asset_t0000000%' "
+                  "OR meta LIKE '%refraction lab recording%'")
     for aid, folder, note in [
             ("asset_t00000000001", "光学类/光的折射", "refraction bending light"),
             ("asset_t00000000002", "光学类/波的干涉", "interference wave fringe"),
