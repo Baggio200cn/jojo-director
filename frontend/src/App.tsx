@@ -1498,10 +1498,10 @@ export default function App() {
           connectionRadius={36}
           selectionOnDrag panOnDrag={[1, 2]} panOnScroll zoomOnDoubleClick={false}
         >
-          <Background color="#23262f" />
+          <Background color="#d5d9e0" />
           <Controls />
-          <MiniMap pannable zoomable nodeColor="#2c3040"
-            maskColor="rgba(15,17,21,0.75)" style={{ background: '#14161c' }} />
+          <MiniMap pannable zoomable nodeColor="#c7ccd6"
+            maskColor="rgba(243,244,246,0.75)" style={{ background: '#f8f9fb' }} />
         </ReactFlow>
         {toast && <div className="toast">{toast}</div>}
         {menu && (
