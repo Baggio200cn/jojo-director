@@ -279,6 +279,15 @@ export default function App() {
   const [libStarOnly, setLibStarOnly] = useState(false)
   const [libCollapsed, setLibCollapsed] = useState<Record<string, boolean>>({})
   const [versionDlg, setVersionDlg] = useState<{ nid: string; list: { id: string; url: string; kind: string; created_at?: string }[] } | null>(null)
+  // ── 教师投稿（2026-09-07）：文件直接入素材库 ──
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [upFile, setUpFile] = useState<File | null>(null)
+  const [upDomain, setUpDomain] = useState('光学类')
+  const [upDomainCustom, setUpDomainCustom] = useState('')
+  const [upTopic, setUpTopic] = useState('')
+  const [upRights, setUpRights] = useState('own')
+  const [upNote, setUpNote] = useState('')
+  const [upBusy, setUpBusy] = useState(false)
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null)
   // ── 鉴权 / 手感升级新状态 ──
   const [authRole, setAuthRole] = useState<'checking' | 'none' | 'admin' | 'invite'>('checking')
@@ -621,8 +630,7 @@ export default function App() {
   }
 
   // ── A3：节点右键「保存到素材库」（落盘≠入库，入库=library+文件夹+权利声明）──
-  const saveToLibrary = async (nid: string) => {
-    setMenu(null)
+  const saveToLibrary = async (nid: string) => {    setMenu(null)
     const vers = await api.nodeVersions(nid)
     if (!vers.length) { say('该节点还没有素材记录'); return }
     const folder = window.prompt('保存到文件夹（格式：学科/课题，如 光学/迈克尔逊干涉）', libFolders[0] || '')
@@ -635,6 +643,22 @@ export default function App() {
       api.listAssetFolders().then(setLibFolders).catch(() => {})
       if (assetScope === 'library') loadAssets()
     } catch (e) { say(`入库失败: ${e}`) }
+  }
+
+  // ── 教师投稿：选择文件 → 学科/课题 → 权利声明 → 直接入素材库 ──
+  const doUpload = async () => {
+    if (!upFile) { say('先选择要上传的文件'); return }
+    const dom = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
+    if (!dom) { say('请填写学科目录'); return }
+    const folder = upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
+    setUpBusy(true)
+    try {
+      await api.uploadToLibrary(upFile, { folder, rights: upRights, note: upNote })
+      say(`投稿成功：已入库 ${folder}`)
+      setUploadOpen(false); setUpFile(null); setUpTopic(''); setUpNote('')
+      api.listAssetFolders().then(setLibFolders).catch(() => {})
+      loadAssets()
+    } catch (e) { say(`投稿失败: ${e}`) } finally { setUpBusy(false) }
   }
 
   // ── A4：节点历史版本切换 ──
@@ -1316,6 +1340,44 @@ export default function App() {
             </div>
             {assetScope === 'library' && (
               <>
+                <button onClick={() => setUploadOpen(v => !v)}>
+                  {uploadOpen ? '收起投稿表单' : '📤 教师投稿（直接入素材库）'}
+                </button>
+                {uploadOpen && (
+                  <div className="lib-upload">
+                    <input type="file" accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf"
+                      onChange={e => setUpFile(e.target.files?.[0] ?? null)} />
+                    <div className="lib-filter">
+                      <select value={upDomain} onChange={e => setUpDomain(e.target.value)}>
+                        {[...new Set(libFolders.map(f => f.split('/')[0]))].map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                        <option value="__custom__">（新学科…）</option>
+                      </select>
+                      <input placeholder="课题（可选，如 迈克尔逊干涉）" value={upTopic}
+                        onChange={e => setUpTopic(e.target.value)} />
+                    </div>
+                    {upDomain === '__custom__' && (
+                      <input placeholder="新学科目录名（如 电子类）" value={upDomainCustom}
+                        onChange={e => setUpDomainCustom(e.target.value)} />
+                    )}
+                    <div className="lib-filter">
+                      <select value={upRights} onChange={e => setUpRights(e.target.value)}>
+                        <option value="own">本人自制</option>
+                        <option value="licensed">已获授权</option>
+                        <option value="reference_only">仅参考不进片</option>
+                      </select>
+                      <input placeholder="简述（可选）" value={upNote}
+                        onChange={e => setUpNote(e.target.value)} />
+                    </div>
+                    <div className="muted" style={{ fontSize: 11 }}>
+                      可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案
+                    </div>
+                    <button disabled={upBusy} onClick={doUpload}>
+                      {upBusy ? '上传中…' : '提交入库'}
+                    </button>
+                  </div>
+                )}
                 <div className="lib-tree">
                   <div className={`lib-folder ${libFolder === '' ? 'on' : ''}`}
                     onClick={() => setLibFolder('')}>全部</div>

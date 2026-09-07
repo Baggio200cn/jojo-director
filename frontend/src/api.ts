@@ -73,6 +73,15 @@ export const api = {
   nodeVersions: (nid: string) => fetch(`/api/nodes/${nid}/versions`).then(j),
   useNodeVersion: (nid: string, aid: string) =>
     post(`/api/nodes/${nid}/use_version/${aid}`),
+  uploadToLibrary: (file: File, meta: { folder: string; rights: string; note: string }) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('folder', meta.folder)
+    fd.append('rights', meta.rights)
+    fd.append('note', meta.note)
+    return fetch('/api/assets/upload', { method: 'POST', body: fd }).then(j)
+  },
+  createAssetFolder: (path: string) => post('/api/assets/folders', { path }),
   executeStep: (nid: string) => post(`/api/nodes/${nid}/execute_chain?step=true`),
   expandStoryboard: (nid: string, domain = 'general') =>
     post(`/api/nodes/${nid}/expand_storyboard`, { domain }),

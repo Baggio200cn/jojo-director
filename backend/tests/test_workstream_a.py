@@ -53,10 +53,18 @@ db.insert("canvas_nodes", {
 
 
 def cleanup() -> None:
-    with db._conn() as c:
-        for tbl in ("canvas_nodes", "canvas_edges", "model_tasks", "assets"):
-            c.execute(f"DELETE FROM {tbl} WHERE project_id=?", (pid,))
-        c.execute("DELETE FROM projects WHERE id=?", (pid,))
+    import time as _t
+    for attempt in range(5):  # WAL 单写者：TestClient 连接可能短暂持锁，重试等待
+        try:
+            with db._conn() as c:
+                for tbl in ("canvas_nodes", "canvas_edges", "model_tasks", "assets"):
+                    c.execute(f"DELETE FROM {tbl} WHERE project_id=?", (pid,))
+                c.execute("DELETE FROM projects WHERE id=?", (pid,))
+            return
+        except Exception:
+            if attempt == 4:
+                raise
+            _t.sleep(0.5)
 
 
 try:
@@ -107,6 +115,44 @@ try:
           and out.get("asset_id") == a1, r.text[:100])
     r = client.post(f"/api/nodes/{nid}/use_version/asset_不存在")
     check("A4 切换不存在版本404", r.status_code == 404)
+
+    # ── 教师投稿（2026-09-07）：预建目录 + 直接入库上传 ──
+    r = client.get("/api/assets/folders")
+    check("投稿 预建目录存在", "光学类" in r.json() and "基础医学教学类" in r.json(),
+          str(r.json()))
+
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 32
+    r = client.post("/api/assets/upload",
+                    files={"file": ("光的折射.png", png, "image/png")},
+                    data={"folder": "光学类/测试课题", "rights": "own", "note": "测试投稿"})
+    up_id = ""
+    try:
+        j = r.json()
+        up_id = j.get("id", "")
+        check("投稿 图片直接入库", r.status_code == 200 and j.get("library") is True
+              and j.get("folder") == "光学类/测试课题" and j.get("kind") == "image"
+              and j.get("rights") == "own", r.text[:120])
+        r2 = client.get("/api/assets/library?folder=光学类/测试课题")
+        check("投稿 入库后可在素材库检索", any(x["id"] == up_id for x in r2.json()))
+        r3 = client.post("/api/assets/upload",
+                         files={"file": ("x.exe", b"MZ", "application/octet-stream")})
+        check("投稿 非法类型拒收", r3.status_code == 400)
+        r4 = client.post("/api/assets/upload",
+                         files={"file": ("教案.pdf", b"%PDF-1.4 fake", "application/pdf")},
+                         data={"folder": "基础医学教学类", "rights": "own"})
+        check("投稿 pdf教案收为doc", r4.status_code == 200 and r4.json().get("kind") == "doc")
+        # 清理 pdf 测试件
+        from app.config import ASSETS_DIR as _AD
+        (_AD / r4.json()["filename"]).unlink(missing_ok=True)
+        with db._conn() as c:
+            c.execute("DELETE FROM assets WHERE id=?", (r4.json()["id"],))
+    finally:
+        if up_id:
+            from app.config import ASSETS_DIR as _AD
+            (_AD / f"{up_id}.png").unlink(missing_ok=True)
+            with db._conn() as c:
+                c.execute("DELETE FROM assets WHERE id=?", (up_id,))
+                c.execute("DELETE FROM library_folders WHERE path=?", ("光学类/测试课题",))
 finally:
     cleanup()
 

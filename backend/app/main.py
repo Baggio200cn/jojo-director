@@ -8,7 +8,7 @@ import re as _re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,6 +43,12 @@ def _migrate() -> None:
                 c.execute(sql)
             except Exception:
                 pass
+        # 教师投稿预建目录（2026-09-07 拍板）：学科级顶层文件夹
+        c.execute("CREATE TABLE IF NOT EXISTS library_folders "
+                  "(path TEXT PRIMARY KEY, created_at TEXT)")
+        for _f in ("光学类", "基础医学教学类"):
+            c.execute("INSERT OR IGNORE INTO library_folders (path, created_at) "
+                      "VALUES (?, ?)", (_f, db.now()))
 
 
 def _reset_stuck_nodes() -> None:
@@ -421,18 +427,34 @@ async def storyboard_from_ref(nid: str):
         route_mode = "R3" if card.get("has_faces") else "R2"
         facts = [str(x) for x in (card.get("science_facts") or [])]
         kfs = s.get("keyframes") or []
+        # 结构化动作序列（B1）：优先用 actions 数组，兼容旧卡的 action_timeline 自由文本
+        acts = card.get("actions") or []
+        if acts:
+            act_txt = "；".join(
+                f"{a.get('t', '?')}s {a.get('action', '')}"
+                + (f"（{'、'.join(str(o) for o in (a.get('objects') or []))}）"
+                   if a.get("objects") else "")
+                for a in acts[:6])
+        else:
+            act_txt = str(card.get("action_timeline") or "")
+        # 时序断言（供视频阶段审核）：动作序列的首尾次序不得颠倒
+        seq_assert = ([{"text": f"动作时序与参考一致：先「{acts[0].get('action', '')}」，"
+                               f"后「{acts[-1].get('action', '')}」，次序不得颠倒",
+                        "phase": "video"}] if len(acts) >= 2 else [])
         shots.append({
             "index": s["index"], "type": "ai_video",
             "first_frame_prompt": card.get("first_frame_desc") or "",
             "last_frame_delta": "",
             "last_frame_prompt": card.get("last_frame_desc") or "",
-            "motion": f"{card.get('camera') or ''}；{card.get('action_timeline') or ''}"[:200],
+            "motion": f"{card.get('camera') or ''}；{act_txt}"[:200],
             "seconds": 10 if sec > 5 else 5,
             "frame_elements": (card.get("subjects") or [])[:3],
             "caption": "",
             "assertions": ([{"text": f, "phase": "frame"} for f in facts[:4]]
-                           + [{"text": "画面与参考基准帧的科学事实一致", "phase": "frame"}]),
+                           + [{"text": "画面与参考基准帧的科学事实一致", "phase": "frame"}]
+                           + seq_assert),
             "route_mode": route_mode,
+            "action_seq": acts[:6],
             "ref_first_url": kfs[0] if kfs else "",
             "ref_last_url": kfs[-1] if len(kfs) > 1 else "",
             "ref_clip_url": s.get("clip_url") or "",
@@ -1001,9 +1023,58 @@ def patch_asset(aid: str, body: AssetPatch):
 
 @app.get("/api/assets/folders")
 def list_asset_folders():
-    """素材库文件夹树：已入库素材的去重文件夹列表（"学科/课题" 两级路径）。"""
-    rows = db.query("assets", "library=1 AND folder!='' GROUP BY folder ORDER BY folder")
-    return [r["folder"] for r in rows]
+    """素材库文件夹树：预建目录（library_folders 表）∪ 已入库素材实际使用的文件夹。"""
+    with db._conn() as c:
+        preset = [r[0] for r in c.execute("SELECT path FROM library_folders")]
+    used = [r["folder"] for r in
+            db.query("assets", "library=1 AND folder!='' GROUP BY folder")]
+    return sorted(set(preset) | set(used))
+
+
+@app.post("/api/assets/folders")
+def create_asset_folder(body: dict):
+    """新建素材库文件夹（学科/课题 两级路径，如 光学类/迈克尔逊干涉）。"""
+    path = str(body.get("path") or "").strip().strip("/")
+    if not path:
+        raise HTTPException(400, "文件夹路径不能为空")
+    with db._conn() as c:
+        c.execute("INSERT OR IGNORE INTO library_folders (path, created_at) "
+                  "VALUES (?, ?)", (path, db.now()))
+    return {"ok": True, "path": path}
+
+
+@app.post("/api/assets/upload")
+async def upload_to_library(file: UploadFile = File(...), folder: str = Form(""),
+                            rights: str = Form("own"), note: str = Form(""),
+                            subject_id: str = Form("")):
+    """教师投稿：文件直接入素材库（library=1），权利声明入库即声明。
+    可提交类型：mp4/mov/webm 实验录屏、png/jpg 图片、pdf 教案/讲义。"""
+    ext = Path(file.filename or "").suffix.lower()
+    kind = {".mp4": "video", ".mov": "video", ".webm": "video",
+            ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
+            ".pdf": "doc"}.get(ext)
+    if not kind:
+        raise HTTPException(400, "仅支持 mp4/mov/webm 视频、png/jpg 图片、pdf 教案")
+    if rights not in ("own", "licensed", "reference_only"):
+        raise HTTPException(400, "rights 只能是 own / licensed / reference_only")
+    if ext in (".mov", ".webm"):
+        ext = ".mp4"  # 统一容器名
+    folder = folder.strip().strip("/")
+    if folder:
+        with db._conn() as c:
+            c.execute("INSERT OR IGNORE INTO library_folders (path, created_at) "
+                      "VALUES (?, ?)", (folder, db.now()))
+    asset_id = db.new_id("asset")
+    filename = f"{asset_id}{ext}"
+    (ASSETS_DIR / filename).write_bytes(await file.read())
+    meta = {"source": "teacher_upload", "note": note.strip(),
+            "orig_name": Path(file.filename or "").name}
+    db.insert("assets", {
+        "id": asset_id, "project_id": "", "node_id": "", "kind": kind,
+        "filename": filename, "meta": json.dumps(meta, ensure_ascii=False),
+        "created_at": db.now(), "folder": folder, "rights": rights,
+        "subject_id": subject_id.strip(), "library": 1})
+    return _asset_view(db.get("assets", asset_id))
 
 
 @app.get("/api/assets/library")

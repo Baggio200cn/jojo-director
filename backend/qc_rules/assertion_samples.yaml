@@ -1,0 +1,38 @@
+# 断言样例库 v1（B3）
+# 正例（positive）：来自已验收项目（LED、迈克尔逊）分镜的已通过断言——新学科组卷参照此写法；
+# 反例（negative）：裁判误判的真实记录（人工改判 / 复盘沉淀）——判卷时用于校准尺度，防止再犯。
+# 装载规则：判卷时按 domain 过滤（general 对所有学科生效），总量封顶（见 _load_assertion_samples）。
+samples:
+  # ── 迈克尔逊干涉项目·正例（已验收，光学）──
+  - id: SMP-MIC-01
+    domain: optics
+    kind: positive
+    text: 画面中可见一台完整的迈克尔逊干涉仪，包括光源、分光镜、两个平面镜和观察屏
+  - id: SMP-MIC-02
+    domain: optics
+    kind: positive
+    text: 画面中可见钠光灯、毛玻璃片、分光镜、固定镜和可移动镜五个主要元件
+  - id: SMP-MIC-03
+    domain: optics
+    kind: positive
+    text: 两束光从分光、反射到重新合并的过程依次呈现
+  - id: SMP-MIC-04
+    domain: optics
+    kind: positive
+    text: 画面中央可见公式 ΔL = 2d cosθ，下方有 d 和 θ 的几何图示
+  - id: SMP-MIC-05
+    domain: optics
+    kind: positive
+    text: 同心圆环条纹从中心向外涌出（动态方向与光程差增大对应）
+
+  # ── 误判反例（真实记录，判官尺度校准）──
+  - id: SMP-OPT-P01
+    domain: optics
+    kind: negative
+    text: 条纹疏密方向判反——曾把疏密正确的同心圆环条纹误判为不合格
+    lesson: 条纹先判大形态（同心/平行），疏密方向存疑一律 uncertain 转人工，不直接 reject
+  - id: SMP-GEN-P01
+    domain: general
+    kind: negative
+    text: 元件状态误读——曾把「按描述应熄灭的吸顶灯、应暗淡的线路」误判为 fail，实际画面符合描述（人工改判 pass_human）
+    lesson: 亮灭明暗类判定须逐帧对照原描述再下结论，单帧看不清不得判 fail

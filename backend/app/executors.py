@@ -1364,6 +1364,22 @@ async def _run_enhance(node: dict) -> dict:
 
 
 
+def _topic_packs(domain: str) -> list[dict]:
+    """课题层规则包：qc_rules/*.yaml 中 topic_of 匹配当前学科的包（如 michelson.yaml）。
+    课题包规则必须全部带 applies_when 关键词门——不命中场景就不进考卷，不稀释判官注意力。"""
+    packs = []
+    for p in sorted(QC_RULES_DIR.glob("*.yaml")):
+        if p.stem in ("general", domain):
+            continue
+        try:
+            data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        if data.get("topic_of") == domain:
+            packs.append(data)
+    return packs
+
+
 def _load_rules(domain: str) -> list[dict]:
     rules: list[dict] = []
     for name in dict.fromkeys(["general", domain]):
@@ -1371,7 +1387,25 @@ def _load_rules(domain: str) -> list[dict]:
         if p.exists():
             data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
             rules += data.get("rules", [])
+    for pack in _topic_packs(domain):      # 课题层并入（规则靠 applies_when 门控）
+        rules += pack.get("rules", [])
     return rules
+
+
+def _load_assertion_samples(domain: str, cap: int = 8) -> list[dict]:
+    """断言样例库（B3）：已验收断言正例 + 裁判误判反例，按学科过滤，总量封顶。
+    正例供组卷参照写法，反例（含课题包 pitfalls）用于校准判官尺度。"""
+    out: list[dict] = []
+    p = QC_RULES_DIR / "assertion_samples.yaml"
+    if p.exists():
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        out += [s for s in (data.get("samples") or [])
+                if s.get("domain") in (domain, "general")]
+    for pack in _topic_packs(domain):
+        for pf in pack.get("pitfalls", []):
+            out.append({"id": pf.get("id", ""), "kind": "negative",
+                        "text": pf.get("text", ""), "lesson": pf.get("lesson", "")})
+    return out[:cap]
 
 
 def _rule_applies(rule: dict, scene_text: str) -> bool:
@@ -1527,6 +1561,19 @@ async def _run_qc(node: dict) -> dict:
             checklist.extend(_load_ref_rules(domain))
         ask = ("被检素材的抽帧图如下（按时间顺序）。请对以下每条规则/断言逐条裁决：\n"
                + json.dumps(checklist, ensure_ascii=False))
+        # B3 断言样例库注入：验收正例 + 误判反例，校准判官尺度（不是新规则，总量封顶）
+        samples = _load_assertion_samples(domain)
+        if samples:
+            ask += ("\n\n【判卷样例校准】（已通过验收的正例与历史误判反例，仅用于校准判定尺度，"
+                    "不是新规则）\n" + json.dumps(samples, ensure_ascii=False))
+        # 课题层上下文：命中课题规则的，附仪器词表帮助判官识别元件
+        _scene4topic = " ".join(assertions) + json.dumps(checklist, ensure_ascii=False)
+        vocabs = [str(v) for pack in _topic_packs(domain)
+                  if any(_rule_applies(r, _scene4topic) for r in pack.get("rules", []))
+                  for v in (pack.get("vocabulary") or [])]
+        if vocabs:
+            ask += ("\n\n【课题仪器词表】（画面元件按此识别，名称写法不苛求一致）："
+                    + "、".join(dict.fromkeys(vocabs)))
         style = _project_style(node["project_id"])
         if style and target["type"] != "code_render":
             # 代码渲染是刻意的 2D 工程图表通道，不受美术风格锚约束

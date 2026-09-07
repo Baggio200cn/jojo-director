@@ -539,3 +539,9 @@ body {
 .lib-filter button { padding: 4px 8px; font-size: 12px; }
 .lib-filter button.on { border-color: #2563eb; background: #1e2a4a; }
 .asset-item[draggable="true"] { cursor: grab; }
+
+/* ── 教师投稿表单 ── */
+.lib-upload { border: 1px solid #2a2f3a; border-radius: 6px; padding: 8px;
+  display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.lib-upload input[type="file"] { font-size: 12px; }
+.lib-upload > input { font-size: 12px; padding: 4px 8px; }

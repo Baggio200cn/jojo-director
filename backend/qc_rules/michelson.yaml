@@ -1,0 +1,61 @@
+# 迈克尔逊干涉仪·课题层规则包（光学样板的第一个课题层）
+# topic_of 声明隶属学科层：domain=optics 判卷时自动并入；
+# 所有规则带 applies_when 关键词门——场景不涉及干涉仪时不进考卷（判官注意力纪律）。
+# 内容来源：服务器已验收项目「迈克尔逊干涉·参考复刻全流程」的断言与误判记录沉淀。
+topic_of: optics
+
+# 仪器部件词表（判卷上下文：判官按此识别元件，写错名字不算错、画错结构才算错）
+vocabulary:
+  - 光源（钠光灯/激光器）
+  - 毛玻璃片（扩束）
+  - 分光镜（半透半反镜，45° 放置）
+  - 固定镜 M1（平面镜）
+  - 可移动镜 M2（平面镜，带微调旋钮/导轨）
+  - 补偿板（与分光镜同材质同厚度，部分光路配置可见）
+  - 观察屏（同心圆环干涉条纹呈现处）
+
+rules:
+  - id: MIC-01
+    applies_when: [迈克尔逊, 干涉仪, 干涉, 条纹, michelson, interferometer, fringe]
+    name: 标准光路拓扑
+    severity: blocker
+    check: 迈克尔逊干涉仪的光路必须是——光源发出的光经分光镜分成两束，分别射向两个平面镜
+      （固定镜/可移动镜），各自反射后回到分光镜重新合并，最终到达观察屏；
+      不得出现两束光射向同一面镜、或未经分光直接到达屏幕的错误拓扑
+    on_fail: 转 code_render 节点（michelson_lightpath 模板按几何逐帧计算）
+  - id: MIC-02
+    applies_when: [迈克尔逊, 干涉仪, 干涉, 条纹, michelson, interferometer, fringe]
+    name: 分光镜角度与双色光路
+    severity: blocker
+    check: 分光镜与入射光成 45°；分出的两束光方向必须互相垂直，
+      若用红蓝双色区分两路光，颜色与路径的对应关系全片一致（不得中途换色）
+    on_fail: 转 code_render 节点
+  - id: MIC-03
+    applies_when: [条纹, 干涉, 圆环, fringe, 同心]
+    name: 干涉条纹形态
+    severity: blocker
+    check: 等倾干涉条纹为同心圆环（等厚干涉为近似平行直条纹），
+      条纹数量、间距的数量级合理，不得出现网格状/放射状等错误图样
+    on_fail: 转 code_render 节点（michelson_fringes 模板）
+  - id: MIC-04
+    applies_when: [条纹, 干涉, 圆环, 涌出, 吞没, fringe]
+    name: 条纹动态方向
+    severity: blocker
+    check: 可移动镜移动改变光程差时，条纹「从中心涌出」或「向中心收缩吞没」的方向
+      必须与光程差增大/减小正确对应，方向不得相反（本项目历史误判高发点）
+    on_fail: 对照参考帧复核方向；判官对方向存疑时转人工
+  - id: MIC-05
+    applies_when: [迈克尔逊, 干涉仪, 干涉, michelson]
+    name: 元件齐整性
+    severity: warning
+    check: 教学全景画面中五大元件（光源/毛玻璃/分光镜/两平面镜/观察屏）应可辨识，
+      不缺关键元件；补偿板的有无不作为判错依据
+
+# ── 历史误判反例（判官尺度校准，供 B3 样例库引用）──
+pitfalls:
+  - id: MIC-P01
+    text: 条纹疏密方向判反——裁判曾把「由中心向外疏密正确」的条纹误判为不合格
+    lesson: 条纹类判定先看同心/平行的大形态对不对，再看疏密；疏密方向存疑一律 uncertain 转人工，不直接 reject
+  - id: MIC-P02
+    text: 元件状态误读——裁判曾把「按描述应熄灭的灯/应暗淡的线路」判为 fail，实际画面符合描述（LED 项目人工改判 pass_human 记录）
+    lesson: 状态类判定（亮/灭、明/暗）须逐帧对照原描述再下结论，单帧看不清不得判 fail

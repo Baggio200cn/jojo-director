@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS assets (
   folder TEXT DEFAULT '', rights TEXT DEFAULT '',
   subject_id TEXT DEFAULT '', library INTEGER DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS library_folders (
+  path TEXT PRIMARY KEY, created_at TEXT
+);
 """
 
 
