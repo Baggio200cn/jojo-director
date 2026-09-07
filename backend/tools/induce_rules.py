@@ -30,8 +30,8 @@ PROMPT = """你是科学实验视频质检规则的归纳助手。下面是某�
 - 每条规则是"什么情况算不合格"的可执行判断，具体到可见画面特征
 - 不与常识重复，不抄正例原文，从反例的教训中提炼
 - 输出严格 JSON（不要 markdown 代码块）：
-{"rules": [{"id": "DRAFT-XX", "severity": "high|medium|low",
-            "check": "判断描述", "from": ["来源样例id"]}]}
+{{"rules": [{{"id": "DRAFT-XX", "severity": "high|medium|low",
+            "check": "判断描述", "from": ["来源样例id"]}}]}}
 
 【正例】
 {positives}
