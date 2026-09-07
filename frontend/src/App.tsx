@@ -1250,8 +1250,8 @@ export default function App() {
           </div>
           <div className="jojo-ad" aria-hidden="true">
             <div className="jojo-ad-stage">
-              <div className="jojo-ad-ring" />
-              <img src="/jojo-logo-dark.png" alt="" />
+              <img className="base" src="/jojo-logo-dark.png" alt="" />
+              <img className="redc" src="/jojo-logo-redcircle.png" alt="" />
             </div>
             <div className="jojo-ad-text">
               <b>JOJO 的“自我学习”是什么？</b>
