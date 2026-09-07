@@ -524,3 +524,18 @@ body {
 .intake-card details summary { cursor: pointer; color: #5cc5ec; }
 .intake-card .transcript { max-height: 180px; overflow-y: auto; font-size: 12px;
   background: #0f1115; border-radius: 6px; padding: 8px; margin-top: 6px; line-height: 1.7; }
+
+/* ── 素材库面板（工作流 A2）：文件夹树 + 过滤 ── */
+.lib-tree { border: 1px solid #2a2f3a; border-radius: 6px; padding: 4px; font-size: 12px;
+  max-height: 180px; overflow-y: auto; }
+.lib-folder { padding: 4px 8px; border-radius: 4px; cursor: pointer; color: #aab3c5; }
+.lib-folder:hover { background: #1c2130; }
+.lib-folder.on { background: #1e2a4a; color: #dbe4ff; }
+.lib-folder.sub { padding-left: 22px; }
+.lib-domain { padding: 4px 6px; cursor: pointer; color: #dbe4ff; font-weight: 600; }
+.lib-filter { display: flex; gap: 6px; align-items: center; }
+.lib-filter select { font-size: 12px; padding: 4px; }
+.lib-filter input { flex: 1; font-size: 12px; padding: 4px 8px; min-width: 0; }
+.lib-filter button { padding: 4px 8px; font-size: 12px; }
+.lib-filter button.on { border-color: #2563eb; background: #1e2a4a; }
+.asset-item[draggable="true"] { cursor: grab; }

@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS model_tasks (
 );
 CREATE TABLE IF NOT EXISTS assets (
   id TEXT PRIMARY KEY, project_id TEXT, node_id TEXT,
-  kind TEXT, filename TEXT, meta TEXT DEFAULT '{}', created_at TEXT
+  kind TEXT, filename TEXT, meta TEXT DEFAULT '{}', created_at TEXT,
+  folder TEXT DEFAULT '', rights TEXT DEFAULT '',
+  subject_id TEXT DEFAULT '', library INTEGER DEFAULT 0
 );
 """
 

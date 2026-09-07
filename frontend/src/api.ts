@@ -59,6 +59,20 @@ export const api = {
   starAsset: (aid: string, starred: boolean) =>
     fetch(`/api/assets/${aid}/star?starred=${starred}`, { method: 'PATCH' }).then(j),
   deleteAsset: (aid: string) => fetch(`/api/assets/${aid}`, { method: 'DELETE' }).then(j),
+  patchAsset: (aid: string, body: { folder?: string; rights?: string; library?: boolean; subject_id?: string }) =>
+    patch(`/api/assets/${aid}`, body),
+  listAssetFolders: () => fetch('/api/assets/folders').then(j),
+  listLibrary: (params: { folder?: string; kind?: string; q?: string; starred?: boolean }) => {
+    const qs = new URLSearchParams()
+    if (params.folder) qs.set('folder', params.folder)
+    if (params.kind) qs.set('kind', params.kind)
+    if (params.q) qs.set('q', params.q)
+    if (params.starred) qs.set('starred', 'true')
+    return fetch(`/api/assets/library?${qs}`).then(j)
+  },
+  nodeVersions: (nid: string) => fetch(`/api/nodes/${nid}/versions`).then(j),
+  useNodeVersion: (nid: string, aid: string) =>
+    post(`/api/nodes/${nid}/use_version/${aid}`),
   executeStep: (nid: string) => post(`/api/nodes/${nid}/execute_chain?step=true`),
   expandStoryboard: (nid: string, domain = 'general') =>
     post(`/api/nodes/${nid}/expand_storyboard`, { domain }),

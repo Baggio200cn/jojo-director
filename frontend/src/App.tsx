@@ -269,8 +269,16 @@ export default function App() {
   const [agentModels, setAgentModels] = useState<{ label: string; model: string }[]>([])
   const [agentModel, setAgentModel] = useState(localStorage.getItem('jojo_agent_model') ?? '')
   const [agentResearch, setAgentResearch] = useState(!!localStorage.getItem('jojo_agent_research'))
-  const [assets, setAssets] = useState<{ id: string; kind: string; url: string; starred?: boolean }[]>([])
-  const [assetScope, setAssetScope] = useState<'project' | 'starred'>('project')
+  const [assets, setAssets] = useState<{ id: string; kind: string; url: string; starred?: boolean; folder?: string; rights?: string; library?: boolean; created_at?: string }[]>([])
+  const [assetScope, setAssetScope] = useState<'project' | 'starred' | 'library'>('project')
+  // ── 素材库（工作流 A2）：文件夹树 + 过滤 + 搜索 ──
+  const [libFolders, setLibFolders] = useState<string[]>([])
+  const [libFolder, setLibFolder] = useState('')
+  const [libKind, setLibKind] = useState('')
+  const [libQ, setLibQ] = useState('')
+  const [libStarOnly, setLibStarOnly] = useState(false)
+  const [libCollapsed, setLibCollapsed] = useState<Record<string, boolean>>({})
+  const [versionDlg, setVersionDlg] = useState<{ nid: string; list: { id: string; url: string; kind: string; created_at?: string }[] } | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null)
   // ── 鉴权 / 手感升级新状态 ──
   const [authRole, setAuthRole] = useState<'checking' | 'none' | 'admin' | 'invite'>('checking')
@@ -570,12 +578,22 @@ export default function App() {
   // ── 素材库 / 个人资产库 ──
   const scopeRef = useRef(assetScope)
   scopeRef.current = assetScope
+  const libFilterRef = useRef({ folder: libFolder, kind: libKind, q: libQ, starred: libStarOnly })
+  libFilterRef.current = { folder: libFolder, kind: libKind, q: libQ, starred: libStarOnly }
   const loadAssets = useCallback(async () => {
-    setAssets(scopeRef.current === 'starred'
-      ? await api.listStarred()
-      : await api.listAssets(projectRef.current))
+    if (scopeRef.current === 'starred') {
+      setAssets(await api.listStarred())
+    } else if (scopeRef.current === 'library') {
+      setAssets(await api.listLibrary(libFilterRef.current))
+    } else {
+      setAssets(await api.listAssets(projectRef.current))
+    }
   }, [])
-  useEffect(() => { if (tab === 'assets') loadAssets() }, [tab, assetScope, loadAssets])
+  useEffect(() => {
+    if (tab !== 'assets') return
+    loadAssets()
+    if (assetScope === 'library') api.listAssetFolders().then(setLibFolders).catch(() => {})
+  }, [tab, assetScope, libFolder, libKind, libQ, libStarOnly, loadAssets])
 
   const toggleStar = async (aid: string, starred: boolean) => {
     await api.starAsset(aid, starred)
@@ -600,6 +618,57 @@ export default function App() {
       setDraft(d => ({ ...d, ref_asset_url: url }))
       say('已设为该图像节点的参考图（记得点保存）')
     } else say('素材只能用于图像（参考图）或视频（首帧）节点')
+  }
+
+  // ── A3：节点右键「保存到素材库」（落盘≠入库，入库=library+文件夹+权利声明）──
+  const saveToLibrary = async (nid: string) => {
+    setMenu(null)
+    const vers = await api.nodeVersions(nid)
+    if (!vers.length) { say('该节点还没有素材记录'); return }
+    const folder = window.prompt('保存到文件夹（格式：学科/课题，如 光学/迈克尔逊干涉）', libFolders[0] || '')
+    if (folder === null) return
+    const rights = window.prompt('权利声明：own=本人自制 / licensed=已获授权 / reference_only=仅参考不进片', 'own')
+    if (rights === null) return
+    try {
+      await api.patchAsset(vers[0].id, { library: true, folder, rights: rights || 'own' })
+      say(`已入库：${folder || '（无文件夹）'} · 权利=${rights || 'own'}`)
+      api.listAssetFolders().then(setLibFolders).catch(() => {})
+      if (assetScope === 'library') loadAssets()
+    } catch (e) { say(`入库失败: ${e}`) }
+  }
+
+  // ── A4：节点历史版本切换 ──
+  const openVersions = async (nid: string) => {
+    setMenu(null)
+    const list = await api.nodeVersions(nid)
+    if (!list.length) { say('该节点还没有历史版本'); return }
+    setVersionDlg({ nid, list })
+  }
+
+  // ── A3：素材拖入画布 = 建节点（按 MIME/kind 定型，成果即素材本身）──
+  const onAssetDrop = async (e: React.DragEvent) => {
+    const data = e.dataTransfer.getData('application/x-jojo-asset')
+    if (!data) return
+    e.preventDefault()
+    const a = JSON.parse(data) as { id: string; kind: string; url: string }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const inst = flowRef.current as unknown as { screenToFlowPosition?: (p: { x: number; y: number }) => { x: number; y: number }; project?: (p: { x: number; y: number }) => { x: number; y: number } } | null
+    const fp = inst?.screenToFlowPosition?.({ x: e.clientX, y: e.clientY })
+      ?? inst?.project?.({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+      ?? { x: 120, y: 120 }
+    const type = a.kind === 'video' ? 'video' : 'image'
+    try {
+      const created = await api.createNode(projectRef.current, {
+        type, title: '', inputs: {}, position: { x: fp.x, y: fp.y },
+      })
+      await api.updateNode(created.id, {
+        outputs: { asset_url: a.url, asset_id: a.id, source: 'library' },
+        status: 'succeeded',
+      })
+      await syncGraph(projectRef.current)
+      setSelectedId(created.id)
+      say(`已从素材库落位：${type === 'video' ? '视频' : '图像'}节点（成果=库内素材）`)
+    } catch (err) { say(`落位失败: ${err}`) }
   }
 
   // ── 撤销 / 重做（删除操作） ──
@@ -1242,16 +1311,69 @@ export default function App() {
                 onClick={() => setAssetScope('project')}>本项目</button>
               <button className={assetScope === 'starred' ? 'on' : ''}
                 onClick={() => setAssetScope('starred')}>⭐ 我的资产</button>
+              <button className={assetScope === 'library' ? 'on' : ''}
+                onClick={() => setAssetScope('library')}>📚 素材库</button>
             </div>
+            {assetScope === 'library' && (
+              <>
+                <div className="lib-tree">
+                  <div className={`lib-folder ${libFolder === '' ? 'on' : ''}`}
+                    onClick={() => setLibFolder('')}>全部</div>
+                  {Object.entries(libFolders.reduce((tree: Record<string, string[]>, f) => {
+                    const parts = f.split('/')
+                    const dom = parts[0]
+                    ;(tree[dom] = tree[dom] || []).push(parts.slice(1).join('/'))
+                    return tree
+                  }, {})).map(([dom, subs]) => (
+                    <div key={dom}>
+                      <div className="lib-domain"
+                        onClick={() => setLibCollapsed(c => ({ ...c, [dom]: !c[dom] }))}>
+                        {libCollapsed[dom] ? '▸' : '▾'} {dom}
+                      </div>
+                      {!libCollapsed[dom] && subs.map(sub => {
+                        const full = sub ? `${dom}/${sub}` : dom
+                        return (
+                          <div key={full}
+                            className={`lib-folder sub ${libFolder === full ? 'on' : ''}`}
+                            onClick={() => setLibFolder(full)}>{sub || '（未分组）'}</div>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+                <div className="lib-filter">
+                  <select value={libKind} onChange={e => setLibKind(e.target.value)}>
+                    <option value="">全部类型</option>
+                    <option value="image">图片</option>
+                    <option value="video">视频</option>
+                  </select>
+                  <input placeholder="搜索文件名/文件夹…" value={libQ}
+                    onChange={e => setLibQ(e.target.value)} />
+                  <button className={libStarOnly ? 'on' : ''} title="只看收藏"
+                    onClick={() => setLibStarOnly(v => !v)}>⭐</button>
+                </div>
+              </>
+            )}
             <div className="muted" style={{ fontSize: 11 }}>
-              点图片 = 填入选中节点（图像→参考图 / 视频→首帧）· ⭐ 收藏入资产库 · ✕ 删除文件
+              {assetScope === 'library'
+                ? '拖素材到画布 = 建节点 · 点图片 = 填入选中节点 · 节点右键可入库'
+                : '点图片 = 填入选中节点（图像→参考图 / 视频→首帧）· ⭐ 收藏入资产库 · ✕ 删除文件'}
             </div>
             {assets.length === 0 && (
-              <div className="muted">{assetScope === 'starred' ? '还没有收藏的资产，点素材上的 ⭐ 收藏' : '暂无素材'}</div>
+              <div className="muted">{
+                assetScope === 'starred' ? '还没有收藏的资产，点素材上的 ⭐ 收藏'
+                : assetScope === 'library' ? '素材库还是空的——在画布节点上右键「保存到素材库」入库'
+                : '暂无素材'}</div>
             )}
             <div className="asset-grid">
               {assets.map(a => (
-                <div key={a.id} className="asset-item" title={a.id}
+                <div key={a.id} className="asset-item" title={`${a.id}${a.folder ? `\n${a.folder}` : ''}`}
+                  draggable
+                  onDragStart={e => {
+                    e.dataTransfer.setData('application/x-jojo-asset',
+                      JSON.stringify({ id: a.id, kind: a.kind, url: a.url }))
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
                   onClick={() => a.kind === 'image' ? useAsset(a.url) : window.open(a.url)}>
                   {a.kind === 'image'
                     ? <img src={a.url} alt="" loading="lazy" />
@@ -1271,7 +1393,9 @@ export default function App() {
         )}
       </div>
       <div className="resizer" onMouseDown={startResize('left')} />
-      <div className="canvas">
+      <div className="canvas"
+        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
+        onDrop={onAssetDrop}>
         {(() => {
           const groups: Record<number, string[]> = {}
           Object.values(bnodes).forEach(n => {
@@ -1339,6 +1463,10 @@ export default function App() {
                 setLightbox({ url: b.outputs.asset_url as string, title: b.title || '' })
               }}>🔍 大图预览</button>
             )}
+            {typeof bnodes[menu.id]?.outputs?.asset_url === 'string' && (
+              <button onClick={() => saveToLibrary(menu.id)}>📚 保存到素材库</button>
+            )}
+            <button onClick={() => openVersions(menu.id)}>🕘 历史版本</button>
             <button className="danger" onClick={() => delNode(menu.id)}>🗑 删除节点</button>
           </div>
         )}
@@ -1361,6 +1489,34 @@ export default function App() {
               {lightbox.url.endsWith('.mp4')
                 ? <video src={lightbox.url} controls autoPlay />
                 : <img src={lightbox.url} alt="" />}
+            </div>
+          </div>
+        )}
+        {versionDlg && (
+          <div className="lightbox" onClick={() => setVersionDlg(null)}>
+            <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
+              <div className="lightbox-head">
+                <b>🕘 历史版本（点击封面切换，新→旧）</b>
+                <button onClick={() => setVersionDlg(null)}>✕ 关闭</button>
+              </div>
+              <div className="asset-grid">
+                {versionDlg.list.map((v, i) => (
+                  <div key={v.id} className="asset-item" title={v.created_at || v.id}
+                    onClick={async () => {
+                      try {
+                        await api.useNodeVersion(versionDlg.nid, v.id)
+                        setVersionDlg(null)
+                        await syncGraph(projectRef.current)
+                        say(`已切换到第 ${i + 1} 个版本（共 ${versionDlg.list.length} 个，新→旧）`)
+                      } catch (e) { say(`切换失败: ${e}`) }
+                    }}>
+                    {v.kind === 'image'
+                      ? <img src={v.url} alt="" loading="lazy" />
+                      : <video src={v.url} muted />}
+                    <span className="kind">{i === 0 ? '最新' : `v-${i}`}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

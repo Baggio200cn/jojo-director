@@ -32,6 +32,17 @@ def _migrate() -> None:
                 c.execute(sql)
             except Exception:
                 pass
+        # 资产库升级（工作流 A1）：folder=学科/课题文件夹，rights=权利声明
+        # （own/licensed/reference_only，入库即声明），subject_id=主体锚点，
+        # library=入库标记（落盘≠入库，1=已入素材库）
+        for sql in ("ALTER TABLE assets ADD COLUMN folder TEXT DEFAULT ''",
+                    "ALTER TABLE assets ADD COLUMN rights TEXT DEFAULT ''",
+                    "ALTER TABLE assets ADD COLUMN subject_id TEXT DEFAULT ''",
+                    "ALTER TABLE assets ADD COLUMN library INTEGER DEFAULT 0"):
+            try:
+                c.execute(sql)
+            except Exception:
+                pass
 
 
 def _reset_stuck_nodes() -> None:
@@ -379,6 +390,10 @@ def update_node(nid: str, body: dict):
         fields["position_y"] = body["position"].get("y", 0)
     if "outputs" in body:   # 管理/产线工具需要改写成果（如调整分镜路由）
         fields["outputs"] = json.dumps(body["outputs"], ensure_ascii=False)
+    if "status" in body:    # 素材库落位等场景需要直接定型（不允许置回 running）
+        if body["status"] not in ("idle", "succeeded", "failed"):
+            raise HTTPException(400, "status 只能是 idle / succeeded / failed")
+        fields["status"] = body["status"]
     if fields:
         fields["updated_at"] = db.now()
         db.update("canvas_nodes", nid, fields)
@@ -921,6 +936,11 @@ async def agent_plan(pid: str, req: AgentReq):
 def _asset_view(r: dict) -> dict:
     r["url"] = f"/assets/{r['filename']}"
     r["starred"] = bool(db.jloads(r.get("meta")).get("starred"))
+    # 资产库字段（旧记录可能无列值，统一兜底）
+    r["folder"] = r.get("folder") or ""
+    r["rights"] = r.get("rights") or ""
+    r["subject_id"] = r.get("subject_id") or ""
+    r["library"] = bool(r.get("library"))
     return r
 
 
@@ -948,6 +968,84 @@ def star_asset(aid: str, starred: bool = True):
     meta["starred"] = starred
     db.update("assets", aid, {"meta": json.dumps(meta, ensure_ascii=False)})
     return {"ok": True, "starred": starred}
+
+
+class AssetPatch(BaseModel):
+    folder: str | None = None        # 学科/课题文件夹（如 "光学/迈克尔逊干涉"）
+    rights: str | None = None        # own / licensed / reference_only / ""（未声明）
+    library: bool | None = None      # 入库标记：落盘≠入库，入库=library=true
+    subject_id: str | None = None    # 主体锚点（仪器/实验装置一致性）
+
+
+@app.patch("/api/assets/{aid}")
+def patch_asset(aid: str, body: AssetPatch):
+    """资产库字段更新：移动到文件夹 / 权利声明 / 入库（保存到素材库）/ 主体锚点。"""
+    a = db.get("assets", aid)
+    if not a:
+        raise HTTPException(404, "素材不存在")
+    fields: dict = {}
+    if body.folder is not None:
+        fields["folder"] = body.folder.strip().strip("/")
+    if body.rights is not None:
+        if body.rights not in ("", "own", "licensed", "reference_only"):
+            raise HTTPException(400, "rights 只能是 own / licensed / reference_only")
+        fields["rights"] = body.rights
+    if body.library is not None:
+        fields["library"] = 1 if body.library else 0
+    if body.subject_id is not None:
+        fields["subject_id"] = body.subject_id.strip()
+    if fields:
+        db.update("assets", aid, fields)
+    return _asset_view(db.get("assets", aid))
+
+
+@app.get("/api/assets/folders")
+def list_asset_folders():
+    """素材库文件夹树：已入库素材的去重文件夹列表（"学科/课题" 两级路径）。"""
+    rows = db.query("assets", "library=1 AND folder!='' GROUP BY folder ORDER BY folder")
+    return [r["folder"] for r in rows]
+
+
+@app.get("/api/assets/library")
+def list_library(folder: str = "", kind: str = "", q: str = "", starred: bool = False):
+    """素材库列表：已入库素材，按文件夹 / 类型过滤 + 关键词搜索。"""
+    where, params = ["library=1"], []
+    if folder:
+        where.append("folder=?")
+        params.append(folder)
+    if kind:
+        where.append("kind=?")
+        params.append(kind)
+    if starred:
+        where.append("meta LIKE '%\"starred\": true%'")
+    if q:
+        where.append("(filename LIKE ? OR subject_id LIKE ? OR folder LIKE ?)")
+        params += [f"%{q}%"] * 3
+    rows = db.query("assets", " AND ".join(where) + " ORDER BY created_at DESC",
+                    tuple(params))
+    return [_asset_view(r) for r in rows]
+
+
+@app.get("/api/nodes/{nid}/versions")
+def node_versions(nid: str):
+    """节点历史版本：同节点产出的全部素材（新→旧），供版本切换 UI。"""
+    return [_asset_view(r) for r in
+            db.query("assets", "node_id=? ORDER BY created_at DESC", (nid,))]
+
+
+@app.post("/api/nodes/{nid}/use_version/{aid}")
+def use_node_version(nid: str, aid: str):
+    """版本切换：把节点成果指回该节点的某个历史版本素材。"""
+    node = db.get("canvas_nodes", nid)
+    asset = db.get("assets", aid)
+    if not node or not asset or asset["node_id"] != nid:
+        raise HTTPException(404, "节点或版本素材不存在")
+    out = db.jloads(node["outputs"])
+    out["asset_url"] = f"/assets/{asset['filename']}"
+    out["asset_id"] = aid
+    db.update("canvas_nodes", nid, {"outputs": json.dumps(out, ensure_ascii=False),
+                                    "updated_at": db.now()})
+    return {"ok": True, "asset_url": out["asset_url"]}
 
 
 @app.delete("/api/assets/{aid}")
