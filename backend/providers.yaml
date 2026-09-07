@@ -31,6 +31,7 @@ routes:
   qc_vision:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 视觉裁判：Doubao-Seed-2.1-pro
   ref_video:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 参考视频分析（视觉模型）
   research:    { provider: ark, model: ep-m-20260628072122-2qpsz }   # Agent 联网调研（需开通联网内容插件）
+  embedding:   { provider: ark, model: doubao-embedding-large-text-240915 }  # 向量化（需在方舟控制台开通该模型）
 
 # 成本阀：超限拒绝执行（单位：人民币元，预估值）
 budget:

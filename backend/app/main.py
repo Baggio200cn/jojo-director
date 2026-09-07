@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, executors
+from . import auth, db, embeddings, executors
 from .config import ASSETS_DIR
 
 
@@ -1074,7 +1074,39 @@ async def upload_to_library(file: UploadFile = File(...), folder: str = Form("")
         "filename": filename, "meta": json.dumps(meta, ensure_ascii=False),
         "created_at": db.now(), "folder": folder, "rights": rights,
         "subject_id": subject_id.strip(), "library": 1})
+    # 飞轮入料：投稿即向量化，供相似检索/自动归目录（服务不可用静默跳过）
+    try:
+        row = db.get("assets", asset_id)
+        if row:
+            await embeddings.upsert("asset", asset_id, embeddings.asset_text(row))
+    except Exception:
+        pass
     return _asset_view(db.get("assets", asset_id))
+
+
+class SuggestIn(BaseModel):
+    text: str
+
+
+@app.post("/api/assets/suggest_folder")
+async def suggest_folder(body: SuggestIn):
+    """投稿自动归目录：按向量相似度在库内投票出建议目录。
+    embedding 服务不可用或库内无相似素材时返回空建议，前端静默。"""
+    return await embeddings.suggest_folder(body.text)
+
+
+@app.post("/api/assets/reindex_embeddings")
+async def reindex_embeddings():
+    """全量回补：把库内所有素材重新向量化（换模型/补历史数据时用）。"""
+    rows = db.query("assets", "library=1")
+    ok = fail = 0
+    for r in rows:
+        if await embeddings.upsert("asset", r["id"], embeddings.asset_text(r)):
+            ok += 1
+        else:
+            fail += 1
+    return {"ok": ok, "fail": fail, "total": len(rows),
+            "embedding_available": embeddings.available()}
 
 
 @app.get("/api/assets/library")

@@ -44,6 +44,11 @@ CREATE TABLE IF NOT EXISTS assets (
 CREATE TABLE IF NOT EXISTS library_folders (
   path TEXT PRIMARY KEY, created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS embeddings (
+  kind TEXT NOT NULL, ref_id TEXT NOT NULL, text TEXT,
+  vector TEXT, dims INTEGER, model TEXT, created_at TEXT,
+  PRIMARY KEY (kind, ref_id)
+);
 """
 
 

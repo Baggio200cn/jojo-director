@@ -81,6 +81,8 @@ export const api = {
     fd.append('note', meta.note)
     return fetch('/api/assets/upload', { method: 'POST', body: fd }).then(j)
   },
+  suggestFolder: (text: string): Promise<{ folder: string; score: number; matches: { ref_id: string; text: string; score: number }[] }> =>
+    post('/api/assets/suggest_folder', { text }),
   createAssetFolder: (path: string) => post('/api/assets/folders', { path }),
   executeStep: (nid: string) => post(`/api/nodes/${nid}/execute_chain?step=true`),
   expandStoryboard: (nid: string, domain = 'general') =>
