@@ -26,6 +26,8 @@ def _conf() -> dict | None:
     except RuntimeError:
         return None
     return {"base": p["base_url"], "model": r["model"],
+            "endpoint": r.get("endpoint", "embeddings"),
+            "multimodal": bool(r.get("multimodal")),
             "headers": {"Authorization": f"Bearer {p['api_key']}",
                         "Content-Type": "application/json"}}
 
@@ -35,13 +37,27 @@ def available() -> bool:
 
 
 async def embed_texts(texts: list[str]) -> list[list[float]] | None:
-    """批量向量化。失败返回 None（降级）。"""
+    """批量向量化。失败返回 None（降级）。
+    multimodal 路由（doubao-embedding-vision）走 /embeddings/multimodal，
+    每次调用一个 {type:text} 输入，返回 data.embedding 单向量。"""
     conf = _conf()
     if not conf or not texts:
         return None
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            r = await client.post(f"{conf['base']}/embeddings",
+            if conf["multimodal"]:
+                out = []
+                for t in texts:
+                    r = await client.post(
+                        f"{conf['base']}/{conf['endpoint']}",
+                        headers=conf["headers"],
+                        json={"model": conf["model"],
+                              "input": [{"type": "text", "text": t}]})
+                    if r.status_code != 200:
+                        return None
+                    out.append(r.json()["data"]["embedding"])
+                return out
+            r = await client.post(f"{conf['base']}/{conf['endpoint']}",
                                   headers=conf["headers"],
                                   json={"model": conf["model"], "input": texts})
             if r.status_code != 200:
