@@ -43,7 +43,7 @@ PROMPT = """你是科学实验视频质检规则的归纳助手。下面是某�
 
 
 def _collect(domain: str) -> tuple[list[dict], list[dict]]:
-    """收集该学科的样例：assertion_samples + 课题包 pitfalls。"""
+    """收集该学科的样例：assertion_samples + 课题包 pitfalls + 真实改判记录。"""
     pos, neg = [], []
     samples_file = config.QC_RULES_DIR / "assertion_samples.yaml"
     if samples_file.exists():
@@ -58,6 +58,15 @@ def _collect(domain: str) -> tuple[list[dict], list[dict]]:
         if data.get("topic_of") == domain:
             for p in data.get("pitfalls", []):
                 neg.append(p)
+    # 改判记录：飞轮最有价值的原料（老师纠正机器的实例），最近 50 条
+    try:
+        from app import db
+        for r in db.query("qc_corrections", "1=1 ORDER BY created_at DESC LIMIT 50"):
+            neg.append({"id": r["id"], "kind": "negative",
+                        "text": f"{r['fail_type']}：{r['reason']}"
+                                f"（机器原判{r['orig_verdict']}→人工终裁{r['human_verdict']}）"})
+    except Exception:
+        pass  # 表不存在（旧库）时静默跳过
     return pos, neg
 
 

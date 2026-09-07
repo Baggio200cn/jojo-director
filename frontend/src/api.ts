@@ -53,8 +53,8 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).then(j),
-  qcOverride: (nid: string, verdict: string) =>
-    post(`/api/nodes/${nid}/qc_override`, { verdict }),
+  qcOverride: (nid: string, verdict: string, failType = '', reason = '') =>
+    post(`/api/nodes/${nid}/qc_override`, { verdict, fail_type: failType, reason }),
   listStarred: () => fetch('/api/assets/starred').then(j),
   starAsset: (aid: string, starred: boolean) =>
     fetch(`/api/assets/${aid}/star?starred=${starred}`, { method: 'PATCH' }).then(j),

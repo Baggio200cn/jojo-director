@@ -1170,18 +1170,23 @@ def delete_asset(aid: str):
 
 class QcOverrideReq(BaseModel):
     verdict: str  # pass_human（人工放行）或 reject_human（人工判不合格）
+    fail_type: str = ""   # 改判类型：误判 / 漏判 / 标准不清（与机器原判不一致时必填）
+    reason: str = ""      # 一句话原因（沉淀进自我学习样例库）
 
 
 @app.post("/api/nodes/{nid}/qc_override")
-def qc_override(nid: str, req: QcOverrideReq):
-    """人工终裁：放行权在人。作用于质检节点，同步写回被检节点。"""
+async def qc_override(nid: str, req: QcOverrideReq):
+    """人工终裁：放行权在人。作用于质检节点，同步写回被检节点。
+    与机器原判不一致时结构化沉淀改判记录（飞轮入料口）并自动向量化。"""
     node = db.get("canvas_nodes", nid)
     if not node or node["type"] != "qc":
         raise HTTPException(404, "质检节点不存在")
     if req.verdict not in ("pass_human", "reject_human"):
         raise HTTPException(400, "verdict 只能是 pass_human 或 reject_human")
     out = db.jloads(node["outputs"])
-    out["verdict"] = "pass" if req.verdict == "pass_human" else "reject"
+    orig = out.get("verdict", "")           # 机器原判（覆盖前先取）
+    human = "pass" if req.verdict == "pass_human" else "reject"
+    out["verdict"] = human
     out["human_override"] = req.verdict
     db.update("canvas_nodes", nid,
               {"outputs": json.dumps(out, ensure_ascii=False), "updated_at": db.now()})
@@ -1192,6 +1197,27 @@ def qc_override(nid: str, req: QcOverrideReq):
                       "human_override": req.verdict}
         db.update("canvas_nodes", tgt["id"],
                   {"outputs": json.dumps(tout, ensure_ascii=False)})
+    # 改判沉淀：机器原判与人工终裁不一致 = 最高价值学习样本
+    if orig and orig != human:
+        fail_type = req.fail_type or (
+            "误判" if orig == "reject" else
+            "漏判" if orig == "pass" else "标准不清")
+        cid = db.new_id("corr")
+        context = {"summary": str(out.get("summary", ""))[:300],
+                   "frames": out.get("frames", [])[:2]}
+        db.insert("qc_corrections", {
+            "id": cid, "qc_node_id": nid,
+            "target_node_id": out.get("target_node_id", ""),
+            "project_id": node["project_id"],
+            "orig_verdict": orig, "human_verdict": req.verdict,
+            "fail_type": fail_type, "reason": req.reason.strip(),
+            "context": json.dumps(context, ensure_ascii=False),
+            "created_at": db.now()})
+        try:
+            text = f"{fail_type}|原判:{orig}→终裁:{human}|{req.reason.strip()}|{context['summary']}"
+            await embeddings.upsert("correction", cid, text)
+        except Exception:
+            pass
     node = db.get("canvas_nodes", nid)
     node["outputs"] = db.jloads(node["outputs"])
     node["inputs"] = db.jloads(node["inputs"])

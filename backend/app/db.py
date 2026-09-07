@@ -49,6 +49,11 @@ CREATE TABLE IF NOT EXISTS embeddings (
   vector TEXT, dims INTEGER, model TEXT, created_at TEXT,
   PRIMARY KEY (kind, ref_id)
 );
+CREATE TABLE IF NOT EXISTS qc_corrections (
+  id TEXT PRIMARY KEY, qc_node_id TEXT, target_node_id TEXT, project_id TEXT,
+  orig_verdict TEXT, human_verdict TEXT, fail_type TEXT DEFAULT '',
+  reason TEXT DEFAULT '', context TEXT DEFAULT '{}', created_at TEXT
+);
 """
 
 

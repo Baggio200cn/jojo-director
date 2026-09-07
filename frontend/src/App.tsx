@@ -290,6 +290,10 @@ export default function App() {
   const [upBusy, setUpBusy] = useState(false)
   const [upMsg, setUpMsg] = useState('')
   const [upSuggest, setUpSuggest] = useState<{ folder: string; score: number } | null>(null)
+  // ── QC 改判沉淀：人工终裁与机器原判不一致时，收集类型+原因进学习库 ──
+  const [overrideDlg, setOverrideDlg] = useState<{ nid: string; verdict: string; orig: string } | null>(null)
+  const [corrFailType, setCorrFailType] = useState('误判')
+  const [corrReason, setCorrReason] = useState('')
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null)
   // ── 鉴权 / 手感升级新状态 ──
   const [authRole, setAuthRole] = useState<'checking' | 'none' | 'admin' | 'invite'>('checking')
@@ -1563,6 +1567,47 @@ export default function App() {
             maskColor="rgba(243,244,246,0.75)" style={{ background: '#f8f9fb' }} />
         </ReactFlow>
         {toast && <div className="toast">{toast}</div>}
+        {overrideDlg && (
+          <div className="lightbox" onClick={() => setOverrideDlg(null)}>
+            <div className="lightbox-inner" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+              <div className="lightbox-head">
+                <b>📝 改判沉淀（进入自我学习样例库）</b>
+                <button onClick={() => setOverrideDlg(null)}>✕ 关闭</button>
+              </div>
+              <div className="muted" style={{ fontSize: 12, lineHeight: 1.7 }}>
+                机器原判「{overrideDlg.orig === 'reject' ? '不合格' : overrideDlg.orig === 'pass' ? '合格' : '待人工'}」
+                → 您的终裁「{overrideDlg.verdict === 'pass_human' ? '放行' : '不合格'}」。
+                这条改判将教会机器下次判得更准。
+              </div>
+              <div className="lib-filter">
+                <select value={corrFailType} onChange={e => setCorrFailType(e.target.value)}>
+                  <option value="误判">误判（机器判错了）</option>
+                  <option value="漏判">漏判（机器没看出来）</option>
+                  <option value="标准不清">标准不清（规则模糊）</option>
+                </select>
+                <input placeholder="一句话原因（可选，如：条纹疏密不算错误）"
+                  value={corrReason} onChange={e => setCorrReason(e.target.value)}
+                  style={{ flex: 1, border: '1px solid #d9dde3', borderRadius: 6, padding: '4px 8px', fontSize: 12 }} />
+              </div>
+              <div className="row" style={{ display: 'flex', gap: 8 }}>
+                <button className="accent" style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', cursor: 'pointer' }}
+                  onClick={async () => {
+                    await api.qcOverride(overrideDlg.nid, overrideDlg.verdict, corrFailType, corrReason)
+                    setOverrideDlg(null)
+                    await syncGraph(projectRef.current)
+                    say(overrideDlg.verdict === 'pass_human' ? '已人工放行，改判已沉淀 ✓' : '已人工判不合格，改判已沉淀 ✓')
+                  }}>提交并终裁</button>
+                <button style={{ border: '1px solid #d9dde3', borderRadius: 6, padding: '8px 14px', background: '#fff', cursor: 'pointer' }}
+                  onClick={async () => {
+                    await api.qcOverride(overrideDlg.nid, overrideDlg.verdict)
+                    setOverrideDlg(null)
+                    await syncGraph(projectRef.current)
+                    say(overrideDlg.verdict === 'pass_human' ? '已人工放行' : '已人工判不合格')
+                  }}>仅终裁，不记录</button>
+              </div>
+            </div>
+          </div>
+        )}
         {menu && (
           <div className="ctx-menu" style={{ left: menu.x, top: menu.y }}>
             <button onClick={() => { setMenu(null); runChain(menu.id) }}>⏩ 运行到此</button>
@@ -1831,10 +1876,16 @@ export default function App() {
                              : '已采纳建议提示词，正在重新生成；完成后回本质检节点 ▶ 复检')
                 }}
                 onOverride={async v => {
-                await fetch(`/api/nodes/${selected.id}/qc_override`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ verdict: v }),
-                })
+                const orig = String(selected.outputs?.verdict ?? '')
+                const human = v === 'pass_human' ? 'pass' : 'reject'
+                if (orig && orig !== human) {
+                  // 与机器原判不一致 → 弹改判沉淀窗（飞轮入料）
+                  setCorrFailType(orig === 'reject' ? '误判' : orig === 'pass' ? '漏判' : '标准不清')
+                  setCorrReason('')
+                  setOverrideDlg({ nid: selected.id, verdict: v, orig })
+                  return
+                }
+                await api.qcOverride(selected.id, v)
                 await syncGraph(projectRef.current)
                 say(v === 'pass_human' ? '已人工放行' : '已人工判不合格')
               }} />
