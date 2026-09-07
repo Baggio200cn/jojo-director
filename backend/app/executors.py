@@ -235,24 +235,18 @@ async def _coach(tgt_in: dict, fails: list, is_pair: bool) -> str:
 
 
 
+# 执行器注册表：节点类型 → 执行函数。登记在文件尾部（见 "执行器注册表" 一节），
+# execute_node 只做查找；新增节点类型 = 写 _run_xxx + 尾部登记一行，派发逻辑不动。
+EXECUTORS: dict = {}
+
+
 async def execute_node(node_id: str) -> None:
     node = db.get("canvas_nodes", node_id)
     if not node:
         raise ValueError(f"节点不存在: {node_id}")
     db.update("canvas_nodes", node_id, {"status": "running", "updated_at": db.now()})
     try:
-        handler = {
-            "script": _run_script,
-            "storyboard": _run_storyboard,
-            "image": _run_image,
-            "video": _run_video,
-            "code_render": _run_code_render,
-            "compose": _run_compose,
-            "qc": _run_qc,
-            "ref_video": _run_ref_video,
-            "enhance": _run_enhance,
-            "tts": _run_tts,
-        }.get(node["type"])
+        handler = EXECUTORS.get(node["type"])
         if not handler:
             raise ValueError(f"暂不支持的节点类型: {node['type']}")
         outputs = await handler(node)
@@ -762,19 +756,40 @@ def _build_srt(script: dict, total: float | None = None) -> str:
     return "\n".join(out)
 
 
+def _shot_index_of(n: dict) -> int | None:
+    """读取节点 inputs.shot_index 契约；无效/缺省返回 None。"""
+    try:
+        v = int(db.jloads(n["inputs"]).get("shot_index") or 0)
+    except (TypeError, ValueError):
+        return None
+    return v if v > 0 else None
+
+
+def clip_order_key(n: dict):
+    """合成排序契约（GRAPH 律：镜头顺序是数据，不是命名巧合）。
+    主键 = 镜头号，取值来源优先级：① 自身 inputs.shot_index（分镜展开产线写入的契约）
+    ② 上游帧节点的 shot_index（视频节点自身不带时，沿图取首帧的镜头号）
+    ③ 标题"镜头N"（人工命名约定，兼容旧项目）。
+    取不到镜头号的节点排最后，按画布行优先(y,x) 兜底——不能按 x 优先：
+    code_render 与视频节点 x 不同会打乱顺序。同号并列时来源优先级高者在前（契约>沿图>命名）。"""
+    si = _shot_index_of(n)
+    if si:
+        return (si, 0, 0, 0)
+    for up in _upstream_nodes(n):
+        si = _shot_index_of(up)
+        if si:
+            return (si, 1, 0, 0)
+    m = re.search(r"镜头(\d+)", n.get("title") or "")
+    if m:
+        return (int(m.group(1)), 2, n["position_y"], n["position_x"])
+    return (1 << 30, 3, n["position_y"], n["position_x"])
+
+
 async def _run_compose(node: dict) -> dict:
-    """合成节点：按镜头号（回退按画布行序）拼接上游视频，可烧录上游脚本的字幕。本地 ffmpeg，零费用。"""
+    """合成节点：按 shot_index 契约（回退标题镜头号/画布行序）拼接上游视频，可烧录上游脚本的字幕。本地 ffmpeg，零费用。"""
     inputs = db.jloads(node["inputs"])
 
-    def _clip_order(n: dict):
-        # 逐镜产线节点标题带"镜头N"，按镜头号排；否则按行优先(y,x)。
-        # 不能按 x 优先：code_render 与视频节点 x 不同，会打乱镜头顺序
-        m = re.search(r"镜头(\d+)", n.get("title") or "")
-        if m:
-            return (0, int(m.group(1)), n["position_y"], n["position_x"])
-        return (1, 0, n["position_y"], n["position_x"])
-
-    ups = sorted(_upstream_nodes(node), key=_clip_order)
+    ups = sorted(_upstream_nodes(node), key=clip_order_key)
     videos, captions, qc_flags, rights_excluded = [], [], [], []
     for u in ups:
         out = db.jloads(u["outputs"])
@@ -1913,3 +1928,29 @@ async def execute_chain(node_id: str) -> None:
         if nid != node_id and n["status"] == "succeeded":
             continue
         await execute_node(nid)
+
+
+async def _run_sim_import(node: dict) -> dict:
+    """占位类型（设计文档第 3 节路径 B）：仿真文件解析尚未实现。
+    PhET / NB / 自研格式均在占位清单中，第一个解析器无限期推迟；
+    当前仿真素材请改用 ref_video 参考视频节点走录屏产线。"""
+    raise ValueError(
+        "sim_import 为占位节点类型：仿真文件解析器尚未实现。"
+        "当前请改用 ref_video 参考视频节点（上传仿真录屏 mp4）走录屏产线。")
+
+
+# ── 执行器注册表 ─────────────────────────────────────────────
+# 新增节点类型：写 _run_xxx 后在下方登记一行即可，execute_node 无需改动。
+EXECUTORS.update({
+    "script": _run_script,
+    "storyboard": _run_storyboard,
+    "image": _run_image,
+    "video": _run_video,
+    "code_render": _run_code_render,
+    "compose": _run_compose,
+    "qc": _run_qc,
+    "ref_video": _run_ref_video,
+    "enhance": _run_enhance,
+    "tts": _run_tts,
+    "sim_import": _run_sim_import,
+})

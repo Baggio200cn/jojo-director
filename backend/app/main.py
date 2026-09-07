@@ -5,6 +5,7 @@
 import asyncio
 import json
 import re as _re
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Request, UploadFile
@@ -16,13 +17,51 @@ from pydantic import BaseModel
 from . import auth, db, executors
 from .config import ASSETS_DIR
 
-app = FastAPI(title="JOJO Studio API", version="0.1.0")
+
+def _migrate() -> None:
+    """启动迁移：为既有表补列（已存在则忽略）。SQLite 的 ADD COLUMN 无 IF NOT EXISTS。"""
+    with db._conn() as c:
+        try:
+            c.execute("ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
+        except Exception:
+            pass
+        # MAAO 证据流：台账补 verdict / capability_id 列
+        for sql in ("ALTER TABLE model_tasks ADD COLUMN verdict TEXT",
+                    "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT"):
+            try:
+                c.execute(sql)
+            except Exception:
+                pass
+
+
+def _reset_stuck_nodes() -> None:
+    """启动自愈：上次进程退出时正在执行的节点会永远卡在 running，复位为 failed 以便重跑。"""
+    with db._conn() as c:
+        stuck = c.execute(
+            "SELECT COUNT(*) FROM canvas_nodes WHERE status='running'").fetchone()[0]
+        if stuck:
+            c.execute(
+                "UPDATE canvas_nodes SET status='failed', "
+                "outputs=json_patch(COALESCE(NULLIF(outputs,''),'{}'), "
+                "'{\"error\": \"执行因服务重启而中断，请重新运行本节点\"}') "
+                "WHERE status='running'")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """启动期初始化：建库、迁移、认证、卡死节点复位（原 import 期副作用迁此）。"""
+    db.init_db()
+    auth.init()
+    _migrate()
+    _reset_stuck_nodes()
+    yield
+
+
+app = FastAPI(title="JOJO Studio API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
-ASSETS_DIR.mkdir(exist_ok=True)
+ASSETS_DIR.mkdir(exist_ok=True)  # StaticFiles 挂载要求目录在 import 期已存在
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
-db.init_db()
-auth.init()
 
 
 @app.middleware("http")
@@ -131,31 +170,6 @@ def admin_toggle_invite(code: str, request: Request):
     with db._conn() as c:
         c.execute("UPDATE invite_codes SET disabled=1-disabled WHERE code=?", (code,))
     return db.query("invite_codes", "code=?", (code,))[0]
-
-# 项目美术风格锚：新增 style 列（已存在则忽略）
-with db._conn() as _c:
-    try:
-        _c.execute("ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
-    except Exception:
-        pass
-    # MAAO 证据流：台账补 verdict / capability_id / estimated 列（已存在则忽略）
-    for _sql in ("ALTER TABLE model_tasks ADD COLUMN verdict TEXT",
-                 "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT"):
-        try:
-            _c.execute(_sql)
-        except Exception:
-            pass
-
-# 启动自愈：上次进程退出时正在执行的节点会永远卡在 running，复位为 failed 以便重跑
-with db._conn() as _c:
-    _stuck = _c.execute("SELECT COUNT(*) FROM canvas_nodes WHERE status='running'").fetchone()[0]
-    if _stuck:
-        _c.execute(
-            "UPDATE canvas_nodes SET status='failed', "
-            "outputs=json_patch(COALESCE(NULLIF(outputs,''),'{}'), "
-            "'{\"error\": \"执行因服务重启而中断，请重新运行本节点\"}') "
-            "WHERE status='running'")
-
 
 class ProjectIn(BaseModel):
     title: str
