@@ -7,6 +7,7 @@
 """
 import datetime
 import json
+import os
 import ssl
 import subprocess
 import sys
@@ -19,8 +20,11 @@ if hasattr(sys.stdout, "reconfigure"):
 
 REPO = Path(__file__).resolve().parents[1]
 KEY = str(Path.home() / ".ssh" / "jojo-deploy.pem")
-HOST = "root@115.190.155.2"
-BASE = "https://115.190.155.2"
+# 服务器地址不入库：运行前 export JOJO_HOST=deploy@<服务器IP>  JOJO_BASE=https://<服务器IP>
+HOST = os.environ.get("JOJO_HOST", "")
+BASE = os.environ.get("JOJO_BASE", "")
+if not HOST or not BASE:
+    sys.exit("请先设置环境变量 JOJO_HOST（如 deploy@服务器IP）和 JOJO_BASE（如 https://服务器IP）")
 
 ok, alerts = [], []
 

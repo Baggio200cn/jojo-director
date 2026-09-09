@@ -25,7 +25,9 @@ ENV = {l.split("=", 1)[0]: l.split("=", 1)[1].strip()
        if "=" in l and not l.startswith("#")}
 KEY = ENV["BJMOMA_API_KEY"]
 BASE = ENV.get("BJMOMA_BASE", "https://www.mobileopentokenaccess.com/maas/ai/aiFactoryServer/v1/apis/1").rstrip("/")
-PUB = ENV.get("PUBLIC_BASE", "https://115.190.155.2").rstrip("/")
+PUB = ENV.get("PUBLIC_BASE", "").rstrip("/")
+if not PUB:
+    sys.exit("请在 backend/.env 中配置 PUBLIC_BASE（如 https://服务器IP），服务器地址不入库")
 SECRET = (ENV.get("PUB_SIGN_KEY") or ENV.get("ADMIN_PASS") or "jojo-dev").encode()
 H = {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 MODEL = "doubao-seedance-2-0-260128"
