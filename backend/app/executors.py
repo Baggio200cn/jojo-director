@@ -31,6 +31,17 @@ def __getattr__(name: str):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
+_BG_TASKS: set = set()
+
+
+def _fire_and_forget(coro) -> None:
+    """发射后台任务并持有引用：裸 create_task 的任务可能被 GC 提前回收（CPython 已知坑），
+    且须在运行中的事件循环上创建（get_event_loop 在 3.12+ 已废弃）。"""
+    t = asyncio.get_running_loop().create_task(coro)
+    _BG_TASKS.add(t)
+    t.add_done_callback(_BG_TASKS.discard)
+
+
 def _video_gw(r: dict):
     """按 providers.yaml 的 provider 字段分发视频网关（默认方舟）。"""
     return bjmoma if r.get("provider") == "bjmoma" else ark
@@ -1901,7 +1912,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     for ref in plan.get("run", []) or []:
         nid = _resolve(str(ref))
         if nid:
-            asyncio.get_event_loop().create_task(_bg_run(nid))
+            _fire_and_forget(_bg_run(nid))
             ran_ids.add(nid)
             ran += 1
         else:
@@ -1911,7 +1922,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     # 只建壳不出内容，用户在画布上看到的是空节点，无从审阅确认
     for nid, t, _, _ in created_meta:
         if t == "script" and nid not in ran_ids:
-            asyncio.get_event_loop().create_task(_bg_run(nid))
+            _fire_and_forget(_bg_run(nid))
             ran += 1
 
     reply = plan.get("reply", "已处理")

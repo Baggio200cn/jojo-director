@@ -55,7 +55,8 @@ def _migrate() -> None:
 
 
 def _reset_stuck_nodes() -> None:
-    """启动自愈：上次进程退出时正在执行的节点会永远卡在 running，复位为 failed 以便重跑。"""
+    """启动自愈：上次进程退出时正在执行的节点会永远卡在 running，复位为 failed 以便重跑。
+    连同 model_tasks 的在途台账一起复位——否则留下永远"运行中"的僵尸记录，污染成本报表。"""
     with db._conn() as c:
         stuck = c.execute(
             "SELECT COUNT(*) FROM canvas_nodes WHERE status='running'").fetchone()[0]
@@ -65,6 +66,13 @@ def _reset_stuck_nodes() -> None:
                 "outputs=json_patch(COALESCE(NULLIF(outputs,''),'{}'), "
                 "'{\"error\": \"执行因服务重启而中断，请重新运行本节点\"}') "
                 "WHERE status='running'")
+        zombie = c.execute(
+            "UPDATE model_tasks SET status='failed', finished_at=?, "
+            "error='任务因服务重启而中断（台账僵尸复位）' "
+            "WHERE status IN ('created','provider_running','downloading')",
+            (db.now(),)).rowcount
+        if stuck or zombie:
+            log.warning("启动自愈：复位卡死节点 %d 个、台账僵尸任务 %d 条", stuck, zombie)
 
 
 @asynccontextmanager
