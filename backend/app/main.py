@@ -4,6 +4,7 @@
 """
 import asyncio
 import json
+import logging
 import re as _re
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -12,26 +13,31 @@ from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import auth, db, embeddings, executors
 from .config import ASSETS_DIR
+
+log = logging.getLogger("jojo")
+
+
+def _add_column(c, sql: str) -> None:
+    """补列迁移：SQLite 的 ADD COLUMN 无 IF NOT EXISTS，重复列是唯一允许静默的情况。"""
+    try:
+        c.execute(sql)
+    except Exception as e:
+        if "duplicate column name" not in str(e):
+            log.warning("迁移异常（未阻断启动，需人工核查）: %s -> %s", sql, e)
 
 
 def _migrate() -> None:
     """启动迁移：为既有表补列（已存在则忽略）。SQLite 的 ADD COLUMN 无 IF NOT EXISTS。"""
     with db._conn() as c:
-        try:
-            c.execute("ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
-        except Exception:
-            pass
+        _add_column(c, "ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
         # MAAO 证据流：台账补 verdict / capability_id 列
         for sql in ("ALTER TABLE model_tasks ADD COLUMN verdict TEXT",
                     "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT"):
-            try:
-                c.execute(sql)
-            except Exception:
-                pass
+            _add_column(c, sql)
         # 资产库升级（工作流 A1）：folder=学科/课题文件夹，rights=权利声明
         # （own/licensed/reference_only，入库即声明），subject_id=主体锚点，
         # library=入库标记（落盘≠入库，1=已入素材库）
@@ -39,10 +45,7 @@ def _migrate() -> None:
                     "ALTER TABLE assets ADD COLUMN rights TEXT DEFAULT ''",
                     "ALTER TABLE assets ADD COLUMN subject_id TEXT DEFAULT ''",
                     "ALTER TABLE assets ADD COLUMN library INTEGER DEFAULT 0"):
-            try:
-                c.execute(sql)
-            except Exception:
-                pass
+            _add_column(c, sql)
         # 教师投稿预建目录（2026-09-07 拍板）：学科级顶层文件夹
         c.execute("CREATE TABLE IF NOT EXISTS library_folders "
                   "(path TEXT PRIMARY KEY, created_at TEXT)")
@@ -52,7 +55,8 @@ def _migrate() -> None:
 
 
 def _reset_stuck_nodes() -> None:
-    """启动自愈：上次进程退出时正在执行的节点会永远卡在 running，复位为 failed 以便重跑。"""
+    """启动自愈：上次进程退出时正在执行的节点会永远卡在 running，复位为 failed 以便重跑。
+    连同 model_tasks 的在途台账一起复位——否则留下永远"运行中"的僵尸记录，污染成本报表。"""
     with db._conn() as c:
         stuck = c.execute(
             "SELECT COUNT(*) FROM canvas_nodes WHERE status='running'").fetchone()[0]
@@ -62,6 +66,13 @@ def _reset_stuck_nodes() -> None:
                 "outputs=json_patch(COALESCE(NULLIF(outputs,''),'{}'), "
                 "'{\"error\": \"执行因服务重启而中断，请重新运行本节点\"}') "
                 "WHERE status='running'")
+        zombie = c.execute(
+            "UPDATE model_tasks SET status='failed', finished_at=?, "
+            "error='任务因服务重启而中断（台账僵尸复位）' "
+            "WHERE status IN ('created','provider_running','downloading')",
+            (db.now(),)).rowcount
+        if stuck or zombie:
+            log.warning("启动自愈：复位卡死节点 %d 个、台账僵尸任务 %d 条", stuck, zombie)
 
 
 @asynccontextmanager
@@ -195,8 +206,8 @@ class ProjectIn(BaseModel):
 class NodeIn(BaseModel):
     type: str                     # script / storyboard / image / video / code_render
     title: str = ""
-    inputs: dict = {}
-    position: dict = {"x": 0, "y": 0}
+    inputs: dict = Field(default_factory=dict)
+    position: dict = Field(default_factory=lambda: {"x": 0, "y": 0})
 
 
 class EdgeIn(BaseModel):
@@ -560,7 +571,7 @@ def expand_storyboard(nid: str, req: ExpandIn):
         if shot.get("type") == "code_render":
             cr = mk("code_render", f"镜头{i}·代码渲染",
                     {"template": "lens_focus", "focal_length": 2.2,
-                     "num_rays": 7, "duration": min(sec, 20)}, x0 + 320, y)
+                     "num_rays": 7, "duration": min(sec, 20), "shot_index": i}, x0 + 320, y)
             q = mk("qc", f"镜头{i}·质检", qc_in, x0 + 320, y + 250)
             link(cr, q)
             link(cr, comp_id)
@@ -577,7 +588,7 @@ def expand_storyboard(nid: str, req: ExpandIn):
             # R1 真实素材增强：真实片段直接进产线（慢放/特写/标注在节点上调）
             en = mk("enhance", f"镜头{i}·素材增强",
                     {"source_url": shot["ref_clip_url"], "slow_factor": 1,
-                     "caption": shot.get("caption") or ""}, x0 + 320, y)
+                     "caption": shot.get("caption") or "", "shot_index": i}, x0 + 320, y)
             q = mk("qc", f"镜头{i}·质检", qc_in, x0 + 320, y + 250)
             link(en, q)
             link(en, comp_id)
@@ -603,7 +614,8 @@ def expand_storyboard(nid: str, req: ExpandIn):
         created += 2
         v_inputs: dict = {"prompt": shot.get("motion") or "", "resolution": "1080p",
                           "caption": shot.get("caption") or "",
-                          "duration": 10 if sec > 5 else 5, "first_frame_node": f1}
+                          "duration": 10 if sec > 5 else 5, "first_frame_node": f1,
+                          "shot_index": i}
         vx = x0 + 640
         make_ref_tail = route_mode in ("R2", "R3") and ref_last and ref_last != ref_first
         if make_ref_tail:
@@ -815,6 +827,8 @@ def migrate_pairs(pid: str):
 
 @app.post("/api/projects/{pid}/edges")
 def create_edge(pid: str, e: EdgeIn):
+    if executors.would_cycle(pid, e.source_node_id, e.target_node_id):
+        raise HTTPException(400, "该连线会形成环（环会让拓扑序失真），请调整连接方向")
     eid = db.new_id("edge")
     db.insert("canvas_edges", {"id": eid, "project_id": pid,
                                "source_node_id": e.source_node_id,
@@ -829,8 +843,9 @@ async def execute_node(nid: str, background: BackgroundTasks):
         raise HTTPException(404, "节点不存在")
     if node["status"] == "running":
         raise HTTPException(409, "节点正在执行中")
-    if node["type"] in ("video", "ref_video", "enhance", "compose", "tts", "code_render"):
-        # 长任务后台执行，前端轮询节点状态（同步长请求会被代理掐断且阻塞事件循环）
+    if executors.is_long_running(node["type"]):
+        # 长任务后台执行，前端轮询节点状态（同步长请求会被代理掐断且阻塞事件循环）。
+        # 清单在执行器注册表 long_running 声明，此处不另维护
         background.add_task(_run_async, nid, False)
         db.update("canvas_nodes", nid, {"status": "running", "updated_at": db.now()})
         return {"status": "running", "node_id": nid}
@@ -900,8 +915,10 @@ async def upload_asset(nid: str, file: UploadFile = File(...)):
         "kind": "video" if is_ref else "image", "filename": filename,
         "meta": json.dumps({"source": "uploaded"}), "created_at": db.now(),
     })
-    outputs = {"asset_id": asset_id, "asset_url": f"/assets/{filename}",
-               "source": "uploaded"}
+    # G1 失败合并不覆盖：上传只更新素材三件套，保留既有 outputs（如质检结论）
+    outputs = db.jloads(node["outputs"])
+    outputs.update({"asset_id": asset_id, "asset_url": f"/assets/{filename}",
+                    "source": "uploaded"})
     db.update("canvas_nodes", nid, {
         # 参考视频：上传只是备料，保持 idle 等待执行分析；图像：上传即成果
         "status": node["status"] if is_ref else "succeeded",
@@ -933,7 +950,7 @@ class AgentReq(BaseModel):
     message: str
     model: str | None = None
     research: bool = False
-    history: list[dict] = []
+    history: list[dict] = Field(default_factory=list)
 
 
 @app.get("/api/agent/models")
@@ -1225,8 +1242,8 @@ async def qc_override(nid: str, req: QcOverrideReq):
 
 
 class RestoreReq(BaseModel):
-    nodes: list[dict] = []
-    edges: list[dict] = []
+    nodes: list[dict] = Field(default_factory=list)
+    edges: list[dict] = Field(default_factory=list)
 
 
 @app.post("/api/projects/{pid}/restore")

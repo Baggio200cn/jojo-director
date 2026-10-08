@@ -18,8 +18,28 @@ from .config import ASSETS_DIR, QC, QC_RULES_DIR, route
 from .gateway.ark import ArkAdapter
 from .gateway.bjmoma import BjmomaAdapter, sign_pub_url
 
-ark = ArkAdapter()
-bjmoma = BjmomaAdapter()
+_adapters: dict = {}
+
+
+def __getattr__(name: str):
+    """适配器惰性单例：首次使用时才实例化。
+    HARNESS 律——缺 API key 只让用到的路径报错（带配置指引），不阻断整个模块 import。"""
+    if name == "ark":
+        return _adapters.setdefault("ark", ArkAdapter())
+    if name == "bjmoma":
+        return _adapters.setdefault("bjmoma", BjmomaAdapter())
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+_BG_TASKS: set = set()
+
+
+def _fire_and_forget(coro) -> None:
+    """发射后台任务并持有引用：裸 create_task 的任务可能被 GC 提前回收（CPython 已知坑），
+    且须在运行中的事件循环上创建（get_event_loop 在 3.12+ 已废弃）。"""
+    t = asyncio.get_running_loop().create_task(coro)
+    _BG_TASKS.add(t)
+    t.add_done_callback(_BG_TASKS.discard)
 
 
 def _video_gw(r: dict):
@@ -235,9 +255,17 @@ async def _coach(tgt_in: dict, fails: list, is_pair: bool) -> str:
 
 
 
-# 执行器注册表：节点类型 → 执行函数。登记在文件尾部（见 "执行器注册表" 一节），
+# 执行器注册表：节点类型 → {handler, long_running}。登记在文件尾部（见 "执行器注册表" 一节），
 # execute_node 只做查找；新增节点类型 = 写 _run_xxx + 尾部登记一行，派发逻辑不动。
+# long_running=True 的类型由路由层转后台执行（L1 六十秒红线，含 QC 的裁判+教练双调用），
+# 是否长任务是执行器的属性，声明在此处——不再由 main.py 维护硬编码清单。
 EXECUTORS: dict = {}
+
+
+def is_long_running(node_type: str) -> bool:
+    """该节点类型是否应后台执行（路由层唯一判定入口）。"""
+    entry = EXECUTORS.get(node_type)
+    return bool(entry and entry.get("long_running"))
 
 
 async def execute_node(node_id: str) -> None:
@@ -246,10 +274,10 @@ async def execute_node(node_id: str) -> None:
         raise ValueError(f"节点不存在: {node_id}")
     db.update("canvas_nodes", node_id, {"status": "running", "updated_at": db.now()})
     try:
-        handler = EXECUTORS.get(node["type"])
-        if not handler:
+        entry = EXECUTORS.get(node["type"])
+        if not entry:
             raise ValueError(f"暂不支持的节点类型: {node['type']}")
-        outputs = await handler(node)
+        outputs = await entry["handler"](node)
         db.update("canvas_nodes", node_id, {
             "status": "succeeded", "outputs": json.dumps(outputs, ensure_ascii=False),
             "updated_at": db.now(),
@@ -569,9 +597,12 @@ async def _run_video(node: dict) -> dict:
     )
     db.update("model_tasks", task_id,
               {"status": "provider_running", "provider_task_id": provider_task_id})
-    # 轮询直至完成（方舟侧一般 1-3 分钟）；瞬时网络错误不算任务失败
+    # 轮询直至完成（方舟侧一般 1-3 分钟）；瞬时网络错误不算任务失败。
+    # 间隔/上限在 providers.yaml 路由项可调（poll_interval_s / poll_max_s）
+    poll_s = int(r.get("poll_interval_s") or 5)
+    max_tries = max(1, int(r.get("poll_max_s") or 600) // poll_s)
     poll_errors = 0
-    for _ in range(120):
+    for _ in range(max_tries):
         try:
             data = await gw.video_get(provider_task_id)
             poll_errors = 0
@@ -579,7 +610,7 @@ async def _run_video(node: dict) -> dict:
             poll_errors += 1
             if poll_errors >= 5:
                 raise
-            await asyncio.sleep(5)
+            await asyncio.sleep(poll_s)
             continue
         status = data.get("status")
         if status == "succeeded":
@@ -604,8 +635,9 @@ async def _run_video(node: dict) -> dict:
             return out
         if status in ("failed", "cancelled"):
             raise RuntimeError(f"视频任务{status}: {data.get('error', '')}")
-        await asyncio.sleep(5)
-    raise TimeoutError("视频任务超时（10 分钟）")
+        await asyncio.sleep(poll_s)
+    raise TimeoutError(f"视频任务超时（{max_tries * poll_s // 60} 分钟，"
+                       f"可在 providers.yaml 的 poll_max_s 调整）")
 
 
 async def _run_code_render(node: dict) -> dict:
@@ -769,7 +801,8 @@ def clip_order_key(n: dict):
     """合成排序契约（GRAPH 律：镜头顺序是数据，不是命名巧合）。
     主键 = 镜头号，取值来源优先级：① 自身 inputs.shot_index（分镜展开产线写入的契约）
     ② 上游帧节点的 shot_index（视频节点自身不带时，沿图取首帧的镜头号）
-    ③ 标题"镜头N"（人工命名约定，兼容旧项目）。
+    ③ 标题"镜头N"——DEPRECATED 兼容兜底，仅为未写 shot_index 的存量项目保留，
+       新建节点一律走 ①；改标题导致错序的风险由存量项目自行消化，不再为此扩展逻辑。
     取不到镜头号的节点排最后，按画布行优先(y,x) 兜底——不能按 x 优先：
     code_render 与视频节点 x 不同会打乱顺序。同号并列时来源优先级高者在前（契约>沿图>命名）。"""
     si = _shot_index_of(n)
@@ -1104,7 +1137,7 @@ def _transcribe(path: str) -> dict | None:
     if "audio" not in (pr.stdout or ""):
         return None
     try:
-        os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+        # HF_ENDPOINT 镜像默认值已在 config.py 显式声明，此处不再运行时改环境
         from faster_whisper import WhisperModel
     except ImportError:
         return None
@@ -1194,13 +1227,23 @@ async def _run_tts(node: dict) -> dict:
                          "（火山控制台→语音技术→应用管理）")
     text = str(inputs.get("text") or "").strip()
     if not text:
-        for n2 in db.query("canvas_nodes", "project_id=?", (node["project_id"],)):
-            if n2["type"] == "script" and n2["status"] == "succeeded":
-                s = db.jloads(n2["outputs"]).get("script")
-                if s:
-                    text = "。".join(str(x.get("narration", "")).strip().rstrip("。")
-                                     for x in s.get("segments", [])) + "。"
-                    break
+        # 与 compose 字幕同一条取源路径：先沿连线找祖先脚本（G3 单一事实源），
+        # 找不到再回退同项目任意已完成脚本（兼容旧画布，多脚本时以连线为准）
+        script = None
+        for anc in _ancestors(node):
+            s = db.jloads(anc["outputs"]).get("script")
+            if s:
+                script = s
+                break
+        if not script:
+            for n2 in db.query("canvas_nodes", "project_id=?", (node["project_id"],)):
+                if n2["type"] == "script" and n2["status"] == "succeeded":
+                    script = db.jloads(n2["outputs"]).get("script")
+                    if script:
+                        break
+        if script:
+            text = "。".join(str(x.get("narration", "")).strip().rstrip("。")
+                             for x in script.get("segments", [])) + "。"
     if not text:
         raise ValueError("没有可配音的文本：填写 text 或先生成项目脚本")
     voice = str(inputs.get("voice_type") or os.getenv("TTS_VOICE")
@@ -1350,10 +1393,15 @@ async def _run_enhance(node: dict) -> dict:
     elif vf:
         args += ["-vf", ",".join(vf)]
     args += ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out_path]
-    pr = subprocess.run(args, capture_output=True, text=True,
-                        encoding="utf-8", errors="replace")
-    if pr.returncode != 0 or not Path(out_path).exists():
-        raise ValueError("增强处理失败：" + (pr.stderr or "")[-300:])
+
+    def _ffmpeg() -> None:
+        # H4 事件循环纪律：阻塞子进程一律进线程
+        pr = subprocess.run(args, capture_output=True, text=True,
+                            encoding="utf-8", errors="replace")
+        if pr.returncode != 0 or not Path(out_path).exists():
+            raise ValueError("增强处理失败：" + (pr.stderr or "")[-300:])
+
+    await asyncio.to_thread(_ffmpeg)
     db.insert("assets", {"id": asset_id, "project_id": node["project_id"],
                          "node_id": node["id"], "kind": "video",
                          "filename": filename, "created_at": db.now()})
@@ -1774,26 +1822,11 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
                     f"【对话历史】\n{hist_ctx}\n\n"
                     f"【用户本轮消息】{message}{research_block}")
 
-    plan = None
-    last_err = ""
-    for attempt in range(2):  # 模型偶发输出非 JSON 时自动重试一次
-        resp = await ark.chat(r["model"], [
-            {"role": "system", "content": load_prompt("agent_system")},
-            {"role": "user", "content": user_content if attempt == 0 else
-             user_content + "\n\n（上次输出不是合法 JSON，请严格只输出 JSON 对象，不要任何其他文字）"},
-        ], json_mode=True)
-        try:
-            text = resp["text"].strip()
-            # 容错：剥掉可能的 markdown 代码块包裹
-            if text.startswith("```"):
-                text = text.split("```")[1]
-                text = text[4:] if text.startswith("json") else text
-            plan = json.loads(text)
-            break
-        except Exception as e:
-            last_err = f"{e}: {resp['text'][:100]}"
-    if plan is None:
-        raise RuntimeError(f"规划模型两次都未返回有效 JSON，请换个说法或换个模型重试。{last_err}")
+    # 空返回/非 JSON 的重试与剥围栏统一走 _chat_json（单一实现，不再各自维护）
+    plan, resp = await _chat_json(r["model"], [
+        {"role": "system", "content": load_prompt("agent_system")},
+        {"role": "user", "content": user_content},
+    ])
 
     allowed = {"tts", "enhance", "script", "storyboard", "image", "video", "code_render",
                "compose", "qc", "ref_video"}
@@ -1829,6 +1862,9 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
         if len(e) == 2:
             src, dst = _resolve(str(e[0])), _resolve(str(e[1]))
             if src and dst and src != dst:
+                if would_cycle(project_id, src, dst):
+                    lint_notes.append(f"忽略会成环的连线 {e}")
+                    continue
                 db.insert("canvas_edges", {
                     "id": db.new_id("edge"), "project_id": project_id,
                     "source_node_id": src, "target_node_id": dst,
@@ -1870,7 +1906,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     for ref in plan.get("run", []) or []:
         nid = _resolve(str(ref))
         if nid:
-            asyncio.get_event_loop().create_task(_bg_run(nid))
+            _fire_and_forget(_bg_run(nid))
             ran_ids.add(nid)
             ran += 1
         else:
@@ -1880,7 +1916,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     # 只建壳不出内容，用户在画布上看到的是空节点，无从审阅确认
     for nid, t, _, _ in created_meta:
         if t == "script" and nid not in ran_ids:
-            asyncio.get_event_loop().create_task(_bg_run(nid))
+            _fire_and_forget(_bg_run(nid))
             ran += 1
 
     reply = plan.get("reply", "已处理")
@@ -1896,6 +1932,26 @@ def _upstream_nodes(node: dict) -> list[dict]:
     edges = db.query("canvas_edges", "target_node_id=?", (node["id"],))
     ups = [db.get("canvas_nodes", e["source_node_id"]) for e in edges]
     return [u for u in ups if u]
+
+
+def would_cycle(pid: str, source: str, target: str) -> bool:
+    """新边 source→target 会成环的判定：沿边方向从 target 出发能回到 source。
+    G4 配套护栏：环会让拓扑序静默失真，建边时拒绝。"""
+    if source == target:
+        return True
+    adj: dict[str, list[str]] = {}
+    for ed in db.query("canvas_edges", "project_id=?", (pid,)):
+        adj.setdefault(ed["source_node_id"], []).append(ed["target_node_id"])
+    seen, stack = set(), [target]
+    while stack:
+        cur = stack.pop()
+        if cur == source:
+            return True
+        if cur in seen:
+            continue
+        seen.add(cur)
+        stack.extend(adj.get(cur, []))
+    return False
 
 
 def _upstream_output(node: dict, key: str):
@@ -1988,16 +2044,20 @@ async def _run_sim_import(node: dict) -> dict:
 
 # ── 执行器注册表 ─────────────────────────────────────────────
 # 新增节点类型：写 _run_xxx 后在下方登记一行即可，execute_node 无需改动。
+# long_running=True：单次执行可能超 60 秒，路由层转后台任务 + 前端轮询；
+# False：同步执行并直接返回结果。判断错了的后果：True 误标 = 多一次轮询；
+# False 误标 = 请求被代理掐断——拿不准就标 True。
 EXECUTORS.update({
-    "script": _run_script,
-    "storyboard": _run_storyboard,
-    "image": _run_image,
-    "video": _run_video,
-    "code_render": _run_code_render,
-    "compose": _run_compose,
-    "qc": _run_qc,
-    "ref_video": _run_ref_video,
-    "enhance": _run_enhance,
-    "tts": _run_tts,
-    "sim_import": _run_sim_import,
+    "script": {"handler": _run_script, "long_running": False},
+    "storyboard": {"handler": _run_storyboard, "long_running": False},
+    "image": {"handler": _run_image, "long_running": False},
+    "video": {"handler": _run_video, "long_running": True},
+    "code_render": {"handler": _run_code_render, "long_running": True},
+    "compose": {"handler": _run_compose, "long_running": True},
+    # QC = 视觉裁判（多帧 base64）+ reject 时教练二次调用，稳超 60s（LOOP-2）
+    "qc": {"handler": _run_qc, "long_running": True},
+    "ref_video": {"handler": _run_ref_video, "long_running": True},
+    "enhance": {"handler": _run_enhance, "long_running": True},
+    "tts": {"handler": _run_tts, "long_running": True},
+    "sim_import": {"handler": _run_sim_import, "long_running": False},
 })

@@ -11,8 +11,21 @@ DB_PATH = BACKEND_DIR / "jojo.db"
 
 load_dotenv(BACKEND_DIR / ".env")
 
-with open(BACKEND_DIR / "providers.yaml", encoding="utf-8") as f:
-    _cfg = yaml.safe_load(f)
+_cfg_path = BACKEND_DIR / "providers.yaml"
+try:
+    with open(_cfg_path, encoding="utf-8") as f:
+        _cfg = yaml.safe_load(f)
+except FileNotFoundError:
+    raise RuntimeError(
+        f"缺少路由配置文件 {_cfg_path}——从仓库根复制 providers.yaml 到 backend/ 目录") from None
+except yaml.YAMLError as e:
+    raise RuntimeError(f"{_cfg_path} 不是合法的 YAML：{e}") from None
+if not isinstance(_cfg, dict) or "providers" not in _cfg or "routes" not in _cfg:
+    raise RuntimeError(f"{_cfg_path} 格式不正确：顶层必须包含 providers 和 routes 两个键")
+
+# Whisper 模型下载走镜像（服务器到 HF 直连不可靠）。显式声明在配置层，
+# 环境变量已设置时以环境为准
+os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
 PROVIDERS: dict = _cfg["providers"]
 ROUTES: dict = _cfg["routes"]

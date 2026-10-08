@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BJMoMA 平台 E2E 实测：额度探针 → 1080p 图生视频 → 下载验流。
 
-用法：cd jojo-studio && python ops/test_bjmoma.py [asset文件名]
+用法：cd jojo-studio/backend && python tests/test_bjmoma.py [asset文件名]
   asset文件名 = 云端 /opt/jojo/backend/assets/ 下的首帧图（默认用迈克尔逊镜13帧）
 额度未解锁时脚本在第一步就会停下（不烧券）。
 """
@@ -19,9 +19,9 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-REPO = Path(__file__).resolve().parents[1]
+BACKEND = Path(__file__).resolve().parents[1]
 ENV = {l.split("=", 1)[0]: l.split("=", 1)[1].strip()
-       for l in (REPO / "backend" / ".env").read_text(encoding="utf-8").splitlines()
+       for l in (BACKEND / ".env").read_text(encoding="utf-8").splitlines()
        if "=" in l and not l.startswith("#")}
 KEY = ENV["BJMOMA_API_KEY"]
 BASE = ENV.get("BJMOMA_BASE", "https://www.mobileopentokenaccess.com/maas/ai/aiFactoryServer/v1/apis/1").rstrip("/")
@@ -99,7 +99,7 @@ def main():
         print(json.dumps(s, ensure_ascii=False)[:400])
         return 1
     ct, data = req(f"{BASE}/v1/videos/{tid}/content", timeout=600, binary=True)
-    out = REPO / "ops" / "bjmoma_1080p_test.mp4"
+    out = BACKEND / "tests" / "bjmoma_1080p_test.mp4"
     if "json" in ct.lower():
         j = json.loads(data)
         real = j.get("url") or (j.get("content") or {}).get("video_url") or j.get("video_url")
