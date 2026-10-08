@@ -244,9 +244,17 @@ async def _coach(tgt_in: dict, fails: list, is_pair: bool) -> str:
 
 
 
-# 执行器注册表：节点类型 → 执行函数。登记在文件尾部（见 "执行器注册表" 一节），
+# 执行器注册表：节点类型 → {handler, long_running}。登记在文件尾部（见 "执行器注册表" 一节），
 # execute_node 只做查找；新增节点类型 = 写 _run_xxx + 尾部登记一行，派发逻辑不动。
+# long_running=True 的类型由路由层转后台执行（L1 六十秒红线，含 QC 的裁判+教练双调用），
+# 是否长任务是执行器的属性，声明在此处——不再由 main.py 维护硬编码清单。
 EXECUTORS: dict = {}
+
+
+def is_long_running(node_type: str) -> bool:
+    """该节点类型是否应后台执行（路由层唯一判定入口）。"""
+    entry = EXECUTORS.get(node_type)
+    return bool(entry and entry.get("long_running"))
 
 
 async def execute_node(node_id: str) -> None:
@@ -255,10 +263,10 @@ async def execute_node(node_id: str) -> None:
         raise ValueError(f"节点不存在: {node_id}")
     db.update("canvas_nodes", node_id, {"status": "running", "updated_at": db.now()})
     try:
-        handler = EXECUTORS.get(node["type"])
-        if not handler:
+        entry = EXECUTORS.get(node["type"])
+        if not entry:
             raise ValueError(f"暂不支持的节点类型: {node['type']}")
-        outputs = await handler(node)
+        outputs = await entry["handler"](node)
         db.update("canvas_nodes", node_id, {
             "status": "succeeded", "outputs": json.dumps(outputs, ensure_ascii=False),
             "updated_at": db.now(),
@@ -2031,16 +2039,20 @@ async def _run_sim_import(node: dict) -> dict:
 
 # ── 执行器注册表 ─────────────────────────────────────────────
 # 新增节点类型：写 _run_xxx 后在下方登记一行即可，execute_node 无需改动。
+# long_running=True：单次执行可能超 60 秒，路由层转后台任务 + 前端轮询；
+# False：同步执行并直接返回结果。判断错了的后果：True 误标 = 多一次轮询；
+# False 误标 = 请求被代理掐断——拿不准就标 True。
 EXECUTORS.update({
-    "script": _run_script,
-    "storyboard": _run_storyboard,
-    "image": _run_image,
-    "video": _run_video,
-    "code_render": _run_code_render,
-    "compose": _run_compose,
-    "qc": _run_qc,
-    "ref_video": _run_ref_video,
-    "enhance": _run_enhance,
-    "tts": _run_tts,
-    "sim_import": _run_sim_import,
+    "script": {"handler": _run_script, "long_running": False},
+    "storyboard": {"handler": _run_storyboard, "long_running": False},
+    "image": {"handler": _run_image, "long_running": False},
+    "video": {"handler": _run_video, "long_running": True},
+    "code_render": {"handler": _run_code_render, "long_running": True},
+    "compose": {"handler": _run_compose, "long_running": True},
+    # QC = 视觉裁判（多帧 base64）+ reject 时教练二次调用，稳超 60s（LOOP-2）
+    "qc": {"handler": _run_qc, "long_running": True},
+    "ref_video": {"handler": _run_ref_video, "long_running": True},
+    "enhance": {"handler": _run_enhance, "long_running": True},
+    "tts": {"handler": _run_tts, "long_running": True},
+    "sim_import": {"handler": _run_sim_import, "long_running": False},
 })

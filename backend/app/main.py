@@ -835,8 +835,9 @@ async def execute_node(nid: str, background: BackgroundTasks):
         raise HTTPException(404, "节点不存在")
     if node["status"] == "running":
         raise HTTPException(409, "节点正在执行中")
-    if node["type"] in ("video", "ref_video", "enhance", "compose", "tts", "code_render"):
-        # 长任务后台执行，前端轮询节点状态（同步长请求会被代理掐断且阻塞事件循环）
+    if executors.is_long_running(node["type"]):
+        # 长任务后台执行，前端轮询节点状态（同步长请求会被代理掐断且阻塞事件循环）。
+        # 清单在执行器注册表 long_running 声明，此处不另维护
         background.add_task(_run_async, nid, False)
         db.update("canvas_nodes", nid, {"status": "running", "updated_at": db.now()})
         return {"status": "running", "node_id": nid}
