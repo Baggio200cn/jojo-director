@@ -769,7 +769,8 @@ def clip_order_key(n: dict):
     """合成排序契约（GRAPH 律：镜头顺序是数据，不是命名巧合）。
     主键 = 镜头号，取值来源优先级：① 自身 inputs.shot_index（分镜展开产线写入的契约）
     ② 上游帧节点的 shot_index（视频节点自身不带时，沿图取首帧的镜头号）
-    ③ 标题"镜头N"（人工命名约定，兼容旧项目）。
+    ③ 标题"镜头N"——DEPRECATED 兼容兜底，仅为未写 shot_index 的存量项目保留，
+       新建节点一律走 ①；改标题导致错序的风险由存量项目自行消化，不再为此扩展逻辑。
     取不到镜头号的节点排最后，按画布行优先(y,x) 兜底——不能按 x 优先：
     code_render 与视频节点 x 不同会打乱顺序。同号并列时来源优先级高者在前（契约>沿图>命名）。"""
     si = _shot_index_of(n)
@@ -1194,13 +1195,23 @@ async def _run_tts(node: dict) -> dict:
                          "（火山控制台→语音技术→应用管理）")
     text = str(inputs.get("text") or "").strip()
     if not text:
-        for n2 in db.query("canvas_nodes", "project_id=?", (node["project_id"],)):
-            if n2["type"] == "script" and n2["status"] == "succeeded":
-                s = db.jloads(n2["outputs"]).get("script")
-                if s:
-                    text = "。".join(str(x.get("narration", "")).strip().rstrip("。")
-                                     for x in s.get("segments", [])) + "。"
-                    break
+        # 与 compose 字幕同一条取源路径：先沿连线找祖先脚本（G3 单一事实源），
+        # 找不到再回退同项目任意已完成脚本（兼容旧画布，多脚本时以连线为准）
+        script = None
+        for anc in _ancestors(node):
+            s = db.jloads(anc["outputs"]).get("script")
+            if s:
+                script = s
+                break
+        if not script:
+            for n2 in db.query("canvas_nodes", "project_id=?", (node["project_id"],)):
+                if n2["type"] == "script" and n2["status"] == "succeeded":
+                    script = db.jloads(n2["outputs"]).get("script")
+                    if script:
+                        break
+        if script:
+            text = "。".join(str(x.get("narration", "")).strip().rstrip("。")
+                             for x in script.get("segments", [])) + "。"
     if not text:
         raise ValueError("没有可配音的文本：填写 text 或先生成项目脚本")
     voice = str(inputs.get("voice_type") or os.getenv("TTS_VOICE")

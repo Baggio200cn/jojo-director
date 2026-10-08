@@ -4,6 +4,7 @@
 """
 import asyncio
 import json
+import logging
 import re as _re
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -17,21 +18,26 @@ from pydantic import BaseModel
 from . import auth, db, embeddings, executors
 from .config import ASSETS_DIR
 
+log = logging.getLogger("jojo")
+
+
+def _add_column(c, sql: str) -> None:
+    """补列迁移：SQLite 的 ADD COLUMN 无 IF NOT EXISTS，重复列是唯一允许静默的情况。"""
+    try:
+        c.execute(sql)
+    except Exception as e:
+        if "duplicate column name" not in str(e):
+            log.warning("迁移异常（未阻断启动，需人工核查）: %s -> %s", sql, e)
+
 
 def _migrate() -> None:
     """启动迁移：为既有表补列（已存在则忽略）。SQLite 的 ADD COLUMN 无 IF NOT EXISTS。"""
     with db._conn() as c:
-        try:
-            c.execute("ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
-        except Exception:
-            pass
+        _add_column(c, "ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
         # MAAO 证据流：台账补 verdict / capability_id 列
         for sql in ("ALTER TABLE model_tasks ADD COLUMN verdict TEXT",
                     "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT"):
-            try:
-                c.execute(sql)
-            except Exception:
-                pass
+            _add_column(c, sql)
         # 资产库升级（工作流 A1）：folder=学科/课题文件夹，rights=权利声明
         # （own/licensed/reference_only，入库即声明），subject_id=主体锚点，
         # library=入库标记（落盘≠入库，1=已入素材库）
@@ -39,10 +45,7 @@ def _migrate() -> None:
                     "ALTER TABLE assets ADD COLUMN rights TEXT DEFAULT ''",
                     "ALTER TABLE assets ADD COLUMN subject_id TEXT DEFAULT ''",
                     "ALTER TABLE assets ADD COLUMN library INTEGER DEFAULT 0"):
-            try:
-                c.execute(sql)
-            except Exception:
-                pass
+            _add_column(c, sql)
         # 教师投稿预建目录（2026-09-07 拍板）：学科级顶层文件夹
         c.execute("CREATE TABLE IF NOT EXISTS library_folders "
                   "(path TEXT PRIMARY KEY, created_at TEXT)")
@@ -560,7 +563,7 @@ def expand_storyboard(nid: str, req: ExpandIn):
         if shot.get("type") == "code_render":
             cr = mk("code_render", f"镜头{i}·代码渲染",
                     {"template": "lens_focus", "focal_length": 2.2,
-                     "num_rays": 7, "duration": min(sec, 20)}, x0 + 320, y)
+                     "num_rays": 7, "duration": min(sec, 20), "shot_index": i}, x0 + 320, y)
             q = mk("qc", f"镜头{i}·质检", qc_in, x0 + 320, y + 250)
             link(cr, q)
             link(cr, comp_id)
@@ -577,7 +580,7 @@ def expand_storyboard(nid: str, req: ExpandIn):
             # R1 真实素材增强：真实片段直接进产线（慢放/特写/标注在节点上调）
             en = mk("enhance", f"镜头{i}·素材增强",
                     {"source_url": shot["ref_clip_url"], "slow_factor": 1,
-                     "caption": shot.get("caption") or ""}, x0 + 320, y)
+                     "caption": shot.get("caption") or "", "shot_index": i}, x0 + 320, y)
             q = mk("qc", f"镜头{i}·质检", qc_in, x0 + 320, y + 250)
             link(en, q)
             link(en, comp_id)
@@ -603,7 +606,8 @@ def expand_storyboard(nid: str, req: ExpandIn):
         created += 2
         v_inputs: dict = {"prompt": shot.get("motion") or "", "resolution": "1080p",
                           "caption": shot.get("caption") or "",
-                          "duration": 10 if sec > 5 else 5, "first_frame_node": f1}
+                          "duration": 10 if sec > 5 else 5, "first_frame_node": f1,
+                          "shot_index": i}
         vx = x0 + 640
         make_ref_tail = route_mode in ("R2", "R3") and ref_last and ref_last != ref_first
         if make_ref_tail:
