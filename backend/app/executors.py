@@ -18,8 +18,17 @@ from .config import ASSETS_DIR, QC, QC_RULES_DIR, route
 from .gateway.ark import ArkAdapter
 from .gateway.bjmoma import BjmomaAdapter, sign_pub_url
 
-ark = ArkAdapter()
-bjmoma = BjmomaAdapter()
+_adapters: dict = {}
+
+
+def __getattr__(name: str):
+    """适配器惰性单例：首次使用时才实例化。
+    HARNESS 律——缺 API key 只让用到的路径报错（带配置指引），不阻断整个模块 import。"""
+    if name == "ark":
+        return _adapters.setdefault("ark", ArkAdapter())
+    if name == "bjmoma":
+        return _adapters.setdefault("bjmoma", BjmomaAdapter())
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _video_gw(r: dict):
@@ -1840,6 +1849,9 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
         if len(e) == 2:
             src, dst = _resolve(str(e[0])), _resolve(str(e[1]))
             if src and dst and src != dst:
+                if would_cycle(project_id, src, dst):
+                    lint_notes.append(f"忽略会成环的连线 {e}")
+                    continue
                 db.insert("canvas_edges", {
                     "id": db.new_id("edge"), "project_id": project_id,
                     "source_node_id": src, "target_node_id": dst,
@@ -1907,6 +1919,26 @@ def _upstream_nodes(node: dict) -> list[dict]:
     edges = db.query("canvas_edges", "target_node_id=?", (node["id"],))
     ups = [db.get("canvas_nodes", e["source_node_id"]) for e in edges]
     return [u for u in ups if u]
+
+
+def would_cycle(pid: str, source: str, target: str) -> bool:
+    """新边 source→target 会成环的判定：沿边方向从 target 出发能回到 source。
+    G4 配套护栏：环会让拓扑序静默失真，建边时拒绝。"""
+    if source == target:
+        return True
+    adj: dict[str, list[str]] = {}
+    for ed in db.query("canvas_edges", "project_id=?", (pid,)):
+        adj.setdefault(ed["source_node_id"], []).append(ed["target_node_id"])
+    seen, stack = set(), [target]
+    while stack:
+        cur = stack.pop()
+        if cur == source:
+            return True
+        if cur in seen:
+            continue
+        seen.add(cur)
+        stack.extend(adj.get(cur, []))
+    return False
 
 
 def _upstream_output(node: dict, key: str):

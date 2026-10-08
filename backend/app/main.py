@@ -819,6 +819,8 @@ def migrate_pairs(pid: str):
 
 @app.post("/api/projects/{pid}/edges")
 def create_edge(pid: str, e: EdgeIn):
+    if executors.would_cycle(pid, e.source_node_id, e.target_node_id):
+        raise HTTPException(400, "该连线会形成环（环会让拓扑序失真），请调整连接方向")
     eid = db.new_id("edge")
     db.insert("canvas_edges", {"id": eid, "project_id": pid,
                                "source_node_id": e.source_node_id,
@@ -904,8 +906,10 @@ async def upload_asset(nid: str, file: UploadFile = File(...)):
         "kind": "video" if is_ref else "image", "filename": filename,
         "meta": json.dumps({"source": "uploaded"}), "created_at": db.now(),
     })
-    outputs = {"asset_id": asset_id, "asset_url": f"/assets/{filename}",
-               "source": "uploaded"}
+    # G1 失败合并不覆盖：上传只更新素材三件套，保留既有 outputs（如质检结论）
+    outputs = db.jloads(node["outputs"])
+    outputs.update({"asset_id": asset_id, "asset_url": f"/assets/{filename}",
+                    "source": "uploaded"})
     db.update("canvas_nodes", nid, {
         # 参考视频：上传只是备料，保持 idle 等待执行分析；图像：上传即成果
         "status": node["status"] if is_ref else "succeeded",
