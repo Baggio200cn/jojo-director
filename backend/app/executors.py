@@ -597,9 +597,12 @@ async def _run_video(node: dict) -> dict:
     )
     db.update("model_tasks", task_id,
               {"status": "provider_running", "provider_task_id": provider_task_id})
-    # 轮询直至完成（方舟侧一般 1-3 分钟）；瞬时网络错误不算任务失败
+    # 轮询直至完成（方舟侧一般 1-3 分钟）；瞬时网络错误不算任务失败。
+    # 间隔/上限在 providers.yaml 路由项可调（poll_interval_s / poll_max_s）
+    poll_s = int(r.get("poll_interval_s") or 5)
+    max_tries = max(1, int(r.get("poll_max_s") or 600) // poll_s)
     poll_errors = 0
-    for _ in range(120):
+    for _ in range(max_tries):
         try:
             data = await gw.video_get(provider_task_id)
             poll_errors = 0
@@ -607,7 +610,7 @@ async def _run_video(node: dict) -> dict:
             poll_errors += 1
             if poll_errors >= 5:
                 raise
-            await asyncio.sleep(5)
+            await asyncio.sleep(poll_s)
             continue
         status = data.get("status")
         if status == "succeeded":
@@ -632,8 +635,9 @@ async def _run_video(node: dict) -> dict:
             return out
         if status in ("failed", "cancelled"):
             raise RuntimeError(f"视频任务{status}: {data.get('error', '')}")
-        await asyncio.sleep(5)
-    raise TimeoutError("视频任务超时（10 分钟）")
+        await asyncio.sleep(poll_s)
+    raise TimeoutError(f"视频任务超时（{max_tries * poll_s // 60} 分钟，"
+                       f"可在 providers.yaml 的 poll_max_s 调整）")
 
 
 async def _run_code_render(node: dict) -> dict:
@@ -1133,7 +1137,7 @@ def _transcribe(path: str) -> dict | None:
     if "audio" not in (pr.stdout or ""):
         return None
     try:
-        os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+        # HF_ENDPOINT 镜像默认值已在 config.py 显式声明，此处不再运行时改环境
         from faster_whisper import WhisperModel
     except ImportError:
         return None
@@ -1389,10 +1393,15 @@ async def _run_enhance(node: dict) -> dict:
     elif vf:
         args += ["-vf", ",".join(vf)]
     args += ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", out_path]
-    pr = subprocess.run(args, capture_output=True, text=True,
-                        encoding="utf-8", errors="replace")
-    if pr.returncode != 0 or not Path(out_path).exists():
-        raise ValueError("增强处理失败：" + (pr.stderr or "")[-300:])
+
+    def _ffmpeg() -> None:
+        # H4 事件循环纪律：阻塞子进程一律进线程
+        pr = subprocess.run(args, capture_output=True, text=True,
+                            encoding="utf-8", errors="replace")
+        if pr.returncode != 0 or not Path(out_path).exists():
+            raise ValueError("增强处理失败：" + (pr.stderr or "")[-300:])
+
+    await asyncio.to_thread(_ffmpeg)
     db.insert("assets", {"id": asset_id, "project_id": node["project_id"],
                          "node_id": node["id"], "kind": "video",
                          "filename": filename, "created_at": db.now()})
@@ -1813,26 +1822,11 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
                     f"【对话历史】\n{hist_ctx}\n\n"
                     f"【用户本轮消息】{message}{research_block}")
 
-    plan = None
-    last_err = ""
-    for attempt in range(2):  # 模型偶发输出非 JSON 时自动重试一次
-        resp = await ark.chat(r["model"], [
-            {"role": "system", "content": load_prompt("agent_system")},
-            {"role": "user", "content": user_content if attempt == 0 else
-             user_content + "\n\n（上次输出不是合法 JSON，请严格只输出 JSON 对象，不要任何其他文字）"},
-        ], json_mode=True)
-        try:
-            text = resp["text"].strip()
-            # 容错：剥掉可能的 markdown 代码块包裹
-            if text.startswith("```"):
-                text = text.split("```")[1]
-                text = text[4:] if text.startswith("json") else text
-            plan = json.loads(text)
-            break
-        except Exception as e:
-            last_err = f"{e}: {resp['text'][:100]}"
-    if plan is None:
-        raise RuntimeError(f"规划模型两次都未返回有效 JSON，请换个说法或换个模型重试。{last_err}")
+    # 空返回/非 JSON 的重试与剥围栏统一走 _chat_json（单一实现，不再各自维护）
+    plan, resp = await _chat_json(r["model"], [
+        {"role": "system", "content": load_prompt("agent_system")},
+        {"role": "user", "content": user_content},
+    ])
 
     allowed = {"tts", "enhance", "script", "storyboard", "image", "video", "code_render",
                "compose", "qc", "ref_video"}

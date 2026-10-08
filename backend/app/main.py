@@ -13,7 +13,7 @@ from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import auth, db, embeddings, executors
 from .config import ASSETS_DIR
@@ -206,8 +206,8 @@ class ProjectIn(BaseModel):
 class NodeIn(BaseModel):
     type: str                     # script / storyboard / image / video / code_render
     title: str = ""
-    inputs: dict = {}
-    position: dict = {"x": 0, "y": 0}
+    inputs: dict = Field(default_factory=dict)
+    position: dict = Field(default_factory=lambda: {"x": 0, "y": 0})
 
 
 class EdgeIn(BaseModel):
@@ -950,7 +950,7 @@ class AgentReq(BaseModel):
     message: str
     model: str | None = None
     research: bool = False
-    history: list[dict] = []
+    history: list[dict] = Field(default_factory=list)
 
 
 @app.get("/api/agent/models")
@@ -1242,8 +1242,8 @@ async def qc_override(nid: str, req: QcOverrideReq):
 
 
 class RestoreReq(BaseModel):
-    nodes: list[dict] = []
-    edges: list[dict] = []
+    nodes: list[dict] = Field(default_factory=list)
+    edges: list[dict] = Field(default_factory=list)
 
 
 @app.post("/api/projects/{pid}/restore")
