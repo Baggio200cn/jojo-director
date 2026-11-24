@@ -1116,14 +1116,14 @@ export default function App() {
 
   // ── 登录页（管理员账密 / 邀请码 双通道） ──
   if (authRole === 'checking') return (
-    <div className="login-page"><div className="login-card"><h1>Scientific Scene Production Engine</h1><div className="muted">正在验证登录状态…</div></div></div>
+    <div className="login-page"><div className="login-card"><h1>科学场景生产与验收</h1><div className="muted">正在验证登录状态…</div></div></div>
   )
   if (authRole === 'none') return (
     <div className="login-page notranslate" translate="no">
       <div className="login-card">
         <img src="/jojo-director-mark.svg" alt="JOJO Director" className="login-logo" />
-        <h1>科学实验类创作画布</h1>
-        <div className="sub">JOJO Director</div>
+        <h1>科学场景生产与验收</h1>
+        <div className="sub">JOJO Director · Scientific Scene Production Engine</div>
         <div className="tab-bar login-tabs">
           <button className={loginMode === 'admin' ? 'on' : ''} onClick={() => { setLoginMode('admin'); setLoginErr('') }}>管理员</button>
           <button className={loginMode === 'invite' ? 'on' : ''} onClick={() => { setLoginMode('invite'); setLoginErr('') }}>邀请码进入</button>
