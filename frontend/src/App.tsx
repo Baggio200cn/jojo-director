@@ -1157,12 +1157,12 @@ export default function App() {
 
   // ── 登录页（管理员账密 / 邀请码 双通道） ──
   if (authRole === 'checking') return (
-    <div className="login-page"><div className="login-card"><h1>科学实验类创作画布</h1><div className="muted">正在验证登录状态…</div></div></div>
+    <div className="login-page"><div className="login-card"><h1>Scientific Scene Production Engine</h1><div className="muted">正在验证登录状态…</div></div></div>
   )
   if (authRole === 'none') return (
     <div className="login-page notranslate" translate="no">
       <div className="login-card">
-        <img src="/jojo-logo-dark.png" alt="JOJO" className="login-logo" />
+        <img src="/jojo-director-mark.svg" alt="JOJO Director" className="login-logo" />
         <h1>科学实验类创作画布</h1>
         <div className="sub">JOJO Director</div>
         <div className="tab-bar login-tabs">
@@ -1259,8 +1259,10 @@ export default function App() {
       {authBar}
       {inviteModal}
       <div className="home-center">
-        <img className="home-logo" src="/jojo-logo-dark.png" alt="JOJO 科学实验类创作画布" />
-        <h1 className="home-title">今天要做点什么科学实验微课？</h1>
+        <img className="home-logo" src="/jojo-director-lockup.svg" alt="JOJO Director — Scientific Scene Production Engine" />
+        <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>
+        <h1 className="home-title">把科学场景，转化为可验证的教学影像。</h1>
+        <p className="home-intro">从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。</p>
         <div className="home-box">
           <textarea rows={3} value={homeInput}
             placeholder="一句话描述你要的微课，例：讲清楚 PWM 调光原理，60 秒，最后拼成完整视频"
@@ -1301,8 +1303,7 @@ export default function App() {
           </div>
           <div className="jojo-ad" aria-hidden="true">
             <div className="jojo-ad-stage">
-              <img className="base" src="/jojo-logo-dark.png" alt="" />
-              <img className="redc" src="/jojo-logo-redcircle.png" alt="" />
+              <img className="base" src="/jojo-director-mark.svg" alt="" />
             </div>
             <div className="jojo-ad-text">
               <b>JOJO 的“自我学习”是什么？</b>
@@ -1414,10 +1415,10 @@ export default function App() {
       {offlineBanner}
       <div className="toolbar" style={{ width: leftW }}>
         <div className="brand-row" onClick={() => setView('home')} title="返回首页">
-          <img src="/jojo-logo-dark.png" alt="JOJO" />
+          <img src="/jojo-director-mark.svg" alt="JOJO Director" />
           <div>
-            <h1>科学实验类创作画布</h1>
-            <div className="sub">JOJO Director v0.5</div>
+            <h1>JOJO DIRECTOR</h1>
+            <div className="sub">Scientific Scene Production Engine</div>
           </div>
         </div>
         <div className="project-bar">
