@@ -6,6 +6,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { api } from './api'
+import TrainingLibrary from './TrainingLibrary'
 
 type TeachingProduction = {
   candidateId: string; version: number; status: string; videoUrl?: string
@@ -254,7 +255,7 @@ export default function App() {
   const [leftW, setLeftW] = useState(250)
   const [rightW, setRightW] = useState(390)
   const [tab, setTab] = useState<'nodes' | 'assets'>('nodes')
-  const [view, setView] = useState<'home' | 'canvas' | 'review'>('home')
+  const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training'>('home')
   type ReviewItem = {
     qc_node_id: string; qc_title: string; target_node_id: string
     target_title: string; target_type: string; asset_url: string
@@ -1380,6 +1381,10 @@ export default function App() {
             <div className="plus">＋</div>
             <div className="pname">新建空白项目</div>
           </div>
+          <div className="proj-card" onClick={() => setView('training')}>
+            <div className="ph">SCI</div>
+            <div className="pname">科学素材训练库 · 浏览与人工抽检</div>
+          </div>
           <div className="proj-card" onClick={() => window.open('/agents-md-course/', '_blank')}>
             <div className="ph">📖</div>
             <div className="pname">教师研修报告 · AGENTS.md 七条军规</div>
@@ -1395,6 +1400,8 @@ export default function App() {
       </div>
     </div>
   )
+
+  if (view === 'training') return <TrainingLibrary onBack={() => setView('home')} />
 
   if (view === 'review') return (
     <div className="review notranslate" translate="no">

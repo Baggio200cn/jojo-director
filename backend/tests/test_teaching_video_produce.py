@@ -17,9 +17,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 from fastapi.testclient import TestClient
+from matplotlib import font_manager
 
 from app import db, teaching_video_import, teaching_video_produce
 from app.main import app
+from app.render.pwm_waveform import CHINESE_FONT
 
 PASS, FAIL = [], []
 FIXTURE = Path(__file__).parent / "fixtures" / "teaching-video"
@@ -47,6 +49,10 @@ def main():
         teaching_video_produce.ASSETS_DIR.mkdir()
         db.init_db()
         client = TestClient(app)
+        font_path = font_manager.findfont(font_manager.FontProperties(family=CHINESE_FONT),
+                                         fallback_to_default=False)
+        glyph_map = font_manager.get_font(font_path).get_charmap()
+        check("渲染中文字体包含常用汉字", all(ord(x) in glyph_map for x in "调光占空比"))
         content = package()
         result = client.post("/api/projects/import/teaching-video", files={"file": ("pwm.zip", content, "application/zip")}).json()
         pid = result["project_id"]

@@ -74,6 +74,14 @@ CREATE TABLE IF NOT EXISTS video_revision_requests (
   id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL, scene_id TEXT NOT NULL,
   comment TEXT NOT NULL, status TEXT NOT NULL, new_candidate_id TEXT, created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS training_reviews (
+  id TEXT PRIMARY KEY, object_type TEXT NOT NULL, object_id TEXT NOT NULL,
+  object_version TEXT NOT NULL, content_hash TEXT NOT NULL,
+  reviewer TEXT NOT NULL, decision TEXT NOT NULL, comment TEXT DEFAULT '',
+  checks TEXT DEFAULT '[]', session_role TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_training_reviews_object
+  ON training_reviews(object_type, object_id, created_at);
 """
 
 

@@ -40,6 +40,8 @@ export const api = {
     post(`/api/projects/${pid}/teaching-video/produce`, body),
   listTeachingVideoCandidates: (pid: string) =>
     fetch(`/api/projects/${pid}/teaching-video/candidates`).then(j),
+  trainingLibrary: () => fetch('/api/training/library').then(j),
+  submitTrainingReview: (body: object) => post('/api/training/reviews', body),
   getGraph: (pid: string) => fetch(`/api/projects/${pid}/graph`).then(j),
   createNode: (pid: string, node: object) => post(`/api/projects/${pid}/nodes`, node),
   updateNode: (nid: string, body: object) => patch(`/api/nodes/${nid}`, body),

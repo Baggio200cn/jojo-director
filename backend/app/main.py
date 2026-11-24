@@ -14,7 +14,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, embeddings, executors, teaching_video_confirm, teaching_video_import, teaching_video_produce, yuke_import
+from . import (auth, db, embeddings, executors, teaching_video_confirm,
+               teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
 
@@ -288,6 +289,20 @@ def produce_teaching_video_candidate(pid: str, payload: dict, background: Backgr
 def list_teaching_video_candidates(pid: str):
     rows = db.query("video_candidates", "project_id=? ORDER BY created_at DESC", (pid,))
     return [{**row, "manifest": db.jloads(row["manifest"])} for row in rows]
+
+
+@app.get("/api/training/library")
+def get_training_library():
+    return training_library.library()
+
+
+@app.post("/api/training/reviews")
+def create_training_review(payload: training_library.ReviewIn, request: Request):
+    session = auth.require(request)
+    try:
+        return training_library.add_review(payload, session)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 class ProjectPatch(BaseModel):
