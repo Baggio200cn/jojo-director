@@ -7,6 +7,12 @@ import {
 import '@xyflow/react/dist/style.css'
 import { api } from './api'
 
+type TeachingProduction = {
+  candidateId: string; version: number; status: string; videoUrl?: string
+  subtitleAssetId?: string; unchangedSceneIds?: string[]
+  missingEvidence?: { sceneId: string; reason: string }[]
+}
+
 type BNode = {
   id: string; type: string; title: string; status: string
   position_x: number; position_y: number
@@ -266,6 +272,12 @@ export default function App() {
   const [yukeImportBusy, setYukeImportBusy] = useState(false)
   const [teachingImportBusy, setTeachingImportBusy] = useState(false)
   const [teachingConfirmBusy, setTeachingConfirmBusy] = useState(false)
+  const [productionBusy, setProductionBusy] = useState(false)
+  const [revisionScene, setRevisionScene] = useState<Record<string, unknown> | null>(null)
+  const [revisionComment, setRevisionComment] = useState('')
+  const [revisionSeconds, setRevisionSeconds] = useState(10)
+  const [revisionRoute, setRevisionRoute] = useState('live_action')
+  const [revisionNarration, setRevisionNarration] = useState('')
   const [selectedSceneId, setSelectedSceneId] = useState('')
   const [chat, setChat] = useState<{ role: string; text: string }[]>([])
   const [chatInput, setChatInput] = useState('')
@@ -624,6 +636,30 @@ export default function App() {
     } finally { setTeachingConfirmBusy(false) }
   }
 
+  const produceTeachingVideo = async (revision?: boolean) => {
+    const node = Object.values(bnodesRef.current).find(n => n.outputs?.teachingVideo)
+    if (!node || productionBusy) return
+    setProductionBusy(true)
+    try {
+      const production = revision ? (node.outputs.production as { candidateId: string }) : null
+      await api.produceTeachingVideo(projectRef.current, revision ? {
+        revisionOf: production!.candidateId,
+        patch: {
+          sceneId: revisionScene!.sceneId,
+          comment: revisionComment,
+          targetSeconds: revisionSeconds,
+          selectedRoute: revisionRoute,
+          narration: revisionNarration,
+        },
+      } : {})
+      setRevisionScene(null)
+      await syncGraph(projectRef.current)
+      say(revision ? '已生成送修候选，原版本保留，其他场景不变' : '候选视频正在后台生成，不调用付费模型')
+    } catch (e) {
+      say(`候选生成失败：${e}`)
+    } finally { setProductionBusy(false) }
+  }
+
   // ── 后端健康监测：离线时全局红条提示 ──
   const [backendUp, setBackendUp] = useState(true)
   useEffect(() => {
@@ -962,7 +998,8 @@ export default function App() {
   // 轮询：有节点在运行时每 3 秒刷新
   useEffect(() => {
     const t = setInterval(() => {
-      if (Object.values(bnodesRef.current).some(n => n.status === 'running')) {
+      if (Object.values(bnodesRef.current).some(n => n.status === 'running' ||
+        (n.outputs.production as { status?: string } | undefined)?.status === 'running')) {
         syncGraph(projectRef.current)
       }
     }, 3000)
@@ -1748,6 +1785,32 @@ export default function App() {
             <button className="danger" onClick={() => setConnectMenu(null)}>取消</button>
           </div>
         )}
+        {revisionScene && (
+          <div className="lightbox" onClick={() => setRevisionScene(null)}>
+            <div className="lightbox-inner" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+              <div className="lightbox-head">
+                <b>退回场景：{String(revisionScene.title)}</b>
+                <button onClick={() => setRevisionScene(null)}>✕ 关闭</button>
+              </div>
+              <div className="field"><label>修改意见（必填）</label>
+                <textarea rows={3} value={revisionComment} onChange={e => setRevisionComment(e.target.value)}
+                  placeholder="例如：缩短波形展示并调整口播" /></div>
+              <div className="field"><label>新时长（秒）</label>
+                <input type="number" min={1} max={300} value={revisionSeconds}
+                  onChange={e => setRevisionSeconds(Number(e.target.value))} /></div>
+              <div className="field"><label>制作路线</label>
+                <select value={revisionRoute} onChange={e => setRevisionRoute(e.target.value)}>
+                  <option value="diagram_2d">确定性 2D</option>
+                  <option value="live_action">真实素材</option>
+                  <option value="slide_composite">课件合成</option>
+                </select></div>
+              <div className="field"><label>新口播</label>
+                <textarea rows={4} value={revisionNarration} onChange={e => setRevisionNarration(e.target.value)} /></div>
+              <button className="accent" disabled={productionBusy || !revisionComment.trim()}
+                onClick={() => produceTeachingVideo(true)}>生成送修候选</button>
+            </div>
+          </div>
+        )}
         {lightbox && (
           <div className="lightbox" onClick={() => setLightbox(null)}>
             <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
@@ -1917,7 +1980,12 @@ export default function App() {
             {selected.outputs?.script != null && <ScriptView script={selected.outputs.script} />}
             {selected.outputs?.teachingVideo != null && (
               <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
-                onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy} />
+                onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy}
+                production={selected.outputs.production as TeachingProduction} onProduce={() => produceTeachingVideo(false)} producing={productionBusy}
+                onRevise={scene => {
+                  setRevisionScene(scene); setRevisionComment(''); setRevisionSeconds(Number(scene.targetSeconds))
+                  setRevisionRoute(String(scene.route)); setRevisionNarration(String(scene.narration || ''))
+                }} />
             )}
             {selected.outputs?.storyboard != null && (
               <StoryboardView sb={selected.outputs.storyboard} onExpand={async () => {
@@ -2011,7 +2079,12 @@ export default function App() {
         )}
         {selected && taskMode && selected.outputs?.teachingVideo != null && (
           <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
-            sceneId={selectedSceneId} onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy} />
+            sceneId={selectedSceneId} onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy}
+            production={selected.outputs.production as TeachingProduction} onProduce={() => produceTeachingVideo(false)} producing={productionBusy}
+            onRevise={scene => {
+              setRevisionScene(scene); setRevisionComment(''); setRevisionSeconds(Number(scene.targetSeconds))
+              setRevisionRoute(String(scene.route)); setRevisionNarration(String(scene.narration || ''))
+            }} />
         )}
         </div>
         <div className="agent-dock">
@@ -2216,8 +2289,10 @@ function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
   )
 }
 
-function TeachingVideoView({ data, review, sceneId, onConfirm, confirming }: {
-  data: unknown; review: unknown; sceneId?: string; onConfirm: () => void; confirming: boolean }) {
+function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, production, onProduce, producing, onRevise }: {
+  data: unknown; review: unknown; sceneId?: string; onConfirm: () => void; confirming: boolean
+  production?: TeachingProduction
+  onProduce: () => void; producing: boolean; onRevise: (scene: Record<string, unknown>) => void }) {
   const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
       assertions?: string[]; routeStatus?: string; evidenceRefs?: string[]; narrationRefs?: string[]
@@ -2245,6 +2320,25 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming }: {
           <div className="muted">确认时间：{audit.confirmation.confirmedAt}</div>
         </div>
       )}
+      {audit.confirmation && !production && (
+        <button className="accent" disabled={producing} onClick={onProduce}>
+          {producing ? '正在生成…' : '生成候选视频（无付费）'}
+        </button>
+      )}
+      {production?.status === 'running' && <div className="seg">候选视频正在后台生成，页面会自动刷新。</div>}
+      {production?.status === 'failed' && <div className="err">候选生成失败，请查看任务记录。</div>}
+      {production?.status === 'pending_acceptance' && (
+        <div className="seg">
+          <b>候选视频 v{production.version} · 待教学验收</b>
+          {production.videoUrl && <video src={production.videoUrl} controls style={{ width: '100%' }} />}
+          <div className="muted">成片已生成，尚未表示教学验收通过。</div>
+          {production.subtitleAssetId && <a href={`/assets/${production.subtitleAssetId}.srt`} download>下载字幕 SRT</a>}
+          {(production.unchangedSceneIds?.length ?? 0) > 0 &&
+            <div className="muted">未修改场景哈希保持一致：{production.unchangedSceneIds!.join('、')}</div>}
+          {(production.missingEvidence?.length ?? 0) > 0 &&
+            <div className="muted">未生成场景：{production.missingEvidence!.map(x => `${x.sceneId}（${x.reason}）`).join('；')}</div>}
+        </div>
+      )}
       {audit.fixtureOnly && <div className="muted">本包含合成契约素材，不能作为真实课堂验收证据。</div>}
       {(audit.missingEvidence?.length ?? 0) > 0 && (
         <div className="seg"><b>待补项</b>{audit.missingEvidence!.map((item, i) =>
@@ -2261,6 +2355,9 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming }: {
           {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">核查：{assertion}</div>)}
           {scene.visualSpec && <details><summary>科学场景规格</summary>
             <pre>{JSON.stringify(scene.visualSpec, null, 2)}</pre></details>}
+          {production?.status === 'pending_acceptance' && (
+            <button onClick={() => onRevise(scene)}>退回此场景</button>
+          )}
         </div>
       ))}
     </div>

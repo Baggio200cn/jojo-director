@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, embeddings, executors, teaching_video_confirm, teaching_video_import, yuke_import
+from . import auth, db, embeddings, executors, teaching_video_confirm, teaching_video_import, teaching_video_produce, yuke_import
 from .config import ASSETS_DIR
 
 
@@ -272,6 +272,22 @@ def confirm_teaching_video_plan(pid: str, payload: dict):
         return teaching_video_confirm.confirm(pid, payload)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/{pid}/teaching-video/produce")
+def produce_teaching_video_candidate(pid: str, payload: dict, background: BackgroundTasks):
+    try:
+        result = teaching_video_produce.start(pid, payload)
+        background.add_task(teaching_video_produce.run, pid, result["candidateId"])
+        return result
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/projects/{pid}/teaching-video/candidates")
+def list_teaching_video_candidates(pid: str):
+    rows = db.query("video_candidates", "project_id=? ORDER BY created_at DESC", (pid,))
+    return [{**row, "manifest": db.jloads(row["manifest"])} for row in rows]
 
 
 class ProjectPatch(BaseModel):

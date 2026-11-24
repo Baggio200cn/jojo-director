@@ -64,6 +64,16 @@ CREATE TABLE IF NOT EXISTS video_plan_confirmations (
   package_hash TEXT NOT NULL, plan_hash TEXT UNIQUE NOT NULL, scene_ids TEXT NOT NULL,
   generative_media TEXT NOT NULL, paid_generation TEXT NOT NULL, created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS video_candidates (
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, import_task_id TEXT NOT NULL,
+  package_hash TEXT NOT NULL, parent_id TEXT, version INTEGER NOT NULL,
+  status TEXT NOT NULL, video_asset_id TEXT, manifest TEXT NOT NULL,
+  created_at TEXT, finished_at TEXT, error TEXT
+);
+CREATE TABLE IF NOT EXISTS video_revision_requests (
+  id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL, scene_id TEXT NOT NULL,
+  comment TEXT NOT NULL, status TEXT NOT NULL, new_candidate_id TEXT, created_at TEXT
+);
 """
 
 
