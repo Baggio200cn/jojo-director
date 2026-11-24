@@ -24,6 +24,11 @@ const patch = jsonReq('PATCH')
 export const api = {
   listProjects: () => fetch('/api/projects').then(j),
   createProject: (title: string) => post('/api/projects', { title }),
+  importYuke: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return fetch('/api/projects/import/yuke', { method: 'POST', body: fd }).then(j)
+  },
   getGraph: (pid: string) => fetch(`/api/projects/${pid}/graph`).then(j),
   createNode: (pid: string, node: object) => post(`/api/projects/${pid}/nodes`, node),
   updateNode: (nid: string, body: object) => patch(`/api/nodes/${nid}`, body),

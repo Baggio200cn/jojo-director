@@ -263,6 +263,7 @@ export default function App() {
   const [thumbs, setThumbs] = useState<Record<string, string>>({})
   const [homeInput, setHomeInput] = useState('')
   const [homeBusy, setHomeBusy] = useState(false)
+  const [yukeImportBusy, setYukeImportBusy] = useState(false)
   const [chat, setChat] = useState<{ role: string; text: string }[]>([])
   const [chatInput, setChatInput] = useState('')
   const [agentBusy, setAgentBusy] = useState(false)
@@ -314,6 +315,7 @@ export default function App() {
   const undoRef = useRef<{ nodes: BNode[]; edges: { id: string; source: string; target: string }[] }[]>([])
   const redoRef = useRef<typeof undoRef.current>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const yukeFileRef = useRef<HTMLInputElement>(null)
   const bnodesRef = useRef(bnodes)
   bnodesRef.current = bnodes
   const rfEdgesRef = useRef(rfEdges)
@@ -559,6 +561,24 @@ export default function App() {
     } catch (e) {
       setHomeErr(`开工失败：${e}。多半是后端服务没有运行——请双击 jojo-studio 文件夹里的 启动JOJO.bat`)
     } finally { setHomeBusy(false) }
+  }
+
+  const importYuke = async (file: File) => {
+    if (yukeImportBusy) return
+    setYukeImportBusy(true)
+    setHomeErr('')
+    try {
+      const r = await api.importYuke(file)
+      setProjects(await api.listProjects())
+      await switchProject(r.project_id)
+      setView('canvas')
+      say(`已导入 ${r.shots} 镜，请先复核制作路线和教学断言；尚未发起付费生成`)
+    } catch (e) {
+      setHomeErr(`导入失败：${e}`)
+    } finally {
+      setYukeImportBusy(false)
+      if (yukeFileRef.current) yukeFileRef.current.value = ''
+    }
   }
 
   // ── 后端健康监测：离线时全局红条提示 ──
@@ -1234,6 +1254,11 @@ export default function App() {
                 {agentModels.map(m => <option key={m.model} value={m.model}>{m.label}</option>)}
               </select>
             )}
+            <input ref={yukeFileRef} type="file" accept=".zip,application/zip" hidden
+              onChange={e => { const f = e.target.files?.[0]; if (f) void importYuke(f) }} />
+            <button disabled={yukeImportBusy} onClick={() => yukeFileRef.current?.click()}>
+              {yukeImportBusy ? '导入中…' : '导入驭课 ZIP'}
+            </button>
             <button className="send" disabled={homeBusy || !homeInput.trim()} onClick={submitHome}>
               {homeBusy ? '规划中…' : '↑ 开工'}
             </button>
@@ -2066,18 +2091,21 @@ function MotionCardView({ card }: { card: Record<string, unknown> }) {
 }
 
 function StoryboardView({ sb, onExpand }: { sb: unknown; onExpand?: () => void }) {
-  const s = sb as { shots?: { index: number; type: string; motion: string; seconds: number; first_frame_prompt?: string }[] }
+  const s = sb as { shots?: { index: number; type: string; motion: string; seconds: number;
+    first_frame_prompt?: string; narration?: string; visual?: string; review_notes?: string
+    route_status?: string; assertion_status?: string }[] }
+  const pending = s.shots?.some(shot => shot.route_status === 'needs_review' || shot.assertion_status === 'needs_review')
   return (
     <div className="result">
       <label>分镜（{s.shots?.length} 个镜头）</label>
       {onExpand && (
         <>
-          <button className="expand-btn" onClick={onExpand}>
-            ⚡ 展开为逐镜生产线
+          <button className="expand-btn" onClick={onExpand} disabled={pending}>
+            {pending ? '路线与断言待复核' : '⚡ 展开为逐镜生产线'}
           </button>
           <div className="muted" style={{ fontSize: 11, lineHeight: 1.6 }}>
-            每镜自动生成：首帧(+尾帧) → 帧质检 → 视频 → 视频质检 → 汇入拼接。
-            帧未生成或质检不合格时，视频节点会被关卡拦下；建议用 ⏭ 单步逐步验收。
+            {pending ? '导入稿只作为候选。请先复核制作路线并补齐教学断言，本版不会自动发起付费生成。'
+              : '每镜自动生成：首帧(+尾帧) → 帧质检 → 视频 → 视频质检 → 汇入拼接。建议用单步逐步验收。'}
           </div>
         </>
       )}
@@ -2085,9 +2113,13 @@ function StoryboardView({ sb, onExpand }: { sb: unknown; onExpand?: () => void }
         <div key={shot.index} className="seg">
           <b>镜头{shot.index}（{shot.seconds}s）</b>
           <span className={`route-badge ${shot.type}`}>
-            {shot.type === 'code_render' ? '⚙ 代码渲染' : '✨ AI 生成'}
+            {shot.type === 'code_render' ? '⚙ 代码渲染' : shot.type === 'live_action' ? '教师实拍' : '✨ AI 生成'}
           </span>
-          <div>{shot.motion}</div>
+          {shot.route_status === 'needs_review' && <div className="muted">路线待复核 · 教学断言待补齐</div>}
+          {shot.visual && <div>{shot.visual}</div>}
+          {shot.narration && <div className="muted">口播：{shot.narration}</div>}
+          {shot.motion && <div>{shot.motion}</div>}
+          {shot.review_notes && <div className="muted">核对：{shot.review_notes}</div>}
         </div>
       ))}
     </div>

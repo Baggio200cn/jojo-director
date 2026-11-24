@@ -49,14 +49,14 @@
 
 ## 快速上手（5 分钟）
 
-**前置条件**：Python 3.11+、Node 18+、ffmpeg，以及一个[火山方舟](https://console.volcengine.com/ark)账号（**自备 API Key，费用自理**——一部 2 分钟微课的直接生成成本约 30-60 元人民币）。
+**前置条件**：Python 3.11+、Node 18+、ffmpeg，以及 MoMA 账号（**自备 API Key，费用自理**——一部 2 分钟微课的直接生成成本约 30-60 元人民币）。文本、图像、视频和视觉质检默认走 MoMA；火山方舟可作为一种显式备选。联网调研、视觉 Embedding 和 TTS 暂未全部完成 MoMA 迁移，配置时按能力位单独确认，不做静默跨供应商降级。
 
 ```bash
 # 1. 后端
 cd backend
 pip install -r requirements.txt
-cp .env.example .env            # 填入你的 ARK_API_KEY
-# 编辑 providers.yaml：把 routes 里的模型 ID 换成你在方舟开通的推理接入点
+cp .env.example .env            # 填入你的 BJMOMA_API_KEY；火山备选再填 ARK_API_KEY
+# 编辑 providers.yaml：按能力位选择 moma / ark，并换成账号实测可用的模型 ID
 python -m uvicorn app.main:app --port 8000
 
 # 2. 前端（另开终端）
@@ -66,6 +66,8 @@ npm run dev                     # 打开 http://localhost:5173
 ```
 
 首页输入"今天要做点什么微课？"→ Agent 规划分镜 → 逐镜生产（帧→质检→视频→质检）→ 🩺 验收台坐诊 → 拼接成片。
+
+也可在首页选择“导入驭课 ZIP”，导入 `yuke-micro-intro/v1` 单课次制作包。系统保存课程、上游 `sourceVersion`、口播和分镜，生成可审候选；导入不代表路线与教学断言已复核，不自动展开产线或发起付费生成。多课次 ZIP 请分课导入。
 
 ## 访问控制（管理员 + 邀请码）
 

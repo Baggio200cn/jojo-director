@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, embeddings, executors
+from . import auth, db, embeddings, executors, yuke_import
 from .config import ASSETS_DIR
 
 
@@ -25,9 +25,14 @@ def _migrate() -> None:
             c.execute("ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
         except Exception:
             pass
+        try:
+            c.execute("ALTER TABLE projects ADD COLUMN source_manifest TEXT DEFAULT '{}'")
+        except Exception:
+            pass
         # MAAO 证据流：台账补 verdict / capability_id 列
         for sql in ("ALTER TABLE model_tasks ADD COLUMN verdict TEXT",
-                    "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT"):
+                    "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT",
+                    "ALTER TABLE model_tasks ADD COLUMN reported_model TEXT"):
             try:
                 c.execute(sql)
             except Exception:
@@ -239,6 +244,16 @@ def create_project(p: ProjectIn):
 @app.get("/api/projects")
 def list_projects():
     return db.query("projects")
+
+
+@app.post("/api/projects/import/yuke")
+async def import_yuke_package(file: UploadFile = File(...)):
+    content = await file.read(yuke_import.MAX_ZIP_BYTES + 1)
+    try:
+        package = yuke_import.read_package(content)
+        return yuke_import.create_project(package)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 class ProjectPatch(BaseModel):
@@ -522,6 +537,9 @@ def expand_storyboard(nid: str, req: ExpandIn):
         req.domain = _sb_domain
     if not shots:
         raise HTTPException(400, "请先执行分镜节点，生成镜头列表")
+    pending = [s for s in shots if s.get("route_status") == "needs_review" or s.get("assertion_status") == "needs_review"]
+    if pending:
+        raise HTTPException(400, f"仍有 {len(pending)} 个导入镜头的制作路线或教学断言待复核，暂不能展开为付费产线")
     pid = node["project_id"]
     x0, y0 = node["position_x"], node["position_y"]
 

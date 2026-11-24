@@ -13,7 +13,7 @@ from .config import DB_PATH
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY, title TEXT NOT NULL, status TEXT DEFAULT 'draft',
-  created_at TEXT, updated_at TEXT
+  source_manifest TEXT DEFAULT '{}', created_at TEXT, updated_at TEXT
 );
 CREATE TABLE IF NOT EXISTS canvas_nodes (
   id TEXT PRIMARY KEY, project_id TEXT NOT NULL, type TEXT NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS canvas_edges (
 );
 CREATE TABLE IF NOT EXISTS model_tasks (
   id TEXT PRIMARY KEY, project_id TEXT, node_id TEXT,
-  provider TEXT, model TEXT, task_type TEXT, status TEXT DEFAULT 'created',
+  provider TEXT, model TEXT, reported_model TEXT, task_type TEXT, status TEXT DEFAULT 'created',
   provider_task_id TEXT, request_payload TEXT, response_payload TEXT,
   input_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0,
   estimated_cost_cny REAL DEFAULT 0, error TEXT,

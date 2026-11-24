@@ -4,6 +4,14 @@ providers:
     base_url: https://ark.cn-beijing.volces.com/api/v3
     api_key_env: ARK_API_KEY
     enabled: true
+  moma:
+    base_url_env: BJMOMA_BASE
+    api_key_env: BJMOMA_API_KEY
+    enabled: true
+  bjmoma:                       # 旧视频配置的兼容别名；新配置统一使用 moma
+    base_url_env: BJMOMA_BASE
+    api_key_env: BJMOMA_API_KEY
+    enabled: true
   openai:
     base_url_env: OPENAI_BASE_URL
     api_key_env: OPENAI_API_KEY
@@ -16,22 +24,22 @@ providers:
     enabled: false            # 预留：百度千帆
 
 routes:
-  script:      { provider: ark, model: ep-m-20260628072122-2qpsz }        # DeepSeek-V4-pro
-  storyboard:  { provider: ark, model: ep-m-20260628072122-2qpsz }
-  image:       { provider: ark, model: ep-m-20260405031810-d2bbc }        # Seedream-4.5（文生图/首帧）
-  image_edit:  { provider: ark, model: doubao-seedream-5-0-pro-260628 }   # Seedream-5.0-pro（编辑/尾帧，实测可执行光效编辑）
-  # 编辑备选：doubao-seedream-5-0-260128（5.0 标准版，光效稍弱）
+  script:      { provider: moma, model: kimi-k3 }
+  storyboard:  { provider: moma, model: kimi-k3 }
+  image:       { provider: moma, model: doubao-seedream-5-0-260128 }
+  image_edit:  { provider: moma, model: doubao-seedream-5-0-260128 }
   image_alt:   { provider: openai, model: gpt-image-2 }                    # 预留
-  video:       { provider: ark, model: doubao-seedance-2-0-mini-260615,   # Seedance-2.0-mini
-                 resolutions: ["480p", "720p"] }   # 实测：1080p 仅纯文生可用，图生(首帧驱动)上限720p——降档保护按图生口径
-  video_hd:    { provider: bjmoma, model: doubao-seedance-2-0-260128,     # 2.0正式版走北京移动Token平台（图生1080p/4k、4-15s）
+  video:       { provider: moma, model: doubao-seedance-2-0-260128,
                  resolutions: ["480p", "540p", "720p", "1080p", "4k"] }
-  # video_hd 备选（方舟直连，需控制台开通）: { provider: ark, model: doubao-seedance-2-0-260128 }
+  video_hd:    { provider: moma, model: doubao-seedance-2-0-260128,
+                 resolutions: ["480p", "540p", "720p", "1080p", "4k"] }
   code_render: { provider: local, engine: manim }
-  qc_vision:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 视觉裁判：Doubao-Seed-2.1-pro
-  ref_video:   { provider: ark, model: doubao-seed-2-1-pro-260628 }  # 参考视频分析（视觉模型）
-  research:    { provider: ark, model: ep-m-20260628072122-2qpsz }   # Agent 联网调研（需开通联网内容插件）
-  embedding:   { provider: ark, model: doubao-embedding-vision-251215,  # 多模态向量（文本+图片同源）
+  qc_vision:   { provider: moma, model: doubao-seed-2-1-pro-huoshan }
+  ref_video:   { provider: moma, model: doubao-seed-2-1-pro-huoshan }
+  # MoMA 尚未接通 Responses/web_search；需要调研时须显式保留火山能力位，不做静默切换。
+  research:    { provider: ark, model: ep-m-20260628072122-2qpsz }
+  # 当前 MoMA 模型目录未发现既有视觉 Embedding；迁移缺口未补齐前显式使用火山。
+  embedding:   { provider: ark, model: doubao-embedding-vision-251215,
                  endpoint: embeddings/multimodal, multimodal: true }
 
 # 成本阀：超限拒绝执行（单位：人民币元，预估值）
@@ -40,10 +48,12 @@ budget:
   max_cost_per_video: 5.0
   max_video_retries: 2
 
-# Agent 对话可选模型（前端下拉框），第一个为默认
+# Agent 对话可选模型（前端下拉框），第一个为默认；供应商随选择一并锁定。
 agent_models:
-  - { label: DeepSeek-V4-pro,     model: ep-m-20260628072122-2qpsz }
-  - { label: Doubao-Seed-2.1-pro, model: doubao-seed-2-1-pro-260628 }
+  - { label: MoMA · Kimi K3,                 provider: moma, model: kimi-k3 }
+  - { label: MoMA · DeepSeek V4 Pro,         provider: moma, model: deepseek-v4-pro-fy }
+  - { label: 火山引擎 · DeepSeek V4 Pro,      provider: ark,  model: ep-m-20260628072122-2qpsz }
+  - { label: 火山引擎 · Doubao Seed 2.1 Pro,  provider: ark,  model: doubao-seed-2-1-pro-260628 }
 
 # 单价表（人民币）：报表端点据此惰性结算 estimated_cost_cny
 # calibrated=true 表示由真实账单反推校准；false 为公开价目估计，拿到账单后应替换

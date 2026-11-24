@@ -1,7 +1,7 @@
 # JOJO Director
 
 职教微课 AI 创作画布：脚本→分镜→帧→视频→质检→拼接的节点式产线。
-后端 FastAPI + SQLite（backend/），前端 React + Vite（frontend/），模型走火山方舟（providers.yaml 路由）。
+后端 FastAPI + SQLite（backend/），前端 React + Vite（frontend/）。模型按能力位在 providers.yaml 显式选择 MoMA / 火山方舟，任务不静默跨供应商降级；当前默认文本、图像、视频和视觉质检走 MoMA，联网调研、Embedding 与 TTS 的迁移缺口单独管理。
 
 ## 约定
 
