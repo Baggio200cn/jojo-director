@@ -4,8 +4,8 @@ html, body, #root { height: 100%; }
 
 body {
   font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
-  background: #f3f4f6;
-  color: #1f2937;
+  background: #FAF8F2;
+  color: #1A1A1A;
   font-size: 14px;
 }
 
@@ -26,7 +26,7 @@ body {
 
 /* ── 验收台 ───────────────── */
 .review {
-  height: 100%; overflow-y: auto; background: #f3f4f6; padding: 18px 26px;
+  height: 100%; overflow-y: auto; background: #FAF8F2; padding: 18px 26px;
 }
 .review-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .review-head h1 { font-size: 18px; flex: 1; }
@@ -610,4 +610,69 @@ body {
   44% { opacity: 1; transform: translateY(0); }
   86% { opacity: 1; }
   96%, 100% { opacity: 0; transform: translateY(6px); }
+}
+
+
+/* JOJO Director brand identity v1 */
+:root {
+  --jojo-ink: #1A1A1A;
+  --jojo-paper: #FAF8F2;
+  --jojo-scene: #00B3A6;
+  --jojo-produce: #E6007E;
+  --jojo-verify: #FF8A00;
+  --jojo-line: #DEDAD1;
+}
+body { background: var(--jojo-paper); color: var(--jojo-ink); }
+.home {
+  background:
+    radial-gradient(65% 42% at 50% 0%, #FFFFFF 0%, var(--jojo-paper) 76%);
+}
+.home-center { width: min(980px, 92vw); padding: 5vh 0 64px; }
+.home-logo {
+  width: min(620px, 78vw); height: auto; max-height: 220px;
+  object-fit: contain; border-radius: 0; margin-bottom: 22px;
+}
+.home-kicker {
+  color: var(--jojo-scene); font-size: 11px; font-weight: 700;
+  letter-spacing: 3.2px; margin: 4px 0 12px;
+}
+.home-title {
+  color: var(--jojo-ink); font-size: clamp(24px, 3vw, 34px);
+  letter-spacing: .5px; text-align: center; margin: 0 0 10px;
+}
+.home-intro {
+  max-width: 760px; color: #66635D; text-align: center;
+  font-size: 14px; line-height: 1.9; margin: 0 0 26px;
+}
+.home-box {
+  border-color: var(--jojo-line); border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(26,26,26,.055);
+}
+.home-box:focus-within { border-color: var(--jojo-scene); }
+.home-box-foot .send, .dock-input .send {
+  background: var(--jojo-ink); color: var(--jojo-paper);
+}
+.home-box-foot .send:hover, .dock-input .send:hover { background: #333333; }
+.proj-card:hover { border-color: var(--jojo-scene); }
+.brand-row h1 { color: var(--jojo-ink); letter-spacing: 1.2px; }
+.brand-row:hover h1 { color: var(--jojo-scene); }
+.toolbar button.accent, .review-actions .accent {
+  background: var(--jojo-ink); border-color: var(--jojo-ink);
+}
+.toolbar button.accent:hover, .review-actions .accent:hover { background: #333333; }
+.tab-bar button.on {
+  border-color: var(--jojo-scene); background: rgba(0,179,166,.10);
+  color: #087F78;
+}
+.jojo-node.selected { border-color: var(--jojo-scene); box-shadow: 0 0 0 2px rgba(0,179,166,.18); }
+.jojo-node .run-btn { background: var(--jojo-ink); }
+.jojo-node .react-flow__handle { background: var(--jojo-scene); }
+.resizer:hover { background: var(--jojo-scene); }
+.home-upload, .jojo-ad, .proj-card { border-color: var(--jojo-line); }
+@media (max-width: 720px) {
+  .home-center { padding-top: 28px; }
+  .home-logo { width: min(520px, 88vw); }
+  .home-title { line-height: 1.35; }
+  .home-intro { padding: 0 10px; font-size: 13px; }
+  .home-box-foot { flex-wrap: wrap; justify-content: stretch; }
 }
