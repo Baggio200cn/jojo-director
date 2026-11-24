@@ -1,0 +1,14 @@
+period:
+  unit: s
+  required: true
+  minExclusive: 0
+dutyCycleSequence:
+  unit: "%"
+  required: true
+  minItems: 1
+  itemRange: [0, 100]
+narrationSourceVersion:
+  required: true
+realFootage:
+  required: false
+  rightsRequired: true

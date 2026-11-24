@@ -1,0 +1,108 @@
+version: 1
+status: draft
+rules:
+  primary_unique: true
+  code_immutable_after_publish: true
+  split_requires_reviewer: true
+  archive_requires_reviewer: true
+levels:
+  - code: SCI-PHY
+    name_zh: 物理学
+    name_en: Physics
+    status: active
+    priority: P0
+    children:
+      - {code: PHY-OPT, name_zh: 光学, name_en: Optics, status: active}
+      - {code: PHY-MEC, name_zh: 力学, name_en: Mechanics, status: active}
+      - {code: PHY-ELE, name_zh: 电学, name_en: Electricity, status: active}
+      - {code: PHY-THE, name_zh: 热学, name_en: Thermodynamics, status: draft}
+      - {code: PHY-MOD, name_zh: 近代物理, name_en: Modern Physics, status: draft}
+  - code: SCI-CHE
+    name_zh: 化学
+    name_en: Chemistry
+    status: draft
+    priority: P1
+    children:
+      - {code: CHE-INO, name_zh: 无机化学, name_en: Inorganic Chemistry, status: draft}
+      - {code: CHE-ORG, name_zh: 有机化学, name_en: Organic Chemistry, status: draft}
+      - {code: CHE-PHC, name_zh: 物理化学, name_en: Physical Chemistry, status: draft}
+      - {code: CHE-ANA, name_zh: 分析化学, name_en: Analytical Chemistry, status: draft}
+      - {code: CHE-SAF, name_zh: 化学安全, name_en: Chemical Safety, status: draft}
+  - code: SCI-MEC
+    name_zh: 机械工程
+    name_en: Mechanical Engineering
+    status: active
+    priority: P0
+    children:
+      - {code: MEC-PRI, name_zh: 机械原理, name_en: Mechanical Principles, status: active}
+      - {code: MEC-DES, name_zh: 机械设计, name_en: Mechanical Design, status: draft}
+      - {code: MEC-MFG, name_zh: 制造工艺, name_en: Manufacturing Processes, status: draft}
+      - {code: MEC-HYD, name_zh: 液压与气动, name_en: Hydraulics and Pneumatics, status: draft}
+      - {code: MEC-ROB, name_zh: 机器人, name_en: Robotics, status: draft}
+  - code: SCI-ELE
+    name_zh: 电气与电子
+    name_en: Electrical and Electronic Engineering
+    status: active
+    priority: P0
+    children:
+      - {code: ELE-CIR, name_zh: 电路基础, name_en: Circuit Fundamentals, status: active}
+      - {code: ELE-MOT, name_zh: 电机与拖动, name_en: Motors and Drives, status: draft}
+      - {code: ELE-POW, name_zh: 电力电子, name_en: Power Electronics, status: active}
+      - {code: ELE-CTL, name_zh: 自动控制, name_en: Automatic Control, status: draft}
+      - {code: ELE-SEN, name_zh: 传感器, name_en: Sensors, status: draft}
+  - code: SCI-CS
+    name_zh: 计算机科学与技术
+    name_en: Computer Science and Technology
+    status: active
+    priority: P0
+    children:
+      - {code: CS-PRO, name_zh: 程序设计基础, name_en: Programming Fundamentals, status: active}
+      - {code: CS-DSA, name_zh: 数据结构与算法, name_en: Data Structures and Algorithms, status: active}
+      - {code: CS-SYS, name_zh: 操作系统与系统原理, name_en: Operating Systems, status: draft}
+      - {code: CS-NET, name_zh: 网络与分布式系统, name_en: Networks and Distributed Systems, status: draft}
+      - {code: CS-DB, name_zh: 数据库与数据管理, name_en: Databases and Data Management, status: draft}
+      - {code: CS-SE, name_zh: 软件工程与测试, name_en: Software Engineering and Testing, status: draft}
+      - {code: CS-AI, name_zh: 人工智能与数据科学, name_en: AI and Data Science, status: draft}
+      - {code: CS-SEC, name_zh: 网络与信息安全, name_en: Cybersecurity, status: draft}
+  - code: SCI-BIO
+    name_zh: 生物学
+    name_en: Biology
+    status: draft
+    priority: P1
+    children:
+      - {code: BIO-CEL, name_zh: 细胞生物, name_en: Cell Biology, status: draft}
+      - {code: BIO-GEN, name_zh: 遗传学, name_en: Genetics, status: draft}
+      - {code: BIO-MIC, name_zh: 微生物, name_en: Microbiology, status: draft}
+      - {code: BIO-BOT, name_zh: 植物学, name_en: Botany, status: draft}
+      - {code: BIO-ZOO, name_zh: 动物学, name_en: Zoology, status: draft}
+  - code: SCI-MED
+    name_zh: 医药与健康
+    name_en: Medicine and Health
+    status: draft
+    priority: P1
+    children:
+      - {code: MED-ANA, name_zh: 解剖学, name_en: Anatomy, status: draft}
+      - {code: MED-PHY, name_zh: 生理学, name_en: Physiology, status: draft}
+      - {code: MED-PHA, name_zh: 药理学, name_en: Pharmacology, status: draft}
+      - {code: MED-NUR, name_zh: 护理技术, name_en: Nursing Practice, status: draft}
+      - {code: MED-IMG, name_zh: 影像诊断, name_en: Medical Imaging, status: draft}
+  - code: SCI-SPO
+    name_zh: 运动科学与体育
+    name_en: Sports Science and Physical Education
+    status: draft
+    priority: P2
+    children:
+      - {code: SPO-KIN, name_zh: 运动力学, name_en: Sports Biomechanics, status: draft}
+      - {code: SPO-PHY, name_zh: 运动生理, name_en: Exercise Physiology, status: draft}
+      - {code: SPO-REH, name_zh: 运动康复, name_en: Sports Rehabilitation, status: draft}
+      - {code: SPO-FIT, name_zh: 健康体适能, name_en: Health-related Fitness, status: draft}
+  - code: SCI-EAR
+    name_zh: 地球与空间科学
+    name_en: Earth and Space Science
+    status: draft
+    priority: P2
+    children:
+      - {code: EAR-AST, name_zh: 天文学, name_en: Astronomy, status: draft}
+      - {code: EAR-GEO, name_zh: 地质学, name_en: Geology, status: draft}
+      - {code: EAR-MET, name_zh: 气象学, name_en: Meteorology, status: draft}
+      - {code: EAR-OCE, name_zh: 海洋学, name_en: Oceanography, status: draft}

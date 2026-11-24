@@ -1,0 +1,16 @@
+{
+  "sceneId": "scene-lens-imaging",
+  "pointId": "point-lens-imaging",
+  "teachingGoal": "观察物距变化与凸透镜成像光路的关系",
+  "objects": ["凸透镜", "物体", "光屏", "光线"],
+  "parameters": {
+    "focalLength": {"required": true, "unit": "mm"},
+    "objectDistance": {"required": true, "unit": "mm"}
+  },
+  "initialState": {"rayDirection": "left_to_right"},
+  "actions": ["按给定参数绘制平行光、焦点和成像位置"],
+  "observations": ["光线方向正确", "焦点位置可核对", "成像结论与光路一致"],
+  "invariants": ["不得改变焦距和物距含义", "不得生成与公式矛盾的光线"],
+  "assertions": [],
+  "reviewRequired": true
+}

@@ -1,0 +1,11 @@
+sortedValues:
+  required: true
+  ordered: true
+target:
+  required: true
+runtime:
+  required: true
+  fields: [language, version, dependencies]
+testCases:
+  required: true
+  include: [found, not_found, empty, left_boundary, right_boundary, duplicates]

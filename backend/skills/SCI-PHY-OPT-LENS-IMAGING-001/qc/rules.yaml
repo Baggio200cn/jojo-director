@@ -1,0 +1,10 @@
+rules:
+  - id: LENS-001
+    severity: high
+    check: 入射光、折射光和焦点方向必须正确，不得出现无依据的反向光路。
+  - id: LENS-002
+    severity: high
+    check: 焦距、物距和像距必须使用一致单位，成像结论必须与光路和公式一致。
+  - id: LENS-003
+    severity: high
+    check: 真实实验画面必须能回查出处，不能用生成式图片冒充真实透镜实验。

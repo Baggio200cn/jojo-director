@@ -1,0 +1,34 @@
+skillId: SCI-ELE-CIR-PWM-DIMMING-001
+version: 0.1.0
+status: candidate
+classification:
+  primary: SCI-ELE-CIR-PWM
+  labels: [高职, 电路基础, 波形, 确定性2D, 待复核]
+title: PWM 占空比与 LED 调光
+description: 用确定性程序生成周期一致的 PWM 波形，并与真实调光素材组合。候选 Skill，未完成教研批准。
+source:
+  - type: existing_project
+    id: backend/app/render/pwm_waveform.py
+    locator: 现有 PWM 渲染实现
+    rights: own
+inputs:
+  - {name: period, unit: s, required: true}
+  - {name: dutyCycleSequence, unit: "%", required: true}
+outputs:
+  - {type: scene_spec, template: spec_template.json}
+  - {type: waveform_frames, renderer: backend/app/render/pwm_waveform.py}
+routeCandidates: [diagram_2d, live_action]
+forbiddenRoutes: [generated_scene]
+evidenceCards: []
+qc:
+  rulesFile: qc/rules.yaml
+  minRules: 3
+  positiveSamples: 0
+  negativeSamples: 0
+reviewStatus:
+  reviewer: 待教研指定
+  status: pending
+reuse:
+  usedCount: 0
+  firstPassRate: null
+  avgFixMinutes: null
