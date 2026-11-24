@@ -185,7 +185,7 @@ sceneId / pointId / sourceVersions
 
 ### 交接契约
 
-最小 `yuke-micro-intro/v1` 解决单课次片头制作包导入。完整生产使用 `yuke-scene-production/v1`，至少包括：
+最小 `yuke-micro-intro/v1` 解决单课次片头制作包导入。完整生产使用 `yuke-teaching-video/v1`，至少包括：
 
 ```text
 manifest.json
@@ -252,12 +252,14 @@ rights/
 - 脚本、分镜、图像、视频、代码渲染、质检、配音、拼接与验收台；
 - MAAO 能力地图、规则包、素材库、改判记录和成本台账；
 - MoMA / 火山引擎能力位选择与旧 `bjmoma` 视频配置兼容；
-- `yuke-micro-intro/v1` 单课次 ZIP 导入，保存来源版本与可审分镜；
+- `yuke-micro-intro/v1` 单课次片头 ZIP 导入，保存来源版本与可审分镜；
+- `yuke-teaching-video/v1` 清单校验、素材 SHA-256 复核、场景路线建议、缺项与版本化审核回执；
+- 相同任务包重复导入返回原任务，同版本不同内容被拒绝；
 - 待复核导入镜头不能展开为付费产线。
 
 ### 仍需逐步完成
 
-- 完整 `yuke-scene-production/v1` 与导入审核台；
+- 驭课侧完整任务包导出、版本化方案确认、成片回传和指定场景送修；
 - 教师前景、课件背景和科学生产的统一时间线；
 - 参数化 3D 与更多学科场景库；
 - 学校/项目级权限、统一 Agent 额度检查和外部任务 `external_unknown`；
@@ -287,6 +289,7 @@ npm run dev                     # 打开 http://localhost:5173
 
 - 输入教学需求，由 Agent 规划脚本与分镜；
 - 选择“导入驭课 ZIP”，导入单课次片头制作包；
+- 选择“导入教学视频包”，审核 `yuke-teaching-video/v1` 的场景、素材、版本和待补项；
 - 在画布中逐镜生产，或在验收台进行人工终裁。
 
 多课次 ZIP 请分课导入。导入只代表候选交接，不代表路线与教学断言已复核，不自动展开产线或发起付费生成。
@@ -301,6 +304,7 @@ backend/
   qc_rules/            学科与课题质检规则、草稿规则
   tools/               改判记录归纳工具
   tests/               离线契约、工作流与真实模型回归
+  schemas/             教学视频任务包 JSON Schema
   providers.yaml       能力位、供应商、模型与成本配置
   capability_map.yaml  模型能力地图与分镜路由
 frontend/              React + React Flow 画布、验收台与素材库

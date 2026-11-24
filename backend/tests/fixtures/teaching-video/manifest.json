@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "format": "yuke-teaching-video/v1",
+  "packageId": "pkg-pwm-duty",
+  "packageVersion": "pkg-v1",
+  "course": {"courseId": "course-led", "title": "LED 驱动器与智慧照明"},
+  "lesson": {"lessonId": "lesson-1", "lessonNumber": 1, "audience": "职业院校初学者"},
+  "template": "concept_explainer",
+  "teachingGoal": "解释 PWM 占空比变化与 LED 平均亮度的关系",
+  "studentObservation": "学生能指出周期不变时，占空比增加会带来平均亮度增加",
+  "sourceVersions": {
+    "preparation": "prep-v3",
+    "blueprint": "blueprint-v7",
+    "design": "design-v4",
+    "ppt": "ppt-v5",
+    "lecture": "lecture-v6"
+  },
+  "unusedInputs": [],
+  "missingEvidence": [
+    {"type": "teacher_media", "description": "教师开场实拍未随契约样例提供", "required": false}
+  ],
+  "scenes": [
+    {
+      "sceneId": "scene-opening",
+      "pointId": "point-pwm-duty",
+      "title": "教师开场",
+      "teachingGoal": "提出占空比与亮度关系的问题",
+      "targetSeconds": 8,
+      "routeCandidates": ["live_action"],
+      "evidenceRefs": ["source-pwm"],
+      "narrationRefs": ["paragraph-opening"],
+      "slideRefs": [],
+      "narration": "LED 的亮度是怎样改变的？",
+      "visual": "教师开场画面待提供",
+      "assertions": ["开场只提出问题，不提前给出错误结论"],
+      "reviewRequired": true
+    },
+    {
+      "sceneId": "scene-pwm-waveform",
+      "pointId": "point-pwm-duty",
+      "title": "占空比波形变化",
+      "teachingGoal": "观察周期不变时高电平宽度增加",
+      "targetSeconds": 22,
+      "routeCandidates": ["diagram_2d"],
+      "evidenceRefs": ["source-pwm", "slide-4"],
+      "narrationRefs": ["paragraph-duty"],
+      "slideRefs": ["slide-4"],
+      "narration": "周期保持不变，高电平所占比例从 10% 增加到 50%，再增加到 90%。",
+      "visual": "三组周期一致的方波依次提高占空比",
+      "assertions": ["三组波形周期一致", "高电平宽度依次增加", "占空比顺序为 10%、50%、90%"],
+      "visualSpec": {"periodInvariant": true, "dutyCycleSequence": [10, 50, 90]},
+      "reviewRequired": true
+    },
+    {
+      "sceneId": "scene-led-demo",
+      "pointId": "point-pwm-duty",
+      "title": "LED 调光现象",
+      "teachingGoal": "将波形变化与真实亮度变化联系起来",
+      "targetSeconds": 10,
+      "routeCandidates": ["live_action"],
+      "evidenceRefs": ["led-demo"],
+      "narrationRefs": ["paragraph-demo"],
+      "slideRefs": [],
+      "narration": "观察占空比增加时 LED 平均亮度的变化。",
+      "visual": "真实调光录屏占位，当前仅为合成测试视频",
+      "assertions": ["实拍出处可回查", "不得把合成占位视频标为真实课堂实录"],
+      "reviewRequired": true
+    },
+    {
+      "sceneId": "scene-summary",
+      "pointId": "point-pwm-duty",
+      "title": "教师总结",
+      "teachingGoal": "归纳占空比与平均亮度的关系",
+      "targetSeconds": 6,
+      "routeCandidates": ["live_action", "slide_composite"],
+      "evidenceRefs": ["source-pwm"],
+      "narrationRefs": ["paragraph-summary"],
+      "slideRefs": ["slide-4"],
+      "narration": "周期不变时，占空比越大，LED 的平均亮度越高。",
+      "visual": "教师总结或课件归纳",
+      "assertions": ["总结同时包含周期不变和占空比增加两个条件"],
+      "reviewRequired": true
+    }
+  ],
+  "assets": [
+    {
+      "assetId": "source-pwm",
+      "kind": "doc",
+      "role": "scientific_evidence",
+      "uri": "evidence/pwm-notes.txt",
+      "contentHash": "sha256:79dfacdabd9405628b3b90d18014a2e866bc518d806672e3cad05626ecc75de8",
+      "sourceVersion": "prep-v3",
+      "rights": "own",
+      "allowedEgress": "approved",
+      "allowedUse": "contract-test-only",
+      "locator": "全文",
+      "syntheticFixture": true
+    },
+    {
+      "assetId": "slide-4",
+      "kind": "image",
+      "role": "slide",
+      "uri": "assets/pwm-waveform.svg",
+      "contentHash": "sha256:b685aabe101aa56f2f2fe62f407c331048c2846d481d057fbbd22db1b46c05e7",
+      "sourceVersion": "ppt-v5",
+      "rights": "own",
+      "allowedEgress": "approved",
+      "allowedUse": "contract-test-only",
+      "locator": "第 4 页",
+      "syntheticFixture": true
+    },
+    {
+      "assetId": "led-demo",
+      "kind": "video",
+      "role": "live_action",
+      "uri": "assets/led-dimming.mp4",
+      "contentHash": "sha256:eb8511761bd417536bf1a4bb13edbf3599d9c2a07e8260a896c96a8a0d4f3166",
+      "sourceVersion": "prep-v3",
+      "rights": "own",
+      "allowedEgress": "not-required-for-local-compose",
+      "allowedUse": "contract-test-only",
+      "attribution": "ffmpeg 合成测试视频，不是实际 LED 调光实拍",
+      "syntheticFixture": true
+    }
+  ],
+  "acceptance": {
+    "periodInvariant": true,
+    "dutyDirection": "increasing",
+    "narrationSubtitleSource": "lecture-v6",
+    "realClassroomEvidenceRequired": true
+  },
+  "approval": {
+    "routeStatus": "pending_teacher",
+    "generativeMedia": "not_authorized",
+    "paidGeneration": "not_required"
+  },
+  "paidGenerationApproved": false
+}

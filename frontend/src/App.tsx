@@ -264,6 +264,7 @@ export default function App() {
   const [homeInput, setHomeInput] = useState('')
   const [homeBusy, setHomeBusy] = useState(false)
   const [yukeImportBusy, setYukeImportBusy] = useState(false)
+  const [teachingImportBusy, setTeachingImportBusy] = useState(false)
   const [chat, setChat] = useState<{ role: string; text: string }[]>([])
   const [chatInput, setChatInput] = useState('')
   const [agentBusy, setAgentBusy] = useState(false)
@@ -316,6 +317,7 @@ export default function App() {
   const redoRef = useRef<typeof undoRef.current>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const yukeFileRef = useRef<HTMLInputElement>(null)
+  const teachingFileRef = useRef<HTMLInputElement>(null)
   const bnodesRef = useRef(bnodes)
   bnodesRef.current = bnodes
   const rfEdgesRef = useRef(rfEdges)
@@ -578,6 +580,25 @@ export default function App() {
     } finally {
       setYukeImportBusy(false)
       if (yukeFileRef.current) yukeFileRef.current.value = ''
+    }
+  }
+
+  const importTeachingVideo = async (file: File) => {
+    if (teachingImportBusy) return
+    setTeachingImportBusy(true)
+    setHomeErr('')
+    try {
+      const r = await api.importTeachingVideo(file)
+      setProjects(await api.listProjects())
+      await switchProject(r.project_id)
+      setView('canvas')
+      say(r.reused ? '该包已导入，已返回原任务，没有重复建项目'
+        : `任务包已接收：${r.scenePlans.length} 个场景，请核对路线和待补项`)
+    } catch (e) {
+      setHomeErr(`教学视频包导入失败：${e}`)
+    } finally {
+      setTeachingImportBusy(false)
+      if (teachingFileRef.current) teachingFileRef.current.value = ''
     }
   }
 
@@ -1259,6 +1280,11 @@ export default function App() {
             <button disabled={yukeImportBusy} onClick={() => yukeFileRef.current?.click()}>
               {yukeImportBusy ? '导入中…' : '导入驭课 ZIP'}
             </button>
+            <input ref={teachingFileRef} type="file" accept=".zip,application/zip" hidden
+              onChange={e => { const f = e.target.files?.[0]; if (f) void importTeachingVideo(f) }} />
+            <button disabled={teachingImportBusy} onClick={() => teachingFileRef.current?.click()}>
+              {teachingImportBusy ? '审核中…' : '导入教学视频包'}
+            </button>
             <button className="send" disabled={homeBusy || !homeInput.trim()} onClick={submitHome}>
               {homeBusy ? '规划中…' : '↑ 开工'}
             </button>
@@ -1830,6 +1856,9 @@ export default function App() {
               </div>
             )}
             {selected.outputs?.script != null && <ScriptView script={selected.outputs.script} />}
+            {selected.outputs?.teachingVideo != null && (
+              <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview} />
+            )}
             {selected.outputs?.storyboard != null && (
               <StoryboardView sb={selected.outputs.storyboard} onExpand={async () => {
                 try {
@@ -2086,6 +2115,35 @@ function MotionCardView({ card }: { card: Record<string, unknown> }) {
           }}>📋 复制</button>
         </div>
       )}
+    </div>
+  )
+}
+
+function TeachingVideoView({ data, review }: { data: unknown; review: unknown }) {
+  const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string }
+    scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
+      assertions?: string[]; routeStatus?: string }[] }
+  const audit = review as { importTaskId?: string; packageHash?: string; status?: string
+    missingEvidence?: { description: string; required: boolean }[]; fixtureOnly?: boolean }
+  return (
+    <div className="result">
+      <label>教学视频任务包 · {value.manifest?.packageId} / {value.manifest?.packageVersion}</label>
+      <div>{value.manifest?.teachingGoal}</div>
+      <div className="muted">导入任务：{audit.importTaskId} · 状态：{audit.status}</div>
+      <div className="muted">包哈希：{audit.packageHash}</div>
+      {audit.fixtureOnly && <div className="muted">本包含合成契约素材，不能作为真实课堂验收证据。</div>}
+      {(audit.missingEvidence?.length ?? 0) > 0 && (
+        <div className="seg"><b>待补项</b>{audit.missingEvidence!.map((item, i) =>
+          <div key={i}>{item.required ? '必需' : '可选'}：{item.description}</div>)}</div>
+      )}
+      {value.scenes?.map(scene => (
+        <div key={scene.sceneId} className="seg">
+          <b>{scene.title} · {scene.targetSeconds}s</b>
+          <div>路线：{scene.route} —— {scene.routeReason}</div>
+          {scene.routeStatus === 'needs_review' && <div className="muted">方案与教学断言待老师复核</div>}
+          {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">核查：{assertion}</div>)}
+        </div>
+      ))}
     </div>
   )
 }

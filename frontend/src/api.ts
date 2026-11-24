@@ -29,6 +29,11 @@ export const api = {
     fd.append('file', file)
     return fetch('/api/projects/import/yuke', { method: 'POST', body: fd }).then(j)
   },
+  importTeachingVideo: (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return fetch('/api/projects/import/teaching-video', { method: 'POST', body: fd }).then(j)
+  },
   getGraph: (pid: string) => fetch(`/api/projects/${pid}/graph`).then(j),
   createNode: (pid: string, node: object) => post(`/api/projects/${pid}/nodes`, node),
   updateNode: (nid: string, body: object) => patch(`/api/nodes/${nid}`, body),

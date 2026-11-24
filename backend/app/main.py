@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, embeddings, executors, yuke_import
+from . import auth, db, embeddings, executors, teaching_video_import, yuke_import
 from .config import ASSETS_DIR
 
 
@@ -252,6 +252,16 @@ async def import_yuke_package(file: UploadFile = File(...)):
     try:
         package = yuke_import.read_package(content)
         return yuke_import.create_project(package)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/import/teaching-video")
+async def import_teaching_video_package(file: UploadFile = File(...)):
+    content = await file.read(teaching_video_import.MAX_ZIP_BYTES + 1)
+    try:
+        package = teaching_video_import.read_package(content)
+        return teaching_video_import.create_or_get(package)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 

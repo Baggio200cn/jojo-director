@@ -54,6 +54,11 @@ CREATE TABLE IF NOT EXISTS qc_corrections (
   orig_verdict TEXT, human_verdict TEXT, fail_type TEXT DEFAULT '',
   reason TEXT DEFAULT '', context TEXT DEFAULT '{}', created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS import_tasks (
+  id TEXT PRIMARY KEY, project_id TEXT, package_id TEXT, package_version TEXT,
+  package_hash TEXT UNIQUE NOT NULL, format TEXT NOT NULL, status TEXT NOT NULL,
+  manifest TEXT NOT NULL, audit TEXT NOT NULL, created_at TEXT
+);
 """
 
 
