@@ -90,6 +90,9 @@ def main():
               and confirmation.json()["status"] == "plan_approved")
         check("确认明确无付费生成", confirmation.json()["paidGeneration"] == "not_required"
               and confirmation.json()["generativeMedia"] == "not_authorized")
+        approved_graph = client.get(f"/api/projects/{pid}/graph").json()
+        approved_storyboard = next(n for n in approved_graph["nodes"] if n["type"] == "storyboard")
+        check("右栏同步方案已确认状态", approved_storyboard["outputs"]["importReview"]["status"] == "plan_approved")
         confirmed_again = client.post(f"/api/projects/{pid}/teaching-video/confirm", json={
             "importTaskId": result["importTaskId"], "packageHash": result["packageHash"],
             "sceneIds": [s["sceneId"] for s in manifest()["scenes"]],

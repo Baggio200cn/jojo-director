@@ -41,6 +41,7 @@ def confirm(project_id: str, payload: dict) -> dict:
         conn.execute("INSERT INTO video_plan_confirmations (id,project_id,import_task_id,package_hash,plan_hash,scene_ids,generative_media,paid_generation,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                      (confirmation_id, project_id, import_id, package_hash, plan_hash,
                       json.dumps(sorted(selected)), "not_authorized", "not_required", now))
+        audit["status"] = "plan_approved"
         audit["confirmation"] = {
             "confirmationId": confirmation_id, "planHash": plan_hash,
             "status": "plan_approved", "sceneIds": sorted(selected),
