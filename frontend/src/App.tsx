@@ -266,7 +266,7 @@ export default function App() {
   const [yukeImportBusy, setYukeImportBusy] = useState(false)
   const [teachingImportBusy, setTeachingImportBusy] = useState(false)
   const [teachingConfirmBusy, setTeachingConfirmBusy] = useState(false)
-  const [advancedCanvas, setAdvancedCanvas] = useState(false)
+  const [selectedSceneId, setSelectedSceneId] = useState('')
   const [chat, setChat] = useState<{ role: string; text: string }[]>([])
   const [chatInput, setChatInput] = useState('')
   const [agentBusy, setAgentBusy] = useState(false)
@@ -492,7 +492,7 @@ export default function App() {
   }, [syncGraph])
 
   const switchProject = async (pid: string) => {
-    setAdvancedCanvas(false)
+    setSelectedSceneId('')
     setProjectId(pid)
     setSelectedId('')
     setRfNodes([])
@@ -1113,7 +1113,11 @@ export default function App() {
   const selected = bnodes[selectedId]
   const meta = selected ? TYPE_META[selected.type] : null
   const teachingNode = Object.values(bnodes).find(n => n.outputs?.teachingVideo)
-  const taskMode = Boolean(teachingNode) && !advancedCanvas
+  const taskMode = Boolean(teachingNode)
+  const selectedSceneTitle = selectedSceneId && teachingNode
+    ? (teachingNode.outputs.teachingVideo as { scenes: { sceneId: string; title: string }[] }).scenes
+      .find(scene => scene.sceneId === selectedSceneId)?.title
+    : ''
 
   // 画布上所有已有成果的图像节点，供参考图/首尾帧下拉选择
   const imageAssets = Object.values(bnodes)
@@ -1453,13 +1457,18 @@ export default function App() {
         {taskMode && teachingNode && (
           <div className="task-nav">
             <button className={tab === 'nodes' ? 'on' : ''} onClick={() => {
-              setTab('nodes'); setSelectedId(teachingNode.id)
+              setTab('nodes'); setSelectedId(teachingNode.id); setSelectedSceneId('')
             }}>📦 任务包</button>
             <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>📚 素材与依据</button>
             <button onClick={openReview} className="badge-host">🩺 验收记录
               {reviewCount > 0 && <span className="count-badge">{reviewCount}</span>}
             </button>
-            <button onClick={() => { setAdvancedCanvas(true); setTab('nodes') }}>⚙ 高级画布</button>
+            {(teachingNode.outputs.teachingVideo as { scenes: { sceneId: string; title: string }[] }).scenes.map(scene => (
+              <button key={scene.sceneId} className={selectedSceneId === scene.sceneId ? 'on' : ''}
+                onClick={() => { setSelectedId(teachingNode.id); setSelectedSceneId(scene.sceneId); setTab('nodes') }}>
+                {selectedSceneId === scene.sceneId ? '● ' : '○ '}{scene.title}
+              </button>
+            ))}
             {projCost != null && <div className="cost-chip">💰 本项目已花 ¥{projCost.toFixed(2)}</div>}
           </div>
         )}
@@ -1634,8 +1643,8 @@ export default function App() {
         })()}
         {taskMode && teachingNode ? (
           <TeachingTimeline data={teachingNode.outputs.teachingVideo}
-            review={teachingNode.outputs.importReview}
-            onOpen={() => setSelectedId(teachingNode.id)} />
+            review={teachingNode.outputs.importReview} selectedSceneId={selectedSceneId}
+            onOpen={sceneId => { setSelectedId(teachingNode.id); setSelectedSceneId(sceneId) }} />
         ) : (
         <ReactFlow
           nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes}
@@ -1791,7 +1800,7 @@ export default function App() {
           </div>
         )}
         {selected && taskMode && teachingNode && (
-          <h2>📦 教学视频任务包
+          <h2>{selectedSceneTitle ? `📍 ${selectedSceneTitle}` : '📦 教学视频任务包'}
             <span className="status-chip running">
               {(teachingNode.outputs.importReview as { confirmation?: unknown }).confirmation ? '方案已确认' : '已接收 · 待方案确认'}
             </span>
@@ -2002,7 +2011,7 @@ export default function App() {
         )}
         {selected && taskMode && selected.outputs?.teachingVideo != null && (
           <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
-            onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy} />
+            sceneId={selectedSceneId} onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy} />
         )}
         </div>
         <div className="agent-dock">
@@ -2174,7 +2183,8 @@ function MotionCardView({ card }: { card: Record<string, unknown> }) {
   )
 }
 
-function TeachingTimeline({ data, review, onOpen }: { data: unknown; review: unknown; onOpen: () => void }) {
+function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
+  data: unknown; review: unknown; selectedSceneId: string; onOpen: (sceneId: string) => void }) {
   const value = data as { manifest?: { teachingGoal?: string; packageVersion?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string
       narration?: string; visual?: string }[] }
@@ -2192,7 +2202,8 @@ function TeachingTimeline({ data, review, onOpen }: { data: unknown; review: unk
       </div>
       <div className="timeline-track">
         {value.scenes?.map((scene, index) => (
-          <button key={scene.sceneId} className="timeline-scene" onClick={onOpen}>
+          <button key={scene.sceneId} className={`timeline-scene ${selectedSceneId === scene.sceneId ? 'selected' : ''}`}
+            onClick={() => onOpen(scene.sceneId)}>
             <span className="scene-order">{index + 1}</span>
             <span className="scene-time">{scene.targetSeconds}s</span>
             <b>{scene.title}</b>
@@ -2205,11 +2216,13 @@ function TeachingTimeline({ data, review, onOpen }: { data: unknown; review: unk
   )
 }
 
-function TeachingVideoView({ data, review, onConfirm, confirming }: {
-  data: unknown; review: unknown; onConfirm: () => void; confirming: boolean }) {
+function TeachingVideoView({ data, review, sceneId, onConfirm, confirming }: {
+  data: unknown; review: unknown; sceneId?: string; onConfirm: () => void; confirming: boolean }) {
   const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
-      assertions?: string[]; routeStatus?: string }[] }
+      assertions?: string[]; routeStatus?: string; evidenceRefs?: string[]; narrationRefs?: string[]
+      slideRefs?: string[]; visualSpec?: Record<string, unknown> }[] }
+  const scenes = value.scenes?.filter(scene => !sceneId || scene.sceneId === sceneId)
   const audit = review as { importTaskId?: string; packageHash?: string; status?: string
     missingEvidence?: { description: string; required: boolean }[]; fixtureOnly?: boolean
     confirmation?: { confirmationId: string; planHash: string; paidGeneration: string; confirmedAt: string } }
@@ -2237,12 +2250,17 @@ function TeachingVideoView({ data, review, onConfirm, confirming }: {
         <div className="seg"><b>待补项</b>{audit.missingEvidence!.map((item, i) =>
           <div key={i}>{item.required ? '必需' : '可选'}：{item.description}</div>)}</div>
       )}
-      {value.scenes?.map(scene => (
+      {scenes?.map(scene => (
         <div key={scene.sceneId} className="seg">
           <b>{scene.title} · {scene.targetSeconds}s</b>
           <div>路线：{scene.route} —— {scene.routeReason}</div>
           {scene.routeStatus === 'needs_review' && <div className="muted">方案与教学断言待老师复核</div>}
+          {(scene.evidenceRefs?.length ?? 0) > 0 && <div className="muted">依据：{scene.evidenceRefs!.join('、')}</div>}
+          {(scene.narrationRefs?.length ?? 0) > 0 && <div className="muted">口播定位：{scene.narrationRefs!.join('、')}</div>}
+          {(scene.slideRefs?.length ?? 0) > 0 && <div className="muted">课件定位：{scene.slideRefs!.join('、')}</div>}
           {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">核查：{assertion}</div>)}
+          {scene.visualSpec && <details><summary>科学场景规格</summary>
+            <pre>{JSON.stringify(scene.visualSpec, null, 2)}</pre></details>}
         </div>
       ))}
     </div>

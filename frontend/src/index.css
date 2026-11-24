@@ -625,3 +625,6 @@ body {
 .scene-route { width: fit-content; padding: 3px 8px; border-radius: 6px; background: #eef4ff; color: #2455b8; font-size: 11px; }
 .scene-narration { color: #64748b; font-size: 12px; line-height: 1.65; }
 @media (max-width: 800px) { .teaching-timeline { padding: 20px; } .timeline-head { flex-direction: column; } }
+
+.timeline-scene.selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.14); }
+.task-nav button.on { border-color: #2563eb; background: #eaf1ff; color: #1d4ed8; }
