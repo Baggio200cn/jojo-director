@@ -265,6 +265,8 @@ export default function App() {
   const [homeBusy, setHomeBusy] = useState(false)
   const [yukeImportBusy, setYukeImportBusy] = useState(false)
   const [teachingImportBusy, setTeachingImportBusy] = useState(false)
+  const [teachingConfirmBusy, setTeachingConfirmBusy] = useState(false)
+  const [advancedCanvas, setAdvancedCanvas] = useState(false)
   const [chat, setChat] = useState<{ role: string; text: string }[]>([])
   const [chatInput, setChatInput] = useState('')
   const [agentBusy, setAgentBusy] = useState(false)
@@ -490,6 +492,7 @@ export default function App() {
   }, [syncGraph])
 
   const switchProject = async (pid: string) => {
+    setAdvancedCanvas(false)
     setProjectId(pid)
     setSelectedId('')
     setRfNodes([])
@@ -600,6 +603,25 @@ export default function App() {
       setTeachingImportBusy(false)
       if (teachingFileRef.current) teachingFileRef.current.value = ''
     }
+  }
+
+  const confirmTeachingPlan = async () => {
+    const node = Object.values(bnodesRef.current).find(n => n.outputs?.teachingVideo)
+    if (!node || teachingConfirmBusy) return
+    const review = node.outputs.importReview as { importTaskId: string; packageHash: string }
+    const data = node.outputs.teachingVideo as { scenes: { sceneId: string }[] }
+    setTeachingConfirmBusy(true)
+    try {
+      await api.confirmTeachingVideo(projectRef.current, {
+        importTaskId: review.importTaskId, packageHash: review.packageHash,
+        sceneIds: data.scenes.map(s => s.sceneId),
+        generativeMediaAuthorized: false, paidGenerationApproved: false,
+      })
+      await syncGraph(projectRef.current)
+      say('方案已确认：仅确定性 2D 与已有素材，无需付费生成')
+    } catch (e) {
+      say(`方案确认失败：${e}`)
+    } finally { setTeachingConfirmBusy(false) }
   }
 
   // ── 后端健康监测：离线时全局红条提示 ──
@@ -1090,6 +1112,8 @@ export default function App() {
 
   const selected = bnodes[selectedId]
   const meta = selected ? TYPE_META[selected.type] : null
+  const teachingNode = Object.values(bnodes).find(n => n.outputs?.teachingVideo)
+  const taskMode = Boolean(teachingNode) && !advancedCanvas
 
   // 画布上所有已有成果的图像节点，供参考图/首尾帧下拉选择
   const imageAssets = Object.values(bnodes)
@@ -1426,11 +1450,24 @@ export default function App() {
           </select>
           <button className="mini" title="新建项目" onClick={newProject}>＋</button>
         </div>
-        <div className="tab-bar">
+        {taskMode && teachingNode && (
+          <div className="task-nav">
+            <button className={tab === 'nodes' ? 'on' : ''} onClick={() => {
+              setTab('nodes'); setSelectedId(teachingNode.id)
+            }}>📦 任务包</button>
+            <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>📚 素材与依据</button>
+            <button onClick={openReview} className="badge-host">🩺 验收记录
+              {reviewCount > 0 && <span className="count-badge">{reviewCount}</span>}
+            </button>
+            <button onClick={() => { setAdvancedCanvas(true); setTab('nodes') }}>⚙ 高级画布</button>
+            {projCost != null && <div className="cost-chip">💰 本项目已花 ¥{projCost.toFixed(2)}</div>}
+          </div>
+        )}
+        {!taskMode && <div className="tab-bar">
           <button className={tab === 'nodes' ? 'on' : ''} onClick={() => setTab('nodes')}>节点</button>
           <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>素材库</button>
-        </div>
-        {tab === 'nodes' && (
+        </div>}
+        {tab === 'nodes' && !taskMode && (
           <>
             <button className="accent" onClick={buildChain}>⚡ 一键搭建微课链</button>
             <button onClick={openReview} className="badge-host">🩺 验收台
@@ -1572,7 +1609,7 @@ export default function App() {
       <div className="canvas"
         onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
         onDrop={onAssetDrop}>
-        {(() => {
+        {!taskMode && (() => {
           const groups: Record<number, string[]> = {}
           Object.values(bnodes).forEach(n => {
             const m = (n.title || '').match(/^镜头(\d+)·/)
@@ -1595,6 +1632,11 @@ export default function App() {
             </div>
           )
         })()}
+        {taskMode && teachingNode ? (
+          <TeachingTimeline data={teachingNode.outputs.teachingVideo}
+            review={teachingNode.outputs.importReview}
+            onOpen={() => setSelectedId(teachingNode.id)} />
+        ) : (
         <ReactFlow
           nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes}
           onInit={inst => { flowRef.current = inst }}
@@ -1617,6 +1659,7 @@ export default function App() {
           <MiniMap pannable zoomable nodeColor="#c7ccd6"
             maskColor="rgba(243,244,246,0.75)" style={{ background: '#f8f9fb' }} />
         </ReactFlow>
+        )}
         {toast && <div className="toast">{toast}</div>}
         {overrideDlg && (
           <div className="lightbox" onClick={() => setOverrideDlg(null)}>
@@ -1747,7 +1790,14 @@ export default function App() {
             或直接在下方对话，让 Agent 继续创作。
           </div>
         )}
-        {selected && meta && (
+        {selected && taskMode && teachingNode && (
+          <h2>📦 教学视频任务包
+            <span className="status-chip running">
+              {(teachingNode.outputs.importReview as { confirmation?: unknown }).confirmation ? '方案已确认' : '已接收 · 待方案确认'}
+            </span>
+          </h2>
+        )}
+        {selected && meta && !taskMode && (
           <>
             <h2>{meta.icon} {selected.title || meta.label}
               <span className={`status-chip ${selected.status}`}>{
@@ -1857,7 +1907,8 @@ export default function App() {
             )}
             {selected.outputs?.script != null && <ScriptView script={selected.outputs.script} />}
             {selected.outputs?.teachingVideo != null && (
-              <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview} />
+              <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
+                onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy} />
             )}
             {selected.outputs?.storyboard != null && (
               <StoryboardView sb={selected.outputs.storyboard} onExpand={async () => {
@@ -2119,18 +2170,64 @@ function MotionCardView({ card }: { card: Record<string, unknown> }) {
   )
 }
 
-function TeachingVideoView({ data, review }: { data: unknown; review: unknown }) {
+function TeachingTimeline({ data, review, onOpen }: { data: unknown; review: unknown; onOpen: () => void }) {
+  const value = data as { manifest?: { teachingGoal?: string; packageVersion?: string }
+    scenes?: { sceneId: string; title: string; targetSeconds: number; route: string
+      narration?: string; visual?: string }[] }
+  const audit = review as { status?: string; confirmation?: { confirmationId: string; paidGeneration: string } }
+  return (
+    <div className="teaching-timeline">
+      <div className="timeline-head">
+        <div>
+          <span className="eyebrow">教学视频任务包 · {value.manifest?.packageVersion}</span>
+          <h2>{value.manifest?.teachingGoal}</h2>
+        </div>
+        <span className="status-chip running">
+          {audit.confirmation ? '方案已确认 · 无需付费生成' : '已接收 · 待方案确认'}
+        </span>
+      </div>
+      <div className="timeline-track">
+        {value.scenes?.map((scene, index) => (
+          <button key={scene.sceneId} className="timeline-scene" onClick={onOpen}>
+            <span className="scene-order">{index + 1}</span>
+            <span className="scene-time">{scene.targetSeconds}s</span>
+            <b>{scene.title}</b>
+            <span className="scene-route">{scene.route}</span>
+            <span className="scene-narration">{scene.narration || scene.visual}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TeachingVideoView({ data, review, onConfirm, confirming }: {
+  data: unknown; review: unknown; onConfirm: () => void; confirming: boolean }) {
   const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
       assertions?: string[]; routeStatus?: string }[] }
   const audit = review as { importTaskId?: string; packageHash?: string; status?: string
-    missingEvidence?: { description: string; required: boolean }[]; fixtureOnly?: boolean }
+    missingEvidence?: { description: string; required: boolean }[]; fixtureOnly?: boolean
+    confirmation?: { confirmationId: string; planHash: string; paidGeneration: string; confirmedAt: string } }
   return (
     <div className="result">
       <label>教学视频任务包 · {value.manifest?.packageId} / {value.manifest?.packageVersion}</label>
       <div>{value.manifest?.teachingGoal}</div>
       <div className="muted">导入任务：{audit.importTaskId} · 状态：{audit.status}</div>
       <div className="muted">包哈希：{audit.packageHash}</div>
+      {!audit.confirmation && (
+        <button className="accent" disabled={confirming} onClick={onConfirm}>
+          {confirming ? '正在确认…' : '确认方案（无需付费生成）'}
+        </button>
+      )}
+      {audit.confirmation && (
+        <div className="seg">
+          <b>方案已确认 · 无需付费生成</b>
+          <div>确认记录：{audit.confirmation.confirmationId}</div>
+          <div className="muted">方案哈希：{audit.confirmation.planHash}</div>
+          <div className="muted">确认时间：{audit.confirmation.confirmedAt}</div>
+        </div>
+      )}
       {audit.fixtureOnly && <div className="muted">本包含合成契约素材，不能作为真实课堂验收证据。</div>}
       {(audit.missingEvidence?.length ?? 0) > 0 && (
         <div className="seg"><b>待补项</b>{audit.missingEvidence!.map((item, i) =>

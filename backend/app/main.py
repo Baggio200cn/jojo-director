@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, embeddings, executors, teaching_video_import, yuke_import
+from . import auth, db, embeddings, executors, teaching_video_confirm, teaching_video_import, yuke_import
 from .config import ASSETS_DIR
 
 
@@ -262,6 +262,14 @@ async def import_teaching_video_package(file: UploadFile = File(...)):
     try:
         package = teaching_video_import.read_package(content)
         return teaching_video_import.create_or_get(package)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/{pid}/teaching-video/confirm")
+def confirm_teaching_video_plan(pid: str, payload: dict):
+    try:
+        return teaching_video_confirm.confirm(pid, payload)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 

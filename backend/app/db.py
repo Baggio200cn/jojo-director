@@ -59,6 +59,11 @@ CREATE TABLE IF NOT EXISTS import_tasks (
   package_hash TEXT UNIQUE NOT NULL, format TEXT NOT NULL, status TEXT NOT NULL,
   manifest TEXT NOT NULL, audit TEXT NOT NULL, created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS video_plan_confirmations (
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, import_task_id TEXT NOT NULL,
+  package_hash TEXT NOT NULL, plan_hash TEXT UNIQUE NOT NULL, scene_ids TEXT NOT NULL,
+  generative_media TEXT NOT NULL, paid_generation TEXT NOT NULL, created_at TEXT
+);
 """
 
 

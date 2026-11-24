@@ -81,6 +81,34 @@ def main():
               and source["sourceVersions"]["lecture"] == "lecture-v6")
         check("契约样例有明确标记", result["fixtureOnly"] is True)
 
+        confirmation = client.post(f"/api/projects/{pid}/teaching-video/confirm", json={
+            "importTaskId": result["importTaskId"], "packageHash": result["packageHash"],
+            "sceneIds": [s["sceneId"] for s in manifest()["scenes"]],
+            "generativeMediaAuthorized": False, "paidGenerationApproved": False,
+        })
+        check("方案确认返回 plan_approved", confirmation.status_code == 200
+              and confirmation.json()["status"] == "plan_approved")
+        check("确认明确无付费生成", confirmation.json()["paidGeneration"] == "not_required"
+              and confirmation.json()["generativeMedia"] == "not_authorized")
+        confirmed_again = client.post(f"/api/projects/{pid}/teaching-video/confirm", json={
+            "importTaskId": result["importTaskId"], "packageHash": result["packageHash"],
+            "sceneIds": [s["sceneId"] for s in manifest()["scenes"]],
+            "generativeMediaAuthorized": False, "paidGenerationApproved": False,
+        })
+        check("相同方案确认幂等", confirmed_again.json()["reused"] is True)
+        wrong_hash = client.post(f"/api/projects/{pid}/teaching-video/confirm", json={
+            "importTaskId": result["importTaskId"], "packageHash": "sha256:" + "0" * 64,
+            "sceneIds": [s["sceneId"] for s in manifest()["scenes"]],
+            "generativeMediaAuthorized": False, "paidGenerationApproved": False,
+        })
+        check("错误包哈希不能确认", wrong_hash.status_code == 400)
+        paid = client.post(f"/api/projects/{pid}/teaching-video/confirm", json={
+            "importTaskId": result["importTaskId"], "packageHash": result["packageHash"],
+            "sceneIds": [s["sceneId"] for s in manifest()["scenes"]],
+            "generativeMediaAuthorized": False, "paidGenerationApproved": True,
+        })
+        check("首版付费批准被明确拒绝", paid.status_code == 400)
+
         again = client.post("/api/projects/import/teaching-video", files={"file": ("pwm.zip", content, "application/zip")})
         check("同包重复导入返回原任务", again.status_code == 200 and again.json()["reused"] is True
               and again.json()["project_id"] == pid)
@@ -100,6 +128,12 @@ def main():
         required["missingEvidence"][0]["required"] = True
         needs = client.post("/api/projects/import/teaching-video", files={"file": ("required.zip", make_zip(required), "application/zip")})
         check("必需缺项进入 needs_material", needs.status_code == 200 and needs.json()["status"] == "needs_material")
+        blocked = client.post(f"/api/projects/{needs.json()['project_id']}/teaching-video/confirm", json={
+            "importTaskId": needs.json()["importTaskId"], "packageHash": needs.json()["packageHash"],
+            "sceneIds": [s["sceneId"] for s in required["scenes"]],
+            "generativeMediaAuthorized": False, "paidGenerationApproved": False,
+        })
+        check("必需缺项不能批准制作", blocked.status_code == 400)
         bad_ref = manifest()
         bad_ref["packageVersion"] = "pkg-v3"
         bad_ref["scenes"][0]["evidenceRefs"] = ["missing-asset"]
