@@ -2000,6 +2000,10 @@ export default function App() {
             )}
           </>
         )}
+        {selected && taskMode && selected.outputs?.teachingVideo != null && (
+          <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
+            onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy} />
+        )}
         </div>
         <div className="agent-dock">
           <div className="chat-log">
