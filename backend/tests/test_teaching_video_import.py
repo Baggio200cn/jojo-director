@@ -99,6 +99,7 @@ def main():
             "generativeMediaAuthorized": False, "paidGenerationApproved": False,
         })
         check("相同方案确认幂等", confirmed_again.json()["reused"] is True)
+        check("重复确认仍回传方案哈希", confirmed_again.json()["planHash"] == confirmation.json()["planHash"])
         wrong_hash = client.post(f"/api/projects/{pid}/teaching-video/confirm", json={
             "importTaskId": result["importTaskId"], "packageHash": "sha256:" + "0" * 64,
             "sceneIds": [s["sceneId"] for s in manifest()["scenes"]],

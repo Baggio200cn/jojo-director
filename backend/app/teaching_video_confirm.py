@@ -33,7 +33,20 @@ def confirm(project_id: str, payload: dict) -> dict:
     existing = db.query("video_plan_confirmations", "plan_hash=?", (plan_hash,))
     if existing:
         record = confirmation_record(existing[0])
-        return {**record, "reused": True}
+        audit["status"] = "plan_approved"
+        audit["confirmation"] = record
+        with db._conn() as conn:
+            conn.execute("UPDATE import_tasks SET status='plan_approved',audit=? WHERE id=?",
+                         (json.dumps(audit, ensure_ascii=False), import_id))
+            nodes = db.query("canvas_nodes", "project_id=? AND type='storyboard'", (project_id,))
+            for node in nodes:
+                out = db.jloads(node["outputs"])
+                if out.get("importReview", {}).get("importTaskId") == import_id:
+                    out["importReview"] = audit
+                    conn.execute("UPDATE canvas_nodes SET outputs=?,updated_at=? WHERE id=?",
+                                 (json.dumps(out, ensure_ascii=False), db.now(), node["id"]))
+        return {**record, "importTaskId": import_id,
+                "packageHash": package_hash, "reused": True}
     confirmation_id = db.new_id("confirm")
     now = db.now()
     nodes = db.query("canvas_nodes", "project_id=? AND type='storyboard'", (project_id,))
