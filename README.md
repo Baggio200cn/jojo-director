@@ -63,6 +63,7 @@ python -m uvicorn app.main:app --port 8000
 cd frontend
 npm install
 npm run dev                     # 打开 http://localhost:5173
+# 隔离验收时可用 VITE_API_PROXY_TARGET=http://127.0.0.1:8001 指向独立后端
 ```
 
 首页输入"今天要做点什么微课？"→ Agent 规划分镜 → 逐镜生产（帧→质检→视频→质检）→ 🩺 验收台坐诊 → 拼接成片。

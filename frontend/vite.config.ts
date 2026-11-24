@@ -1,14 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const apiTarget = process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8000'
+const proxy = {
+  '/api': apiTarget,
+  '/assets': apiTarget,
+}
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: true,   // 允许同一局域网内的手机/其他电脑访问
-    proxy: {
-      '/api': 'http://127.0.0.1:8000',
-      '/assets': 'http://127.0.0.1:8000',
-    },
+    host: true,
+    proxy,
+  },
+  preview: {
+    port: 4173,
+    host: true,
+    proxy,
   },
 })
