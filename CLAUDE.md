@@ -1,6 +1,6 @@
 # JOJO Director
 
-职教微课 AI 创作画布：脚本→分镜→帧→视频→质检→拼接的节点式产线。
+Scientific Scene Production Engine：以科学场景为生产、核查与修订单位，按时间线交付实验实训教学影像；底层保留脚本→分镜→帧→视频→质检→拼接的节点式产线。
 后端 FastAPI + SQLite（backend/），前端 React + Vite（frontend/），模型走火山方舟（providers.yaml 路由）。
 
 ## 约定
