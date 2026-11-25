@@ -400,6 +400,13 @@ export default function App() {
     localStorage.removeItem('jojo_left_width')
     localStorage.removeItem('jojo_right_width')
   }
+  const adjustRightWidth = (delta: number) => {
+    setRightW(previous => {
+      const next = Math.min(720, Math.max(300, previous + delta))
+      localStorage.setItem('jojo_right_width', String(next))
+      return next
+    })
+  }
 
   const say = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000) }
 
@@ -518,17 +525,20 @@ export default function App() {
       let list = await api.listProjects()
       if (!list.length) list = [await api.createProject('微课示例项目')]
       list = [...list].reverse()   // 最新项目在前
+      const requestedPid = new URLSearchParams(window.location.search).get('project')
+      const initial = list.find((p: { id: string }) => p.id === requestedPid) ?? list[0]
       setProjects(list)
-      setProjectId(list[0].id)
-      setChat(JSON.parse(localStorage.getItem(`jojo_chat_${list[0].id}`) ?? '[]'))
+      setProjectId(initial.id)
+      setChat(JSON.parse(localStorage.getItem(`jojo_chat_${initial.id}`) ?? '[]'))
       const models = await api.agentModels().catch(() => [])
       setAgentModels(models)
       if (models.length && !models.some((m: { model: string }) => m.model === localStorage.getItem('jojo_agent_model'))) {
         setAgentModel(models[0].model)
       }
-      await syncGraph(list[0].id)
-      api.projectStats(list[0].id).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
-      api.reviewQueue(list[0].id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
+      await syncGraph(initial.id)
+      if (initial.id === requestedPid) setView('canvas')
+      api.projectStats(initial.id).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
+      api.reviewQueue(initial.id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncGraph, authRole])
@@ -1912,6 +1922,12 @@ export default function App() {
         onPointerDown={startResize('right')} onKeyDown={resizeKeys('right')} onDoubleClick={resetWidths} />
       <div className="inspector" style={{ width: rightW }}>
         <div className="inspector-top">
+        <div className="panel-width-controls">
+          <span>右栏宽度</span>
+          <button onClick={() => adjustRightWidth(-60)} disabled={rightW <= 300}>变窄</button>
+          <button onClick={() => adjustRightWidth(60)} disabled={rightW >= 720}>加宽</button>
+          <button onClick={resetWidths}>默认</button>
+        </div>
         {!selected && (
           <div className="muted">
             点击画布节点可在此编辑参数；<br />
