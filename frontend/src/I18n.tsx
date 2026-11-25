@@ -24,7 +24,7 @@ const en: Record<string, string> = {
   '节点': 'Nodes', '素材库': 'Media library', '新建项目': 'New project', '返回首页': 'Back to home',
   '点击画布节点可在此编辑参数；': 'Select a canvas node to edit its settings;',
   '或直接在下方对话，让 Agent 继续创作。': 'or ask the Agent below to continue the work.',
-  '右栏宽度': 'Right panel width', '变窄': 'Narrower', '加宽': 'Wider', '默认': 'Reset',
+  '右栏宽度': 'Right panel width', '本项目已花': 'Project cost', '变窄': 'Narrower', '加宽': 'Wider', '默认': 'Reset',
   '和 Agent 说下一步（回车发送）': 'Tell the Agent the next step (Enter to send)',
   '发送': 'Send', '联网调研': 'Web research',
   '教学视频任务包': 'Teaching video package', '方案已确认 · 无需付费生成': 'Plan confirmed · No paid generation',

@@ -527,7 +527,9 @@ export default function App() {
       let list = await api.listProjects()
       if (!list.length) list = [await api.createProject('微课示例项目')]
       list = [...list].reverse()   // 最新项目在前
-      const requestedPid = new URLSearchParams(window.location.search).get('project')
+      const params = new URLSearchParams(window.location.search)
+      const requestedPid = params.get('project')
+      const requestedView = params.get('view')
       const initial = list.find((p: { id: string }) => p.id === requestedPid) ?? list[0]
       setProjects(list)
       setProjectId(initial.id)
@@ -538,7 +540,8 @@ export default function App() {
         setAgentModel(models[0].model)
       }
       await syncGraph(initial.id)
-      if (initial.id === requestedPid) setView('canvas')
+      if (requestedView === 'training') setView('training')
+      else if (initial.id === requestedPid) setView('canvas')
       api.projectStats(initial.id).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
       api.reviewQueue(initial.id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     })()
@@ -1568,7 +1571,7 @@ export default function App() {
                 {selectedSceneId === scene.sceneId ? '● ' : '○ '}{scene.title}
               </button>
             ))}
-            {projCost != null && <div className="cost-chip">💰 本项目已花 ¥{projCost.toFixed(2)}</div>}
+            {projCost != null && <div className="cost-chip">💰 {t('本项目已花')} ¥{projCost.toFixed(2)}</div>}
           </div>
         )}
         {!taskMode && <div className="tab-bar">
@@ -1584,7 +1587,7 @@ export default function App() {
             <button onClick={tidyLayout}>🧹 一键整理布局</button>
             {projCost != null && (
               <div className="cost-chip" title="本项目累计模型调用成本（MAAO 台账实时计）">
-                💰 本项目已花 ¥{projCost.toFixed(2)}
+                💰 {t('本项目已花')} ¥{projCost.toFixed(2)}
               </div>
             )}
             <div className="style-bar">
