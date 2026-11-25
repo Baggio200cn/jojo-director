@@ -2,6 +2,23 @@
 
 html, body, #root { height: 100%; }
 
+.app-shell { height: 100%; display: flex; flex-direction: column; }
+.app-language-bar {
+  height: 42px; flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; background: #fff; border-bottom: 1px solid #e2e8f0; color: #1f2937;
+}
+.app-language-bar > b { font-size: 12px; letter-spacing: .06em; }
+.app-content { flex: 1; min-height: 0; }
+.app-content .login-page { height: 100%; }
+.language-switcher { display: flex; align-items: center; gap: 5px; }
+.language-switcher > span { margin-right: 5px; color: #64748b; font-size: 11px; }
+.language-switcher button {
+  border: 1px solid #d8e0eb; border-radius: 6px; background: #fff; color: #475569;
+  padding: 5px 11px; cursor: pointer; font-size: 12px;
+}
+.language-switcher button.on { border-color: #00B3A6; background: rgba(0,179,166,.10); color: #087F78; }
+.offline-banner { top: 42px; }
+
 body {
   font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
   background: #FAF8F2;

@@ -7,6 +7,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import { api } from './api'
 import TrainingLibrary from './TrainingLibrary'
+import { localizedRoute, useI18n } from './I18n'
 
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
 const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
@@ -248,6 +249,7 @@ function JojoNode({ id, data, selected }: NodeProps) {
 const nodeTypes = { jojo: JojoNode }
 
 export default function App() {
+  const { t } = useI18n()
   const [projectId, setProjectId] = useState('')
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([])
   const [bnodes, setBnodes] = useState<Record<string, BNode>>({})
@@ -723,7 +725,7 @@ export default function App() {
   }, [])
   const offlineBanner = !backendUp && (
     <div className="offline-banner">
-      ⚠ 后端服务未运行——画布可以看，但所有生成/保存都会失败。请双击 jojo-studio 文件夹里的 <b>启动JOJO.bat</b>（会弹出 JOJO-backend-8000 窗口），几秒后本提示自动消失
+      ⚠ {t('后端服务未运行，当前内容可查看，但生成和保存会失败。')}
     </div>
   )
 
@@ -862,39 +864,39 @@ export default function App() {
           {[...new Set(libFolders.map(f => f.split('/')[0]))].map(d => (
             <option key={d} value={d}>{d}</option>
           ))}
-          <option value="__custom__">（新学科…）</option>
+          <option value="__custom__">{t('（新学科…）')}</option>
         </select>
-        <input placeholder="课题（可选，如 迈克尔逊干涉）" value={upTopic}
+        <input placeholder={t('课题（可选，如 迈克尔逊干涉）')} value={upTopic}
           onChange={e => setUpTopic(e.target.value)} />
       </div>
       {upDomain === '__custom__' && (
-        <input placeholder="新学科目录名（如 电子类）" value={upDomainCustom}
+        <input placeholder={t('新学科目录名（如 电子类）')} value={upDomainCustom}
           onChange={e => setUpDomainCustom(e.target.value)} />
       )}
       <div className="lib-filter">
         <select value={upRights} onChange={e => setUpRights(e.target.value)}>
-          <option value="own">本人自制</option>
-          <option value="licensed">已获授权</option>
-          <option value="reference_only">仅参考不进片</option>
+          <option value="own">{t('本人自制')}</option>
+          <option value="licensed">{t('已获授权')}</option>
+          <option value="reference_only">{t('仅参考不进片')}</option>
         </select>
-        <input placeholder="简述（可选）" value={upNote}
+        <input placeholder={t('简述（可选）')} value={upNote}
           onChange={e => setUpNote(e.target.value)} />
       </div>
       <div className="lib-filter">
-        <button onClick={askSuggest}>✨ 智能建议目录</button>
+        <button onClick={askSuggest}>✨ {t('智能建议目录')}</button>
         {upSuggest && (
           <span className="up-suggest">
-            建议：<b>{upSuggest.folder}</b>（{upSuggest.score.toFixed(2)}）
-            <button className="mini" onClick={adoptSuggest}>采用</button>
+            {t('建议：')}<b>{upSuggest.folder}</b>（{upSuggest.score.toFixed(2)}）
+            <button className="mini" onClick={adoptSuggest}>{t('采用')}</button>
           </span>
         )}
       </div>
       {upMsg && <div className="muted" style={{ fontSize: 11 }}>{upMsg}</div>}
       <div className="muted" style={{ fontSize: 11 }}>
-        可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案
+        {t('可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案')}
       </div>
       <button disabled={upBusy} onClick={doUpload}>
-        {upBusy ? '上传中…' : '提交入库'}
+        {upBusy ? t('上传中…') : t('提交入库')}
       </button>
     </div>
   )
@@ -1275,38 +1277,38 @@ export default function App() {
 
   // ── 登录页（管理员账密 / 邀请码 双通道） ──
   if (authRole === 'checking') return (
-    <div className="login-page"><div className="login-card"><h1>科学场景生产与验收</h1><div className="muted">正在验证登录状态…</div></div></div>
+    <div className="login-page"><div className="login-card"><h1>{t('科学场景生产与验收')}</h1><div className="muted">{t('正在验证登录状态…')}</div></div></div>
   )
   if (authRole === 'none') return (
     <div className="login-page notranslate" translate="no">
       <div className="login-card">
         <img src={publicAsset('jojo-director-mark.svg')} alt="JOJO Director" className="login-logo" />
-        <h1>科学场景生产与验收</h1>
+        <h1>{t('科学场景生产与验收')}</h1>
         <div className="sub">JOJO Director · Scientific Scene Production Engine</div>
         <div className="tab-bar login-tabs">
-          <button className={loginMode === 'admin' ? 'on' : ''} onClick={() => { setLoginMode('admin'); setLoginErr('') }}>管理员</button>
-          <button className={loginMode === 'invite' ? 'on' : ''} onClick={() => { setLoginMode('invite'); setLoginErr('') }}>邀请码进入</button>
+          <button className={loginMode === 'admin' ? 'on' : ''} onClick={() => { setLoginMode('admin'); setLoginErr('') }}>{t('管理员')}</button>
+          <button className={loginMode === 'invite' ? 'on' : ''} onClick={() => { setLoginMode('invite'); setLoginErr('') }}>{t('邀请码进入')}</button>
         </div>
         {loginMode === 'admin' ? (
           <>
-            <input type="text" placeholder="账号" value={loginU} autoComplete="username"
+            <input type="text" placeholder={t('账号')} value={loginU} autoComplete="username"
               onChange={e => setLoginU(e.target.value)} />
-            <input type="password" placeholder="密码" value={loginP} autoComplete="current-password"
+            <input type="password" placeholder={t('密码')} value={loginP} autoComplete="current-password"
               onChange={e => setLoginP(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && doLogin()} />
           </>
         ) : (
-          <input type="text" placeholder="输入邀请码，如 JOJO-A1B2C3" value={loginCode}
+          <input type="text" placeholder={t('输入邀请码，如 JOJO-A1B2C3')} value={loginCode}
             onChange={e => setLoginCode(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && doLogin()} />
         )}
         {loginErr && <div className="login-err">{loginErr}</div>}
         <button className="accent login-go" disabled={loginBusy} onClick={doLogin}>
-          {loginBusy ? '登录中…' : '进入画布'}
+          {loginBusy ? t('登录中…') : t('进入画布')}
         </button>
         {loginMode === 'invite' && (
           <div className="muted" style={{ fontSize: 12 }}>
-            邀请码由管理员发放，含每日生成额度；生成费用由平台承担
+            {t('邀请码由管理员发放，含每日生成额度；生成费用由平台承担')}
           </div>
         )}
       </div>
@@ -1316,7 +1318,7 @@ export default function App() {
   const authBar = (
     <div className="auth-bar">
       {authRole === 'admin' && authInfo.auth_enabled !== false && (
-        <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 邀请码管理</button>
+        <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 {t('邀请码管理')}</button>
       )}
       {authRole === 'invite' && authInfo.usage_today && (
         <span className="muted" style={{ fontSize: 12 }}>
@@ -1325,7 +1327,7 @@ export default function App() {
         </span>
       )}
       {authInfo.auth_enabled !== false && (
-        <button onClick={async () => { await api.authLogout(); setAuthRole('none') }}>退出</button>
+        <button onClick={async () => { await api.authLogout(); setAuthRole('none') }}>{t('退出')}</button>
       )}
     </div>
   )
@@ -1379,11 +1381,11 @@ export default function App() {
       <div className="home-center">
         <img className="home-logo" src={publicAsset('jojo-director-lockup.svg')} alt="JOJO Director — Scientific Scene Production Engine" />
         <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>
-        <h1 className="home-title">把科学场景，转化为可验证的教学影像。</h1>
-        <p className="home-intro">从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。</p>
+        <h1 className="home-title">{t('把科学场景，转化为可验证的教学影像。')}</h1>
+        <p className="home-intro">{t('从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。')}</p>
         <div className="home-box">
           <textarea rows={3} value={homeInput}
-            placeholder="一句话描述你要的微课，例：讲清楚 PWM 调光原理，60 秒，最后拼成完整视频"
+            placeholder={t('一句话描述你要的微课，例：讲清楚 PWM 调光原理，60 秒，最后拼成完整视频')}
             onChange={e => setHomeInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitHome() } }} />
           <div className="home-box-foot">
@@ -1398,24 +1400,24 @@ export default function App() {
             <input ref={yukeFileRef} type="file" accept=".zip,application/zip" hidden
               onChange={e => { const f = e.target.files?.[0]; if (f) void importYuke(f) }} />
             <button disabled={yukeImportBusy} onClick={() => yukeFileRef.current?.click()}>
-              {yukeImportBusy ? '导入中…' : '导入驭课 ZIP'}
+              {yukeImportBusy ? t('导入中…') : t('导入驭课 ZIP')}
             </button>
             <input ref={teachingFileRef} type="file" accept=".zip,application/zip" hidden
               onChange={e => { const f = e.target.files?.[0]; if (f) void importTeachingVideo(f) }} />
             <button disabled={teachingImportBusy} onClick={() => teachingFileRef.current?.click()}>
-              {teachingImportBusy ? '审核中…' : '导入教学视频包'}
+              {teachingImportBusy ? t('审核中…') : t('导入教学视频包')}
             </button>
             <button className="send" disabled={homeBusy || !homeInput.trim()} onClick={submitHome}>
-              {homeBusy ? '规划中…' : '↑ 开工'}
+              {homeBusy ? t('规划中…') : t('↑ 开工')}
             </button>
           </div>
         </div>
         {homeErr && <div className="home-err">{homeErr}</div>}
         <div className="home-dual">
           <div className="home-upload">
-            <h3>📤 教师投稿</h3>
+            <h3>📤 {t('教师投稿')}</h3>
             <div className="muted" style={{ fontSize: 12 }}>
-              把您的实验录屏 / 图片 / 教案投进素材库，丰富 JOJO 的训练素材
+              {t('把您的实验录屏 / 图片 / 教案投进素材库，丰富 JOJO 的训练素材')}
             </div>
             {uploadForm}
           </div>
@@ -1424,23 +1426,23 @@ export default function App() {
               <img className="base" src={publicAsset('jojo-director-mark.svg')} alt="" />
             </div>
             <div className="jojo-ad-text">
-              <b>JOJO 的“自我学习”是什么？</b>
-              <span>机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。</span>
+              <b>{t('JOJO 的“自我学习”是什么？')}</b>
+              <span>{t('机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。')}</span>
             </div>
           </div>
         </div>
         <div className="proj-grid">
           <div className="proj-card new" onClick={newProject}>
             <div className="plus">＋</div>
-            <div className="pname">新建空白项目</div>
+            <div className="pname">{t('新建空白项目')}</div>
           </div>
           <div className="proj-card" onClick={() => setView('training')}>
             <div className="ph">SCI</div>
-            <div className="pname">科学素材训练库 · 浏览与人工抽检</div>
+            <div className="pname">{t('科学素材训练库 · 浏览与人工抽检')}</div>
           </div>
           <div className="proj-card" onClick={() => window.open('/agents-md-course/', '_blank')}>
             <div className="ph">📖</div>
-            <div className="pname">教师研修报告 · AGENTS.md 七条军规</div>
+            <div className="pname">{t('教师研修报告 · AGENTS.md 七条军规')}</div>
           </div>
           {projects.slice(0, 11).map(p => (
             <div key={p.id} className="proj-card"
@@ -1460,15 +1462,15 @@ export default function App() {
     <div className="review notranslate" translate="no">
       {offlineBanner}
       <div className="review-head">
-        <button onClick={() => setView('canvas')}>← 返回画布</button>
-        <h1>🩺 验收台 · {projects.find(p => p.id === projectId)?.title}</h1>
+        <button onClick={() => setView('canvas')}>← {t('返回画布')}</button>
+        <h1>🩺 {t('验收台')} · {projects.find(p => p.id === projectId)?.title}</h1>
         <div className="review-actions">
-          <button onClick={loadReview}>↻ 刷新</button>
+          <button onClick={loadReview}>↻ {t('刷新')}</button>
           {review.failures.some(f => f.error_class === 'infra') && (
-            <button onClick={retryInfraAll}>🔁 重试全部网络失败
+            <button onClick={retryInfraAll}>🔁 {t('重试全部网络失败')}
               （{review.failures.filter(f => f.error_class === 'infra').length}）</button>
           )}
-          <button className="accent" onClick={resumeLineAll}>▶ 续跑产线</button>
+          <button className="accent" onClick={resumeLineAll}>▶ {t('续跑产线')}</button>
         </div>
       </div>
       <div className="review-hint">
@@ -1555,9 +1557,9 @@ export default function App() {
           <div className="task-nav">
             <button className={tab === 'nodes' ? 'on' : ''} onClick={() => {
               setTab('nodes'); setSelectedId(teachingNode.id); setSelectedSceneId('')
-            }}>📦 任务包</button>
-            <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>📚 素材与依据</button>
-            <button onClick={openReview} className="badge-host">🩺 验收记录
+            }}>📦 {t('任务包')}</button>
+            <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>📚 {t('素材与依据')}</button>
+            <button onClick={openReview} className="badge-host">🩺 {t('验收记录')}
               {reviewCount > 0 && <span className="count-badge">{reviewCount}</span>}
             </button>
             {(teachingNode.outputs.teachingVideo as { scenes: { sceneId: string; title: string }[] }).scenes.map(scene => (
@@ -1852,25 +1854,25 @@ export default function App() {
           <div className="lightbox" onClick={() => setRevisionScene(null)}>
             <div className="lightbox-inner" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
               <div className="lightbox-head">
-                <b>退回场景：{String(revisionScene.title)}</b>
-                <button onClick={() => setRevisionScene(null)}>✕ 关闭</button>
+                <b>{t('退回场景：')}{String(revisionScene.title)}</b>
+                <button onClick={() => setRevisionScene(null)}>✕ {t('关闭')}</button>
               </div>
-              <div className="field"><label>修改意见（必填）</label>
+              <div className="field"><label>{t('修改意见（必填）')}</label>
                 <textarea rows={3} value={revisionComment} onChange={e => setRevisionComment(e.target.value)}
-                  placeholder="例如：缩短波形展示并调整口播" /></div>
-              <div className="field"><label>新时长（秒）</label>
+                  placeholder={t('例如：缩短波形展示并调整口播')} /></div>
+              <div className="field"><label>{t('新时长（秒）')}</label>
                 <input type="number" min={1} max={300} value={revisionSeconds}
                   onChange={e => setRevisionSeconds(Number(e.target.value))} /></div>
-              <div className="field"><label>制作路线</label>
+              <div className="field"><label>{t('制作路线')}</label>
                 <select value={revisionRoute} onChange={e => setRevisionRoute(e.target.value)}>
-                  <option value="diagram_2d">确定性 2D</option>
-                  <option value="live_action">真实素材</option>
-                  <option value="slide_composite">课件合成</option>
+                  <option value="diagram_2d">{t('确定性 2D')}</option>
+                  <option value="live_action">{t('真实素材')}</option>
+                  <option value="slide_composite">{t('课件合成')}</option>
                 </select></div>
-              <div className="field"><label>新口播</label>
+              <div className="field"><label>{t('新口播')}</label>
                 <textarea rows={4} value={revisionNarration} onChange={e => setRevisionNarration(e.target.value)} /></div>
               <button className="accent" disabled={productionBusy || !revisionComment.trim()}
-                onClick={() => produceTeachingVideo(true)}>生成送修候选</button>
+                onClick={() => produceTeachingVideo(true)}>{t('生成送修候选')}</button>
             </div>
           </div>
         )}
@@ -1923,21 +1925,21 @@ export default function App() {
       <div className="inspector" style={{ width: rightW }}>
         <div className="inspector-top">
         <div className="panel-width-controls">
-          <span>右栏宽度</span>
-          <button onClick={() => adjustRightWidth(-60)} disabled={rightW <= 300}>变窄</button>
-          <button onClick={() => adjustRightWidth(60)} disabled={rightW >= 720}>加宽</button>
-          <button onClick={resetWidths}>默认</button>
+          <span>{t('右栏宽度')}</span>
+          <button onClick={() => adjustRightWidth(-60)} disabled={rightW <= 300}>{t('变窄')}</button>
+          <button onClick={() => adjustRightWidth(60)} disabled={rightW >= 720}>{t('加宽')}</button>
+          <button onClick={resetWidths}>{t('默认')}</button>
         </div>
         {!selected && (
           <div className="muted">
-            点击画布节点可在此编辑参数；<br />
-            或直接在下方对话，让 Agent 继续创作。
+            {t('点击画布节点可在此编辑参数；')}<br />
+            {t('或直接在下方对话，让 Agent 继续创作。')}
           </div>
         )}
         {selected && taskMode && teachingNode && (
-          <h2>{selectedSceneTitle ? `📍 ${selectedSceneTitle}` : '📦 教学视频任务包'}
+          <h2>{selectedSceneTitle ? `📍 ${selectedSceneTitle}` : `📦 ${t('教学视频任务包')}`}
             <span className="status-chip running">
-              {(teachingNode.outputs.importReview as { confirmation?: unknown }).confirmation ? '方案已确认' : '已接收 · 待方案确认'}
+              {(teachingNode.outputs.importReview as { confirmation?: unknown }).confirmation ? t('方案已确认 · 无需付费生成') : t('已接收 · 待方案确认')}
             </span>
           </h2>
         )}
@@ -2162,18 +2164,18 @@ export default function App() {
         <div className="agent-dock">
           <div className="chat-log">
             {chat.length === 0 && (
-              <div className="muted">和 Agent 对话继续创作：加镜头、改脚本、重新规划……<br />例：给这条微课加一段 PWM 波形的代码渲染镜头</div>
+              <div className="muted">{t('和 Agent 对话继续创作：加镜头、改脚本、重新规划……')}<br />{t('例：给这条微课加一段 PWM 波形的代码渲染镜头')}</div>
             )}
             {chat.map((m, i) => (
               <div key={i} className={`msg ${m.role}`}>{m.text}</div>
             ))}
-            {agentBusy && <div className="msg assistant">规划中…</div>}
+            {agentBusy && <div className="msg assistant">{t('规划中…')}</div>}
           </div>
           <div className="dock-input">
-            <textarea rows={2} value={chatInput} placeholder="和 Agent 说下一步（回车发送）"
+            <textarea rows={2} value={chatInput} placeholder={t('和 Agent 说下一步（回车发送）')}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAgent() } }} />
-            <button className="send" disabled={agentBusy} onClick={() => sendAgent()} title="发送">
+            <button className="send" disabled={agentBusy} onClick={() => sendAgent()} title={t('发送')}>
               {agentBusy ? '…' : '↑'}
             </button>
           </div>
@@ -2186,12 +2188,12 @@ export default function App() {
                 {agentModels.map(m => <option key={m.model} value={m.model}>{m.label}</option>)}
               </select>
             )}
-            <label className="check-line" title="先联网查真实事实再规划（需开通方舟联网插件）">
+            <label className="check-line" title={t('先联网查真实事实再规划（需开通方舟联网插件）')}>
               <input type="checkbox" checked={agentResearch} onChange={e => {
                 setAgentResearch(e.target.checked)
                 localStorage.setItem('jojo_agent_research', e.target.checked ? '1' : '')
               }} />
-              🌐 联网调研
+              🌐 {t('联网调研')}
             </label>
           </div>
         </div>
@@ -2330,6 +2332,7 @@ function MotionCardView({ card }: { card: Record<string, unknown> }) {
 
 function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
   data: unknown; review: unknown; selectedSceneId: string; onOpen: (sceneId: string) => void }) {
+  const { t, language } = useI18n()
   const value = data as { manifest?: { teachingGoal?: string; packageVersion?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string
       narration?: string; visual?: string }[] }
@@ -2338,11 +2341,11 @@ function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
     <div className="teaching-timeline">
       <div className="timeline-head">
         <div>
-          <span className="eyebrow">教学视频任务包 · {value.manifest?.packageVersion}</span>
+          <span className="eyebrow">{t('教学视频任务包')} · {value.manifest?.packageVersion}</span>
           <h2>{value.manifest?.teachingGoal}</h2>
         </div>
         <span className="status-chip running">
-          {audit.confirmation ? '方案已确认 · 无需付费生成' : '已接收 · 待方案确认'}
+          {audit.confirmation ? t('方案已确认 · 无需付费生成') : t('已接收 · 待方案确认')}
         </span>
       </div>
       <div className="timeline-track">
@@ -2352,7 +2355,7 @@ function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
             <span className="scene-order">{index + 1}</span>
             <span className="scene-time">{scene.targetSeconds}s</span>
             <b>{scene.title}</b>
-            <span className="scene-route">{scene.route}</span>
+            <span className="scene-route">{localizedRoute(scene.route, language)}</span>
             <span className="scene-narration">{scene.narration || scene.visual}</span>
           </button>
         ))}
@@ -2365,6 +2368,7 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, produ
   data: unknown; review: unknown; sceneId?: string; onConfirm: () => void; confirming: boolean
   production?: TeachingProduction
   onProduce: () => void; producing: boolean; onRevise: (scene: Record<string, unknown>) => void }) {
+  const { t, language } = useI18n()
   const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
       assertions?: string[]; routeStatus?: string; evidenceRefs?: string[]; narrationRefs?: string[]
@@ -2375,60 +2379,60 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, produ
     confirmation?: { confirmationId: string; planHash: string; paidGeneration: string; confirmedAt: string } }
   return (
     <div className="result">
-      <label>教学视频任务包 · {value.manifest?.packageId} / {value.manifest?.packageVersion}</label>
+      <label>{t('教学视频任务包')} · {value.manifest?.packageId} / {value.manifest?.packageVersion}</label>
       <div>{value.manifest?.teachingGoal}</div>
-      <div className="muted">导入任务：{audit.importTaskId} · 状态：{audit.status}</div>
-      <div className="muted">包哈希：{audit.packageHash}</div>
+      <div className="muted">{t('导入任务：')}{audit.importTaskId} · {t('状态：')}{audit.status}</div>
+      <div className="muted">{t('包哈希：')}{audit.packageHash}</div>
       {!audit.confirmation && (
         <button className="accent" disabled={confirming} onClick={onConfirm}>
-          {confirming ? '正在确认…' : '确认方案（无需付费生成）'}
+          {confirming ? t('正在确认…') : t('确认方案（无需付费生成）')}
         </button>
       )}
       {audit.confirmation && (
         <div className="seg">
-          <b>方案已确认 · 无需付费生成</b>
-          <div>确认记录：{audit.confirmation.confirmationId}</div>
-          <div className="muted">方案哈希：{audit.confirmation.planHash}</div>
-          <div className="muted">确认时间：{audit.confirmation.confirmedAt}</div>
+          <b>{t('方案已确认 · 无需付费生成')}</b>
+          <div>{t('确认记录：')}{audit.confirmation.confirmationId}</div>
+          <div className="muted">{t('方案哈希：')}{audit.confirmation.planHash}</div>
+          <div className="muted">{t('确认时间：')}{audit.confirmation.confirmedAt}</div>
         </div>
       )}
       {audit.confirmation && !production && (
         <button className="accent" disabled={producing} onClick={onProduce}>
-          {producing ? '正在生成…' : '生成候选视频（无付费）'}
+          {producing ? t('正在生成…') : t('生成候选视频（无付费）')}
         </button>
       )}
-      {production?.status === 'running' && <div className="seg">候选视频正在后台生成，页面会自动刷新。</div>}
-      {production?.status === 'failed' && <div className="err">候选生成失败，请查看任务记录。</div>}
+      {production?.status === 'running' && <div className="seg">{t('候选视频正在后台生成，页面会自动刷新。')}</div>}
+      {production?.status === 'failed' && <div className="err">{t('候选生成失败，请查看任务记录。')}</div>}
       {production?.status === 'pending_acceptance' && (
         <div className="seg">
-          <b>候选视频 v{production.version} · 待教学验收</b>
+          <b>{language === 'zh' ? '候选视频' : 'Candidate video'} v{production.version} · {t('待教学验收')}</b>
           {production.videoUrl && <video src={assetUrl(production.videoUrl)} controls style={{ width: '100%' }} />}
-          <div className="muted">成片已生成，尚未表示教学验收通过。</div>
-          {production.subtitleAssetId && <a href={assetUrl(`/assets/${production.subtitleAssetId}.srt`)} download>下载字幕 SRT</a>}
+          <div className="muted">{t('成片已生成，尚未表示教学验收通过。')}</div>
+          {production.subtitleAssetId && <a href={assetUrl(`/assets/${production.subtitleAssetId}.srt`)} download>{t('下载字幕 SRT')}</a>}
           {(production.unchangedSceneIds?.length ?? 0) > 0 &&
-            <div className="muted">未修改场景哈希保持一致：{production.unchangedSceneIds!.join('、')}</div>}
+            <div className="muted">{t('未修改场景哈希保持一致：')}{production.unchangedSceneIds!.join('、')}</div>}
           {(production.missingEvidence?.length ?? 0) > 0 &&
-            <div className="muted">未生成场景：{production.missingEvidence!.map(x => `${x.sceneId}（${x.reason}）`).join('；')}</div>}
+            <div className="muted">{t('未生成场景：')}{production.missingEvidence!.map(x => `${x.sceneId}（${x.reason}）`).join('；')}</div>}
         </div>
       )}
-      {audit.fixtureOnly && <div className="muted">本包含合成契约素材，不能作为真实课堂验收证据。</div>}
+      {audit.fixtureOnly && <div className="muted">{t('本包含合成契约素材，不能作为真实课堂验收证据。')}</div>}
       {(audit.missingEvidence?.length ?? 0) > 0 && (
-        <div className="seg"><b>待补项</b>{audit.missingEvidence!.map((item, i) =>
-          <div key={i}>{item.required ? '必需' : '可选'}：{item.description}</div>)}</div>
+        <div className="seg"><b>{t('待补项')}</b>{audit.missingEvidence!.map((item, i) =>
+          <div key={i}>{item.required ? t('必需') : t('可选')}：{item.description}</div>)}</div>
       )}
       {scenes?.map(scene => (
         <div key={scene.sceneId} className="seg">
           <b>{scene.title} · {scene.targetSeconds}s</b>
-          <div>路线：{scene.route} —— {scene.routeReason}</div>
-          {scene.routeStatus === 'needs_review' && <div className="muted">方案与教学断言待老师复核</div>}
-          {(scene.evidenceRefs?.length ?? 0) > 0 && <div className="muted">依据：{scene.evidenceRefs!.join('、')}</div>}
-          {(scene.narrationRefs?.length ?? 0) > 0 && <div className="muted">口播定位：{scene.narrationRefs!.join('、')}</div>}
-          {(scene.slideRefs?.length ?? 0) > 0 && <div className="muted">课件定位：{scene.slideRefs!.join('、')}</div>}
-          {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">核查：{assertion}</div>)}
-          {scene.visualSpec && <details><summary>科学场景规格</summary>
+          <div>{language === 'zh' ? '路线：' : 'Route: '}{localizedRoute(scene.route, language)} —— {scene.routeReason}</div>
+          {scene.routeStatus === 'needs_review' && <div className="muted">{t('方案与教学断言待老师复核')}</div>}
+          {(scene.evidenceRefs?.length ?? 0) > 0 && <div className="muted">{t('依据：')}{scene.evidenceRefs!.join('、')}</div>}
+          {(scene.narrationRefs?.length ?? 0) > 0 && <div className="muted">{t('口播定位：')}{scene.narrationRefs!.join('、')}</div>}
+          {(scene.slideRefs?.length ?? 0) > 0 && <div className="muted">{t('课件定位：')}{scene.slideRefs!.join('、')}</div>}
+          {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">{t('核查：')}{assertion}</div>)}
+          {scene.visualSpec && <details><summary>{t('科学场景规格')}</summary>
             <pre>{JSON.stringify(scene.visualSpec, null, 2)}</pre></details>}
           {production?.status === 'pending_acceptance' && (
-            <button onClick={() => onRevise(scene)}>退回此场景</button>
+            <button onClick={() => onRevise(scene)}>{t('退回此场景')}</button>
           )}
         </div>
       ))}
