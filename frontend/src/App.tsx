@@ -8,6 +8,10 @@ import '@xyflow/react/dist/style.css'
 import { api } from './api'
 import TrainingLibrary from './TrainingLibrary'
 
+const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
+const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
+const publicAsset = (name: string) => `${BASE_PATH}/${name}`
+
 type TeachingProduction = {
   candidateId: string; version: number; status: string; videoUrl?: string
   subtitleAssetId?: string; unchangedSceneIds?: string[]
@@ -202,10 +206,10 @@ function JojoNode({ id, data, selected }: NodeProps) {
           <div className="err">✖ {excerpt(out.error, 80) || '执行失败'}</div>
         )}
         {typeof out.asset_url === 'string' && !(out.asset_url as string).endsWith('.mp4') && (
-          <img src={out.asset_url} alt="" draggable={false} />
+          <img src={assetUrl(out.asset_url as string)} alt="" draggable={false} />
         )}
         {typeof out.asset_url === 'string' && (out.asset_url as string).endsWith('.mp4') && (
-          <video src={out.asset_url as string} muted loop autoPlay playsInline />
+          <video src={assetUrl(out.asset_url as string)} muted loop autoPlay playsInline />
         )}
         {out.script != null && <div className="ok">📄 脚本已生成，点击查看</div>}
         {out.storyboard != null && <div className="ok">🎞 分镜已生成，点击查看</div>}
@@ -664,7 +668,7 @@ export default function App() {
   // ── 后端健康监测：离线时全局红条提示 ──
   const [backendUp, setBackendUp] = useState(true)
   useEffect(() => {
-    const check = () => fetch('/api/health').then(r => setBackendUp(r.ok)).catch(() => setBackendUp(false))
+    const check = () => fetch(`${BASE_PATH}/api/health`).then(r => setBackendUp(r.ok)).catch(() => setBackendUp(false))
     check()
     const t = setInterval(check, 8000)
     return () => clearInterval(t)
@@ -1228,7 +1232,7 @@ export default function App() {
   if (authRole === 'none') return (
     <div className="login-page notranslate" translate="no">
       <div className="login-card">
-        <img src="/jojo-director-mark.svg" alt="JOJO Director" className="login-logo" />
+        <img src={publicAsset('jojo-director-mark.svg')} alt="JOJO Director" className="login-logo" />
         <h1>科学场景生产与验收</h1>
         <div className="sub">JOJO Director · Scientific Scene Production Engine</div>
         <div className="tab-bar login-tabs">
@@ -1325,7 +1329,7 @@ export default function App() {
       {authBar}
       {inviteModal}
       <div className="home-center">
-        <img className="home-logo" src="/jojo-director-lockup.svg" alt="JOJO Director — Scientific Scene Production Engine" />
+        <img className="home-logo" src={publicAsset('jojo-director-lockup.svg')} alt="JOJO Director — Scientific Scene Production Engine" />
         <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>
         <h1 className="home-title">把科学场景，转化为可验证的教学影像。</h1>
         <p className="home-intro">从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。</p>
@@ -1369,7 +1373,7 @@ export default function App() {
           </div>
           <div className="jojo-ad" aria-hidden="true">
             <div className="jojo-ad-stage">
-              <img className="base" src="/jojo-director-mark.svg" alt="" />
+              <img className="base" src={publicAsset('jojo-director-mark.svg')} alt="" />
             </div>
             <div className="jojo-ad-text">
               <b>JOJO 的“自我学习”是什么？</b>
@@ -1393,7 +1397,7 @@ export default function App() {
           {projects.slice(0, 11).map(p => (
             <div key={p.id} className="proj-card"
               onClick={async () => { await switchProject(p.id); setView('canvas') }}>
-              {thumbs[p.id] ? <img src={thumbs[p.id]} alt="" loading="lazy" /> : <div className="ph">🎬</div>}
+              {thumbs[p.id] ? <img src={assetUrl(thumbs[p.id])} alt="" loading="lazy" /> : <div className="ph">🎬</div>}
               <div className="pname">{p.title}</div>
             </div>
           ))}
@@ -1430,8 +1434,8 @@ export default function App() {
         {review.reviews.map(it => (
           <div key={it.qc_node_id} className="review-card">
             {it.asset_url && (it.asset_url.endsWith('.mp4')
-              ? <video src={it.asset_url} controls muted />
-              : <img src={it.asset_url} alt="" loading="lazy" />)}
+              ? <video src={assetUrl(it.asset_url)} controls muted />
+              : <img src={assetUrl(it.asset_url)} alt="" loading="lazy" />)}
             <div className="rc-body">
               <div className="rc-title">
                 {it.target_title || it.qc_title}
@@ -1487,7 +1491,7 @@ export default function App() {
       {offlineBanner}
       <div className="toolbar" style={{ width: leftW }}>
         <div className="brand-row" onClick={() => setView('home')} title="返回首页">
-          <img src="/jojo-director-mark.svg" alt="JOJO Director" />
+          <img src={publicAsset('jojo-director-mark.svg')} alt="JOJO Director" />
           <div>
             <h1>JOJO DIRECTOR</h1>
             <div className="sub">Scientific Scene Production Engine</div>
@@ -1643,8 +1647,8 @@ export default function App() {
                   }}
                   onClick={() => a.kind === 'image' ? useAsset(a.url) : window.open(a.url)}>
                   {a.kind === 'image'
-                    ? <img src={a.url} alt="" loading="lazy" />
-                    : <video src={a.url} muted />}
+                    ? <img src={assetUrl(a.url)} alt="" loading="lazy" />
+                    : <video src={assetUrl(a.url)} muted />}
                   <span className="kind">{a.kind === 'image' ? '图' : '视频'}</span>
                   <button className="star" title={a.starred ? '移出资产库' : '收藏到我的资产'}
                     onClick={e => { e.stopPropagation(); toggleStar(a.id, !a.starred) }}>
@@ -1827,8 +1831,8 @@ export default function App() {
                 <button onClick={() => setLightbox(null)}>✕ 关闭（Esc）</button>
               </div>
               {lightbox.url.endsWith('.mp4')
-                ? <video src={lightbox.url} controls autoPlay />
-                : <img src={lightbox.url} alt="" />}
+                ? <video src={assetUrl(lightbox.url)} controls autoPlay />
+                : <img src={assetUrl(lightbox.url)} alt="" />}
             </div>
           </div>
         )}
@@ -1851,8 +1855,8 @@ export default function App() {
                       } catch (e) { say(`切换失败: ${e}`) }
                     }}>
                     {v.kind === 'image'
-                      ? <img src={v.url} alt="" loading="lazy" />
-                      : <video src={v.url} muted />}
+                      ? <img src={assetUrl(v.url)} alt="" loading="lazy" />
+                      : <video src={assetUrl(v.url)} muted />}
                     <span className="kind">{i === 0 ? '最新' : `v-${i}`}</span>
                   </div>
                 ))}
@@ -1976,8 +1980,8 @@ export default function App() {
             {typeof selected.outputs?.asset_url === 'string' && (
               <div className="preview-wrap">
                 {(selected.outputs.asset_url as string).endsWith('.mp4')
-                  ? <video src={selected.outputs.asset_url as string} controls />
-                  : <img src={selected.outputs.asset_url as string} alt=""
+                  ? <video src={assetUrl(selected.outputs.asset_url as string)} controls />
+                  : <img src={assetUrl(selected.outputs.asset_url as string)} alt=""
                       title="点击放大预览"
                       onClick={() => setLightbox({ url: selected.outputs.asset_url as string, title: selected.title || '' })} />}
                 <button className="zoom-btn" onClick={() =>
@@ -2170,7 +2174,7 @@ function QcReportView({ out, onOverride, onGoTarget, onAdopt }: {
       {typeof out.summary === 'string' && out.summary && <div className="seg">{out.summary}</div>}
       {typeof out.note === 'string' && out.note && <div className="seg">{out.note}</div>}
       <div className="qc-frames">
-        {frames.map(f => <img key={f} src={f} alt="" />)}
+        {frames.map(f => <img key={f} src={assetUrl(f)} alt="" />)}
       </div>
       {out.mode === 'manual' && checklist.length > 0 && (
         <div className="seg">
@@ -2338,9 +2342,9 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, produ
       {production?.status === 'pending_acceptance' && (
         <div className="seg">
           <b>候选视频 v{production.version} · 待教学验收</b>
-          {production.videoUrl && <video src={production.videoUrl} controls style={{ width: '100%' }} />}
+          {production.videoUrl && <video src={assetUrl(production.videoUrl)} controls style={{ width: '100%' }} />}
           <div className="muted">成片已生成，尚未表示教学验收通过。</div>
-          {production.subtitleAssetId && <a href={`/assets/${production.subtitleAssetId}.srt`} download>下载字幕 SRT</a>}
+          {production.subtitleAssetId && <a href={assetUrl(`/assets/${production.subtitleAssetId}.srt`)} download>下载字幕 SRT</a>}
           {(production.unchangedSceneIds?.length ?? 0) > 0 &&
             <div className="muted">未修改场景哈希保持一致：{production.unchangedSceneIds!.join('、')}</div>}
           {(production.missingEvidence?.length ?? 0) > 0 &&
