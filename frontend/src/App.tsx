@@ -256,8 +256,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState('')
   const [draft, setDraft] = useState<Record<string, unknown>>({})
   const [toast, setToast] = useState('')
-  const [leftW, setLeftW] = useState(250)
-  const [rightW, setRightW] = useState(390)
+  const [leftW, setLeftW] = useState(() => Number(localStorage.getItem('jojo_left_width')) || 250)
+  const [rightW, setRightW] = useState(() => Number(localStorage.getItem('jojo_right_width')) || 390)
   const [tab, setTab] = useState<'nodes' | 'assets'>('nodes')
   const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training'>('home')
   type ReviewItem = {
@@ -347,20 +347,58 @@ export default function App() {
   selectedIdRef.current = selectedId
 
   // 拖动分隔条调整左右面板宽度
-  const startResize = (side: 'left' | 'right') => (e: React.MouseEvent) => {
+  const startResize = (side: 'left' | 'right') => (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
     const startX = e.clientX
     const startL = leftW, startR = rightW
-    const move = (ev: MouseEvent) => {
-      if (side === 'left') setLeftW(Math.min(440, Math.max(56, startL + ev.clientX - startX)))
-      else setRightW(Math.min(680, Math.max(56, startR - (ev.clientX - startX))))
+    const previousCursor = document.body.style.cursor
+    const previousSelect = document.body.style.userSelect
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const move = (ev: PointerEvent) => {
+      const delta = ev.clientX - startX
+      if (side === 'left') {
+        const max = Math.max(200, Math.min(520, window.innerWidth - startR - 420))
+        const next = Math.min(max, Math.max(200, startL + delta))
+        setLeftW(next)
+        localStorage.setItem('jojo_left_width', String(next))
+      } else {
+        const max = Math.max(300, Math.min(720, window.innerWidth - startL - 420))
+        const next = Math.min(max, Math.max(300, startR - delta))
+        setRightW(next)
+        localStorage.setItem('jojo_right_width', String(next))
+      }
     }
     const up = () => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', up)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      document.body.style.cursor = previousCursor
+      document.body.style.userSelect = previousSelect
     }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+  const resizeKeys = (side: 'left' | 'right') => (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    e.preventDefault()
+    const delta = e.key === 'ArrowRight' ? 20 : -20
+    if (side === 'left') {
+      const next = Math.min(520, Math.max(200, leftW + delta))
+      setLeftW(next)
+      localStorage.setItem('jojo_left_width', String(next))
+    } else {
+      const next = Math.min(720, Math.max(300, rightW - delta))
+      setRightW(next)
+      localStorage.setItem('jojo_right_width', String(next))
+    }
+  }
+  const resetWidths = () => {
+    setLeftW(250); setRightW(390)
+    localStorage.removeItem('jojo_left_width')
+    localStorage.removeItem('jojo_right_width')
   }
 
   const say = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000) }
@@ -1663,7 +1701,10 @@ export default function App() {
           </div>
         )}
       </div>
-      <div className="resizer" onMouseDown={startResize('left')} />
+      <div className="resizer" role="separator" aria-label="调整左侧导航宽度" aria-orientation="vertical"
+        aria-valuenow={leftW} aria-valuemin={200} aria-valuemax={520} tabIndex={0}
+        title="拖动调整宽度；方向键微调；双击恢复三栏默认宽度"
+        onPointerDown={startResize('left')} onKeyDown={resizeKeys('left')} onDoubleClick={resetWidths} />
       <div className="canvas"
         onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
         onDrop={onAssetDrop}>
@@ -1865,7 +1906,10 @@ export default function App() {
           </div>
         )}
       </div>
-      <div className="resizer" onMouseDown={startResize('right')} />
+      <div className="resizer" role="separator" aria-label="调整右侧详情宽度" aria-orientation="vertical"
+        aria-valuenow={rightW} aria-valuemin={300} aria-valuemax={720} tabIndex={0}
+        title="拖动调整宽度；方向键微调；双击恢复三栏默认宽度"
+        onPointerDown={startResize('right')} onKeyDown={resizeKeys('right')} onDoubleClick={resetWidths} />
       <div className="inspector" style={{ width: rightW }}>
         <div className="inspector-top">
         {!selected && (

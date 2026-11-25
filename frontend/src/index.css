@@ -96,14 +96,21 @@ body {
 
 /* ── 面板分隔条（可拖动） ───────────────── */
 .resizer {
-  width: 5px; cursor: col-resize; background: #e5e7eb; flex: none;
+  width: 12px; cursor: col-resize; background: #e2e8f0; flex: none;
+  position: relative; z-index: 12; touch-action: none; outline: none;
   transition: background .15s;
 }
-.resizer:hover { background: #2563eb; }
+.resizer::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 4px; height: 44px; border-left: 1px solid #94a3b8; border-right: 1px solid #94a3b8;
+  border-radius: 2px;
+}
+.resizer:hover, .resizer:active, .resizer:focus-visible { background: #bfdbfe; }
+.resizer:hover::after, .resizer:active::after, .resizer:focus-visible::after { border-color: #2563eb; }
 
 /* ── 左侧工具栏 ───────────────────────── */
 .toolbar {
-  padding: 16px 14px; overflow: hidden auto; flex: none;
+  padding: 16px 14px; overflow: hidden auto; flex: none; min-width: 0;
   display: flex; flex-direction: column; gap: 8px; background: #ffffff;
   border-right: 1px solid #e5e7eb;
 }
@@ -201,7 +208,7 @@ body {
 }
 
 /* ── 画布 ───────────────────────── */
-.canvas { flex: 1; position: relative; background: #f8f9fb; }
+.canvas { flex: 1; min-width: 0; position: relative; background: #f8f9fb; }
 .toast {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
   background: #2563eb; color: #fff; padding: 8px 18px; border-radius: 20px;
@@ -265,7 +272,7 @@ body {
 
 /* ── 右侧检查器 ───────────────────────── */
 .inspector {
-  background: #ffffff; flex: none;
+  background: #ffffff; flex: none; min-width: 0;
   padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
   border-left: 1px solid #e5e7eb;
 }
