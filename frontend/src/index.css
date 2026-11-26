@@ -838,3 +838,15 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .markdown-body th, .markdown-body td { border: 1px solid #d8e0eb; padding: 9px 11px; text-align: left; vertical-align: top; }
 .markdown-body th { background: #f1f5f9; }
 @media (max-width: 720px) { .home-documents { grid-template-columns: 1fr; } .document-page { padding: 14px; } .document-card { padding: 20px; } .document-head { flex-wrap: wrap; } }
+
+
+.upload-source-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.upload-source-buttons button { border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; padding: 8px; cursor: pointer; }
+.upload-source-buttons button:hover { border-color: #00B3A6; color: #087F78; }
+.upload-selection { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-report { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 7px; padding: 9px; background: #f8fafc; }
+.upload-report-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 4px 8px; padding: 7px 0; border-top: 1px solid #e2e8f0; }
+.upload-report-row code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-report-row small { grid-column: 2; color: #64748b; word-break: break-word; }
+.upload-report-row.accepted > span { color: #15803d; }
+.upload-report-row.rejected > span, .upload-report-row.duplicate > span { color: #b45309; }

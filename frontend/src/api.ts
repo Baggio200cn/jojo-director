@@ -104,6 +104,17 @@ export const api = {
     fd.append('note', meta.note)
     return request('/api/assets/upload', { method: 'POST', body: fd }).then(j)
   },
+  uploadFolderToLibrary: (files: File[], meta: { folder: string; rights: string; note: string }) => {
+    const fd = new FormData()
+    files.forEach(file => {
+      fd.append('files', file)
+      fd.append('paths', file.webkitRelativePath || file.name)
+    })
+    fd.append('folder', meta.folder)
+    fd.append('rights', meta.rights)
+    fd.append('note', meta.note)
+    return request('/api/assets/upload_folder', { method: 'POST', body: fd }).then(j)
+  },
   suggestFolder: (text: string): Promise<{ folder: string; score: number; matches: { ref_id: string; text: string; score: number }[] }> =>
     post('/api/assets/suggest_folder', { text }),
   createAssetFolder: (path: string) => post('/api/assets/folders', { path }),

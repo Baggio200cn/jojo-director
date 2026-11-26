@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import (auth, db, document_library, embeddings, executors, teaching_video_confirm,
+from . import (asset_ingest, auth, db, document_library, embeddings, executors, teaching_video_confirm,
                teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
@@ -1180,6 +1180,38 @@ async def upload_to_library(file: UploadFile = File(...), folder: str = Form("")
     except Exception:
         pass
     return _asset_view(db.get("assets", asset_id))
+
+
+@app.post("/api/assets/upload_folder")
+async def upload_folder_to_library(files: list[UploadFile] = File(...),
+                                   paths: list[str] = Form(...),
+                                   folder: str = Form("__auto__"), rights: str = Form("own"),
+                                   note: str = Form("")):
+    """文件夹投稿：本地检查、去重、保留相对路径并给出待审核归类。"""
+    if not files or len(files) != len(paths):
+        raise HTTPException(400, "文件与相对路径数量不一致")
+    if len(files) > asset_ingest.MAX_FILES:
+        raise HTTPException(400, f"单个文件夹最多 {asset_ingest.MAX_FILES} 个文件")
+    if rights not in ("own", "licensed", "reference_only"):
+        raise HTTPException(400, "rights 只能是 own / licensed / reference_only")
+    batch_id = db.new_id("folder")
+    results = []
+    total_bytes = 0
+    seen_hashes = set()
+    for file, relative_path in zip(files, paths):
+        content = await file.read(asset_ingest.MAX_TOTAL_BYTES + 1)
+        total_bytes += len(content)
+        if total_bytes > asset_ingest.MAX_TOTAL_BYTES:
+            results.append({"status": "rejected", "path": relative_path,
+                            "reason": "文件夹总大小超过 500MB，本文件及后续文件未入库"})
+            break
+        results.append(asset_ingest.ingest_file(content, relative_path, folder, rights,
+                                                note, batch_id, seen_hashes))
+    summary = {state: sum(1 for x in results if x["status"] == state)
+               for state in ("accepted", "rejected", "duplicate")}
+    return {"batchId": batch_id, "results": results, "summary": summary,
+            "reviewRequired": True, "paidModelCalled": False,
+            "analysisScope": "格式签名、文件名、相对路径与备注；不代替专业内容审核"}
 
 
 class SuggestIn(BaseModel):

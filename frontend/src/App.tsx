@@ -308,6 +308,8 @@ export default function App() {
   // ── 教师投稿（2026-09-07）：文件直接入素材库 ──
   const [uploadOpen, setUploadOpen] = useState(false)
   const [upFile, setUpFile] = useState<File | null>(null)
+  const [upFiles, setUpFiles] = useState<File[]>([])
+  const [upReport, setUpReport] = useState<{ batchId: string; results: { status: string; path: string; folder?: string; reason?: string }[]; summary: { accepted: number; rejected: number; duplicate: number } } | null>(null)
   const [upDomain, setUpDomain] = useState('光学类')
   const [upDomainCustom, setUpDomainCustom] = useState('')
   const [upTopic, setUpTopic] = useState('')
@@ -341,6 +343,8 @@ export default function App() {
   const undoRef = useRef<{ nodes: BNode[]; edges: { id: string; source: string; target: string }[] }[]>([])
   const redoRef = useRef<typeof undoRef.current>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const singleUploadRef = useRef<HTMLInputElement>(null)
+  const folderUploadRef = useRef<HTMLInputElement>(null)
   const yukeFileRef = useRef<HTMLInputElement>(null)
   const teachingFileRef = useRef<HTMLInputElement>(null)
   const bnodesRef = useRef(bnodes)
@@ -819,7 +823,7 @@ export default function App() {
 
   // ── 教师投稿：选择文件 → 学科/课题 → 权利声明 → 直接入素材库 ──
   const askSuggest = async () => {
-    const text = [upNote, upFile?.name || ''].join(' ').trim()
+    const text = [upNote, upFile?.name || upFiles[0]?.name || ''].join(' ').trim()
     if (!text) { setUpMsg('先选文件或写一句简述，再让机器建议目录'); return }
     try {
       const r = await api.suggestFolder(text)
@@ -838,19 +842,26 @@ export default function App() {
   }
 
   const doUpload = async () => {
-    if (!upFile) { setUpMsg('先选择要上传的文件'); say('先选择要上传的文件'); return }
+    if (!upFile && !upFiles.length) { setUpMsg(t('先选择要上传的文件或文件夹')); say(t('先选择要上传的文件或文件夹')); return }
     const dom = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
-    if (!dom) { setUpMsg('请填写学科目录'); say('请填写学科目录'); return }
-    const folder = upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
-    setUpBusy(true)
+    if (!dom) { setUpMsg(t('请填写学科目录')); say(t('请填写学科目录')); return }
+    const folder = upDomain === '__auto__' ? '__auto__' : upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
+    setUpBusy(true); setUpReport(null)
     try {
-      await api.uploadToLibrary(upFile, { folder, rights: upRights, note: upNote })
-      setUpMsg(`✅ 投稿成功：已入库 ${folder}`)
-      say(`投稿成功：已入库 ${folder}`)
-      setUploadOpen(false); setUpFile(null); setUpTopic(''); setUpNote(''); setUpSuggest(null)
+      if (upFiles.length) {
+        const report = await api.uploadFolderToLibrary(upFiles, { folder, rights: upRights, note: upNote })
+        setUpReport(report)
+        setUpMsg(t('文件夹处理完成，请逐项核对分析与归类结果；全部内容仍需人工审核'))
+        say(t('文件夹上传与分析已完成'))
+      } else {
+        await api.uploadToLibrary(upFile!, { folder, rights: upRights, note: upNote })
+        setUpMsg(`${t('投稿成功：已入库')} ${folder}`)
+        say(`${t('投稿成功：已入库')} ${folder}`)
+      }
+      setUploadOpen(false); setUpFile(null); setUpFiles([]); setUpTopic(''); setUpNote(''); setUpSuggest(null)
       api.listAssetFolders().then(setLibFolders).catch(() => {})
       loadAssets()
-    } catch (e) { setUpMsg(`投稿失败: ${e}`); say(`投稿失败: ${e}`) } finally { setUpBusy(false) }
+    } catch (e) { setUpMsg(`${t('投稿失败')}: ${e}`); say(`${t('投稿失败')}: ${e}`) } finally { setUpBusy(false) }
   }
 
   // ── A4：节点历史版本切换 ──
@@ -864,14 +875,24 @@ export default function App() {
   // ── 教师投稿表单（首页投稿板块 & 画布素材库面板共用）──
   const uploadForm = (
     <div className="lib-upload">
-      <input type="file" accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf"
-        onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpSuggest(null); setUpMsg('') }} />
+      <input ref={singleUploadRef} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf"
+        onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpFiles([]); setUpSuggest(null); setUpReport(null); setUpMsg('') }} />
+      <input ref={node => { folderUploadRef.current = node; node?.setAttribute('webkitdirectory', '') }}
+        type="file" hidden multiple accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.csv"
+        onChange={e => { const files = Array.from(e.target.files ?? []); setUpFiles(files); setUpFile(null); setUpSuggest(null); setUpReport(null); setUpMsg(files.length ? `${files.length} ${t('个文件待上传')}` : '') }} />
+      <div className="upload-source-buttons">
+        <button type="button" onClick={() => singleUploadRef.current?.click()}>{t('选择文件')}</button>
+        <button type="button" onClick={() => folderUploadRef.current?.click()}>{t('选择文件夹')}</button>
+      </div>
+      {upFile && <div className="muted upload-selection">{upFile.name}</div>}
+      {upFiles.length > 0 && <div className="muted upload-selection">{upFiles[0].webkitRelativePath || upFiles[0].name} · {upFiles.length} {t('个文件')}</div>}
       <div className="lib-filter">
         <select value={upDomain} onChange={e => setUpDomain(e.target.value)}>
           {[...new Set(libFolders.map(f => f.split('/')[0]))].map(d => (
             <option key={d} value={d}>{d}</option>
           ))}
           <option value="__custom__">{t('（新学科…）')}</option>
+          <option value="__auto__">{t('自动归类（待审核）')}</option>
         </select>
         <input placeholder={t('课题（可选，如 迈克尔逊干涉）')} value={upTopic}
           onChange={e => setUpTopic(e.target.value)} />
@@ -903,8 +924,18 @@ export default function App() {
         {t('可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案')}
       </div>
       <button disabled={upBusy} onClick={doUpload}>
-        {upBusy ? t('上传中…') : t('提交入库')}
+        {upBusy ? t('正在上传并分析…') : upFiles.length ? t('上传并分析文件夹') : t('提交入库')}
       </button>
+      {upReport && <div className="upload-report">
+        <b>{t('批次回执')}：{upReport.batchId}</b>
+        <div>{t('接收')} {upReport.summary.accepted} · {t('拒绝')} {upReport.summary.rejected} · {t('重复')} {upReport.summary.duplicate}</div>
+        {upReport.results.map((result, index) => <div className={`upload-report-row ${result.status}`} key={`${result.path}-${index}`}>
+          <span>{result.status === 'accepted' ? t('已接收') : result.status === 'duplicate' ? t('重复') : t('未接收')}</span>
+          <code>{result.path}</code>
+          <small>{result.folder ? `${t('目录')}：${result.folder}` : result.reason}</small>
+        </div>)}
+        <div className="muted">{t('本地规则分析不等于专业内容审核；全部结果均待人工复核。')}</div>
+      </div>}
     </div>
   )
 
