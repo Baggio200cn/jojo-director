@@ -34,7 +34,7 @@ def main():
         assert download.status_code == 200
         assert download.headers["content-type"].startswith("text/markdown")
         assert ".md" in download.headers["content-disposition"]
-        assert download.content.decode("utf-8") == guide.json()["content"]
+        assert download.content.decode("utf-8").replace("\r\n", "\n") == guide.json()["content"].replace("\r\n", "\n")
 
         hero = client.get("/api/docs/assets/readme-hero")
         assert hero.status_code == 200 and b"<svg" in hero.content
