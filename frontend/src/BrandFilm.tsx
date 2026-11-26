@@ -22,8 +22,8 @@ export default function BrandFilm() {
       <span>{t('约 30 秒；点击播放，结束后回到最终标识。')}</span>
     </div>
     <div className="jojo-ad-text">
-      <b>{t('JOJO 的“自我学习”是什么？')}</b>
-      <span>{t('机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。')}</span>
+      <b>{t('品牌标识：场景、生产与验证的统一')}</b>
+      <span>{t('轨道与节点构成科学场景系统，青色、品红与橙色分别对应场景组织、生产执行和质量验证。')}</span>
     </div>
   </div>
 }

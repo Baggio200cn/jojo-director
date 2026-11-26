@@ -53,7 +53,7 @@ def _migrate() -> None:
         # 教师投稿预建目录（2026-09-07 拍板）：学科级顶层文件夹
         c.execute("CREATE TABLE IF NOT EXISTS library_folders "
                   "(path TEXT PRIMARY KEY, created_at TEXT)")
-        for _f in ("光学类", "基础医学教学类"):
+        for _f in ("光学类", "基础医学教学类", "人工智能（AI）"):
             c.execute("INSERT OR IGNORE INTO library_folders (path, created_at) "
                       "VALUES (?, ?)", (_f, db.now()))
 

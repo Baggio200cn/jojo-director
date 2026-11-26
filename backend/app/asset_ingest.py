@@ -1,5 +1,6 @@
 """文件夹投稿的本地检查、去重与可审核归类。"""
 import hashlib
+import re
 from pathlib import Path, PurePosixPath
 
 from . import db
@@ -13,6 +14,7 @@ EXTENSIONS = {
     ".pdf": "doc", ".txt": "doc", ".md": "doc", ".csv": "doc",
 }
 DOMAIN_RULES = {
+    "人工智能（AI）": ["人工智能", "机器学习", "深度学习", "神经网络", "大语言模型", "大模型", "生成式ai", "aigc", "智能体", "自然语言处理", "计算机视觉", "ai", "machine learning", "deep learning", "neural network", "llm", "agent"],
     "基础医学教学类": ["医学", "生理", "解剖", "心脏", "细胞", "血液", "药物", "护理", "medical", "anatomy", "physiology", "cardiac", "cell", "pharmacology", "nursing"],
     "光学类": ["光学", "透镜", "光路", "机器视觉", "相机", "标定", "光源", "镜头", "焦距", "optics", "lens", "camera", "calibration", "vision"],
     "电气与电子": ["pwm", "led", "电路", "占空比", "电气", "电子", "电力", "控制", "circuit", "electrical", "electronic"],
@@ -49,9 +51,16 @@ def signature_valid(ext: str, content: bytes) -> bool:
     return False
 
 
+def _keyword_count(text: str, keyword: str) -> int:
+    keyword = keyword.lower()
+    if keyword.isascii() and keyword.isalnum() and len(keyword) <= 3:
+        return len(re.findall(rf"(?<![a-z0-9]){re.escape(keyword)}(?![a-z0-9])", text))
+    return text.count(keyword)
+
+
 def classify(relative_path: str, note: str, text_content: str = "") -> dict:
     text = f"{relative_path} {note} {text_content}".lower()
-    scores = {domain: sum(text.count(keyword.lower()) for keyword in keywords)
+    scores = {domain: sum(_keyword_count(text, keyword) for keyword in keywords)
               for domain, keywords in DOMAIN_RULES.items()}
     candidates = sorted(({"domain": domain, "score": score} for domain, score in scores.items() if score),
                         key=lambda x: -x["score"])

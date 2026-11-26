@@ -62,8 +62,18 @@ levels:
       - {code: CS-NET, name_zh: 网络与分布式系统, name_en: Networks and Distributed Systems, status: draft}
       - {code: CS-DB, name_zh: 数据库与数据管理, name_en: Databases and Data Management, status: draft}
       - {code: CS-SE, name_zh: 软件工程与测试, name_en: Software Engineering and Testing, status: draft}
-      - {code: CS-AI, name_zh: 人工智能与数据科学, name_en: AI and Data Science, status: draft}
       - {code: CS-SEC, name_zh: 网络与信息安全, name_en: Cybersecurity, status: draft}
+  - code: SCI-AI
+    name_zh: 人工智能（AI）
+    name_en: Artificial Intelligence (AI)
+    status: active
+    priority: P0
+    children:
+      - {code: AI-ML, name_zh: 机器学习, name_en: Machine Learning, status: draft}
+      - {code: AI-DL, name_zh: 深度学习与神经网络, name_en: Deep Learning and Neural Networks, status: draft}
+      - {code: AI-CV, name_zh: 计算机视觉, name_en: Computer Vision, status: draft}
+      - {code: AI-NLP, name_zh: 自然语言处理, name_en: Natural Language Processing, status: draft}
+      - {code: AI-GEN, name_zh: 生成式人工智能与智能体, name_en: Generative AI and Agents, status: draft}
   - code: SCI-BIO
     name_zh: 生物学
     name_en: Biology

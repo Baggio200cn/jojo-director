@@ -1529,13 +1529,13 @@ export default function App() {
         {homeErr && <div className="home-err">{homeErr}</div>}
         <div className="home-documents">
           <section className="home-document-card">
-            <h3>{t('项目介绍')}</h3>
+            <h3 className="brand-section-title scene"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('项目介绍')}</span></h3>
             <p>{t('项目定位、技术架构、当前能力与验收边界。')}</p>
             <div><button onClick={() => { setDocumentName('project'); setView('document') }}>{t('在线阅读')}</button>
               <a href={api.documentDownload('project')} download>{t('下载 Markdown 文件')}</a></div>
           </section>
           <section className="home-document-card">
-            <h3>{t('教师投稿合作手册')}</h3>
+            <h3 className="brand-section-title produce"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('教师投稿合作手册')}</span></h3>
             <p>{t('素材准备、上传步骤、规则审核、退回补证与联系方式。')}</p>
             <div><button onClick={() => { setDocumentName('guide'); setView('document') }}>{t('在线阅读')}</button>
               <a href={api.documentDownload('guide')} download>{t('下载 Markdown 文件')}</a></div>
@@ -1543,7 +1543,7 @@ export default function App() {
         </div>
         <div className="home-dual">
           <div className="home-upload">
-            <h3>📤 {t('教师投稿')}</h3>
+            <h3 className="brand-section-title verify"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('教师投稿')}</span></h3>
             <div className="muted" style={{ fontSize: 12 }}>
               {t('把您的实验录屏 / 图片 / 教案投进素材库，丰富 JOJO 的训练素材')}
             </div>

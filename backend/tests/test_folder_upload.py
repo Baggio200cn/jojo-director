@@ -54,6 +54,8 @@ def main():
         accepted = {x["path"]: x for x in result["results"] if x["status"] == "accepted"}
         check("光学内容正确归类", accepted["光学实验/透镜-v1.md"]["folder"] == "光学类/光学实验")
         check("PWM 文本内容正确归类", accepted["电子实验/pwm-v1.txt"]["folder"] == "电气与电子/电子实验")
+        check("AI 独立大类自动归类", asset_ingest.classify("AI实验/神经网络.md", "", "")["suggestedDomain"] == "人工智能（AI）")
+        check("AI 缩写不误伤普通英文", asset_ingest.classify("detail.md", "", "")["suggestedDomain"] == "待确认")
         check("保留相对路径与哈希", all(x["analysis"]["reviewRequired"] for x in accepted.values())
               and all(x["analysis"]["method"] == "local_rules_v1" for x in accepted.values()))
         rows = db.query("assets")
