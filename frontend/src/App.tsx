@@ -9,6 +9,7 @@ import { api } from './api'
 import TrainingLibrary from './TrainingLibrary'
 import DocumentView from './DocumentView'
 import BrandFilm from './BrandFilm'
+import CommunityCenter from './CommunityCenter'
 import { localizedRoute, useI18n } from './I18n'
 import { localizedContent } from './contentI18n'
 
@@ -271,8 +272,10 @@ export default function App() {
   const [leftW, setLeftW] = useState(() => Number(localStorage.getItem('jojo_left_width')) || 250)
   const [rightW, setRightW] = useState(() => Number(localStorage.getItem('jojo_right_width')) || 390)
   const [tab, setTab] = useState<'nodes' | 'assets'>('nodes')
-  const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training' | 'document'>('home')
+  const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training' | 'document' | 'communities'>('home')
   const [documentName, setDocumentName] = useState<'project' | 'guide'>('project')
+  const [communityId, setCommunityId] = useState('')
+  const [communityOptions, setCommunityOptions] = useState<{ id: string; title: string; my_role: string }[]>([])
   type ReviewItem = {
     qc_node_id: string; qc_title: string; target_node_id: string
     target_title: string; target_type: string; asset_url: string
@@ -327,6 +330,8 @@ export default function App() {
   const [upNote, setUpNote] = useState('')
   const [upBusy, setUpBusy] = useState(false)
   const [upMsg, setUpMsg] = useState('')
+  const [upCommunityId, setUpCommunityId] = useState('')
+  const [upLastCommunityId, setUpLastCommunityId] = useState('')
   const [upSuggest, setUpSuggest] = useState<{ folder: string; score: number } | null>(null)
   // ── QC 改判沉淀：人工终裁与机器原判不一致时，收集类型+原因进学习库 ──
   const [overrideDlg, setOverrideDlg] = useState<{ nid: string; verdict: string; orig: string } | null>(null)
@@ -554,6 +559,7 @@ export default function App() {
       setChat(JSON.parse(localStorage.getItem(`jojo_chat_${initial.id}`) ?? '[]'))
       const models = await api.agentModels().catch(() => [])
       setAgentModels(models)
+      api.listCommunities().then(setCommunityOptions).catch(() => {})
       if (models.length && !models.some((m: { model: string }) => m.model === localStorage.getItem('jojo_agent_model'))) {
         setAgentModel(models[0].model)
       }
@@ -859,16 +865,18 @@ export default function App() {
     const dom = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
     if (!dom) { setUpMsg(t('请填写学科目录')); say(t('请填写学科目录')); return }
     const folder = upDomain === '__auto__' ? '__auto__' : upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
-    setUpBusy(true); setUpReport(null)
+    setUpBusy(true); setUpReport(null); setUpLastCommunityId('')
     setUpMsg(upFiles.length ? t('正在上传并分析文件夹，请保持当前页面…') : t('正在上传文件，请保持当前页面…'))
     try {
       if (upFiles.length) {
-        const report = await api.uploadFolderToLibrary(upFiles, { folder, rights: upRights, note: upNote })
+        const report = await api.uploadFolderToLibrary(upFiles, { folder, rights: upRights, note: upNote, communityId: upCommunityId || undefined })
         setUpReport(report)
+        if (report.communityId) setUpLastCommunityId(report.communityId)
         setUpMsg(t('文件夹处理完成，请逐项核对分析与归类结果；全部内容仍需人工审核'))
         say(t('文件夹上传与分析已完成'))
       } else {
-        await api.uploadToLibrary(upFile!, { folder, rights: upRights, note: upNote })
+        const result = await api.uploadToLibrary(upFile!, { folder, rights: upRights, note: upNote, communityId: upCommunityId || undefined })
+        if (result.communityId) setUpLastCommunityId(result.communityId)
         setUpMsg(`${t('投稿成功：已入库')} ${folder}`)
         say(`${t('投稿成功：已入库')} ${folder}`)
       }
@@ -916,6 +924,10 @@ export default function App() {
         <button type="button" onClick={() => singleUploadRef.current?.click()}>{t('选择文件')}</button>
         <button type="button" onClick={() => folderUploadRef.current?.click()}>{t('选择文件夹')}</button>
       </div>
+      <select value={upCommunityId} onChange={e => setUpCommunityId(e.target.value)}>
+        <option value="">仅提交素材库（不关联课题社区）</option>
+        {communityOptions.filter(item => item.my_role).map(item => <option key={item.id} value={item.id}>投稿到课题：{item.title}</option>)}
+      </select>
       {upFile && <div className="muted upload-selection">{upFile.name}</div>}
       {upFiles.length > 0 && <div className="muted upload-selection">{upFiles[0].webkitRelativePath || upFiles[0].name} · {upFiles.length} {t('个文件')}</div>}
       <div className="lib-filter">
@@ -985,6 +997,10 @@ export default function App() {
             </div>)}
           </div>}
         </div>
+      </div>}
+      {upLastCommunityId && <div className="upload-community-next">
+        <b>素材已进入课题社区，接下来邀请老师一起讨论和审校。</b>
+        <button onClick={() => { setCommunityId(upLastCommunityId); setView('communities') }}>进入课题继续共建 →</button>
       </div>}
       {recentBatches.length > 0 && <details className="recent-batches">
         <summary>{t('最近上传批次与审核状态')}</summary>
@@ -1527,6 +1543,10 @@ export default function App() {
           </div>
         </div>
         {homeErr && <div className="home-err">{homeErr}</div>}
+        <section className="community-entry">
+          <div><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><div><h2>课题共建社区</h2><p>不止上传素材：参与讨论、认领任务、学科审校、场景接驳与版本发布。</p></div></div>
+          <button onClick={() => { setCommunityId(''); setView('communities') }}>进入共建 →</button>
+        </section>
         <div className="home-documents">
           <section className="home-document-card">
             <h3 className="brand-section-title scene"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('项目介绍')}</span></h3>
@@ -1583,6 +1603,8 @@ export default function App() {
       </div>
     </div>
   )
+
+  if (view === 'communities') return <CommunityCenter authRole={authRole} initialCommunityId={communityId} onBack={() => { setView('home'); void api.listCommunities().then(setCommunityOptions) }} />
 
   if (view === 'training') return <TrainingLibrary onBack={() => setView('home')} />
 

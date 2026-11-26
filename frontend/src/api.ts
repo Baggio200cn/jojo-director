@@ -96,15 +96,17 @@ export const api = {
   nodeVersions: (nid: string) => request(`/api/nodes/${nid}/versions`).then(j),
   useNodeVersion: (nid: string, aid: string) =>
     post(`/api/nodes/${nid}/use_version/${aid}`),
-  uploadToLibrary: (file: File, meta: { folder: string; rights: string; note: string }) => {
+  uploadToLibrary: (file: File, meta: { folder: string; rights: string; note: string; communityId?: string; contributionId?: string }) => {
     const fd = new FormData()
     fd.append('file', file)
     fd.append('folder', meta.folder)
     fd.append('rights', meta.rights)
     fd.append('note', meta.note)
+    if (meta.communityId) fd.append('community_id', meta.communityId)
+    if (meta.contributionId) fd.append('contribution_id', meta.contributionId)
     return request('/api/assets/upload', { method: 'POST', body: fd }).then(j)
   },
-  uploadFolderToLibrary: (files: File[], meta: { folder: string; rights: string; note: string }) => {
+  uploadFolderToLibrary: (files: File[], meta: { folder: string; rights: string; note: string; communityId?: string }) => {
     const fd = new FormData()
     files.forEach(file => {
       fd.append('files', file)
@@ -113,11 +115,35 @@ export const api = {
     fd.append('folder', meta.folder)
     fd.append('rights', meta.rights)
     fd.append('note', meta.note)
+    if (meta.communityId) fd.append('community_id', meta.communityId)
     return request('/api/assets/upload_folder', { method: 'POST', body: fd }).then(j)
   },
   listIngestionBatches: () => request('/api/assets/ingestion-batches').then(j),
   reviewIngestionBatch: (batchId: string, action: string, comment: string) =>
     post(`/api/assets/ingestion-batches/${batchId}/review`, { action, comment }),
+  listCommunities: () => request('/api/communities').then(j),
+  createCommunity: (body: object) => post('/api/communities', body),
+  communityDetail: (id: string) => request(`/api/communities/${id}`).then(j),
+  joinCommunity: (id: string) => post(`/api/communities/${id}/join`),
+  createContribution: (id: string, body: object) => post(`/api/communities/${id}/contributions`, body),
+  contributionDetail: (id: string, contributionId: string) =>
+    request(`/api/communities/${id}/contributions/${contributionId}`).then(j),
+  addContributionComment: (id: string, contributionId: string, body: object) =>
+    post(`/api/communities/${id}/contributions/${contributionId}/comments`, body),
+  reviewContribution: (id: string, contributionId: string, body: object) =>
+    post(`/api/communities/${id}/contributions/${contributionId}/review`, body),
+  reviseContribution: (id: string, contributionId: string, body: object) =>
+    post(`/api/communities/${id}/contributions/${contributionId}/revisions`, body),
+  bindContribution: (id: string, contributionId: string, body: object) =>
+    post(`/api/communities/${id}/contributions/${contributionId}/bind`, body),
+  createCommunityTask: (id: string, body: object) => post(`/api/communities/${id}/tasks`, body),
+  communityTaskAction: (id: string, taskId: string, action: string) =>
+    post(`/api/communities/${id}/tasks/${taskId}/${action}`),
+  publishCommunityVersion: (id: string, body: object) => post(`/api/communities/${id}/versions`, body),
+  setCommunityMemberRole: (id: string, memberId: string, role: string) =>
+    post(`/api/communities/${id}/members/${memberId}/${role}`),
+  readCommunityNotifications: (id: string) => post(`/api/communities/${id}/notifications/read`),
+  importCommunityBatch: (id: string, batchId: string) => post(`/api/communities/${id}/import-batch`, { batch_id: batchId }),
   suggestFolder: (text: string): Promise<{ folder: string; score: number; matches: { ref_id: string; text: string; score: number }[] }> =>
     post('/api/assets/suggest_folder', { text }),
   createAssetFolder: (path: string) => post('/api/assets/folders', { path }),

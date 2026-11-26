@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import (asset_ingest, auth, db, document_library, embeddings, executors, ingestion_review,
+from . import (asset_ingest, auth, community, db, document_library, embeddings, executors, ingestion_review,
                teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
@@ -83,6 +83,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="JOJO Studio API", version="0.1.0", lifespan=lifespan)
+app.include_router(community.router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 ASSETS_DIR.mkdir(exist_ok=True)  # StaticFiles 挂载要求目录在 import 期已存在
@@ -1143,11 +1144,23 @@ def create_asset_folder(body: dict):
 
 
 @app.post("/api/assets/upload")
-async def upload_to_library(file: UploadFile = File(...), folder: str = Form(""),
+async def upload_to_library(request: Request, file: UploadFile = File(...), folder: str = Form(""),
                             rights: str = Form("own"), note: str = Form(""),
-                            subject_id: str = Form("")):
+                            subject_id: str = Form(""), community_id: str = Form(""),
+                            contribution_id: str = Form("")):
     """教师投稿：文件直接入素材库（library=1），权利声明入库即声明。
     可提交类型：mp4/mov/webm 实验录屏、png/jpg 图片、pdf 教案/讲义。"""
+    session = auth.require(request)
+    if contribution_id and not community_id:
+        raise HTTPException(400, "提交贡献新版本时必须指定课题社区")
+    if community_id:
+        try:
+            community._community(community_id)
+            community._member(community_id, session)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(403, str(exc)) from exc
     ext = Path(file.filename or "").suffix.lower()
     kind = {".mp4": "video", ".mov": "video", ".webm": "video",
             ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
@@ -1180,16 +1193,39 @@ async def upload_to_library(file: UploadFile = File(...), folder: str = Form("")
             await embeddings.upsert("asset", asset_id, embeddings.asset_text(row))
     except Exception:
         pass
-    return _asset_view(db.get("assets", asset_id))
+    out = _asset_view(db.get("assets", asset_id))
+    try:
+        if contribution_id:
+            detail = community.add_asset_revision(community_id, contribution_id, asset_id, note, session)
+            out["contributionId"] = contribution_id
+            out["contributionVersion"] = detail["contribution"]["version"]
+        elif community_id:
+            contribution = community.create_asset_contribution(community_id, asset_id, session)
+            out["contributionId"] = contribution["id"]
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    if community_id:
+        out["communityId"] = community_id
+    return out
 
 
 @app.post("/api/assets/upload_folder")
 async def upload_folder_to_library(request: Request, files: list[UploadFile] = File(...),
                                    paths: list[str] = Form(...),
                                    folder: str = Form("__auto__"), rights: str = Form("own"),
-                                   note: str = Form("")):
+                                   note: str = Form(""), community_id: str = Form("")):
     """文件夹投稿：本地检查、去重、保留相对路径并给出待审核归类。"""
     session = auth.require(request)
+    if community_id:
+        try:
+            community._community(community_id)
+            community._member(community_id, session)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(403, str(exc)) from exc
     if not files or len(files) != len(paths):
         raise HTTPException(400, "文件与相对路径数量不一致")
     if len(files) > asset_ingest.MAX_FILES:
@@ -1207,13 +1243,22 @@ async def upload_folder_to_library(request: Request, files: list[UploadFile] = F
             results.append({"status": "rejected", "path": relative_path,
                             "reason": "文件夹总大小超过 500MB，本文件及后续文件未入库"})
             break
-        results.append(asset_ingest.ingest_file(content, relative_path, folder, rights,
-                                                note, batch_id, seen_hashes))
+        result = asset_ingest.ingest_file(content, relative_path, folder, rights,
+                                          note, batch_id, seen_hashes)
+        if community_id and result["status"] == "accepted":
+            try:
+                contribution = community.create_asset_contribution(
+                    community_id, result["assetId"], session, batch_id)
+                result["contributionId"] = contribution["id"]
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
+        results.append(result)
     summary = {state: sum(1 for x in results if x["status"] == state)
                for state in ("accepted", "rejected", "duplicate")}
     ingestion_review.create_batch(batch_id, results, folder, rights, note,
                                   session.get("role", "unknown"))
-    return {"batchId": batch_id, "results": results, "summary": summary,
+    return {"batchId": batch_id, "communityId": community_id or None,
+            "results": results, "summary": summary,
             "status": "analyzed_pending_teacher", "reviewRequired": True, "paidModelCalled": False,
             "analysisScope": "格式签名、文件名、相对路径与备注；不代替专业内容审核"}
 
