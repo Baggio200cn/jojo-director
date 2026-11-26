@@ -545,6 +545,8 @@ body {
 
 /* ── 邀请码管理 ── */
 .invite-panel { min-width: 620px; }
+.account-panel { width: min(400px, 90vw); }
+.account-panel > .accent { border: none; border-radius: 7px; padding: 10px; background: #1A1A1A; color: #fff; cursor: pointer; }
 .invite-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #374151; }
 .invite-table th, .invite-table td { border-bottom: 1px solid #e5e7eb; padding: 7px 8px; text-align: left; }
 .invite-table th { color: #6b7280; font-weight: normal; font-size: 12px; }

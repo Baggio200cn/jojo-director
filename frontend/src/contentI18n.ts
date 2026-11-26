@@ -1,0 +1,77 @@
+import type { Language } from './I18n'
+
+const contentEn: Record<string, string> = {
+  'LED 驱动器与智慧照明': 'LED Drivers and Smart Lighting',
+  'LED 驱动器与智慧照明 · 第1节 · 解释 PWM 占空比变化与 LED 平均亮度的关系': 'LED Drivers and Smart Lighting · Lesson 1 · PWM Duty Cycle and Average LED Brightness',
+  '解释 PWM 占空比变化与 LED 平均亮度的关系': 'How PWM duty cycle affects average LED brightness',
+  '教师开场': 'Teacher introduction', '占空比波形变化': 'Duty-cycle waveform changes',
+  'LED 调光现象': 'LED dimming demonstration', '教师总结': 'Teacher summary',
+  'LED 的亮度是怎样改变的？': 'How is LED brightness controlled?',
+  '请依次观察三个波形。周期相同，高电平所占时间由十分之一变为二分之一，再变为十分之九。': 'Observe the three waveforms in order. Their periods are identical, while the high-level durations change from 10% to 50% and then 90% of each period.',
+  '周期保持不变，高电平所占比例从 10% 增加到 50%，再增加到 90%。': 'The period remains constant while the high-level duty cycle increases from 10% to 50% and then 90%.',
+  '观察占空比增加时 LED 平均亮度的变化。': 'Observe how average LED brightness changes as duty cycle increases.',
+  '周期不变时，占空比越大，LED 的平均亮度越高。': 'With a constant period, a higher duty cycle produces higher average LED brightness.',
+  '教师开场画面待提供': 'Teacher introduction footage is required',
+  '三组周期一致的方波依次提高占空比': 'Three square waves with identical periods show increasing duty cycles',
+  '真实调光录屏占位，当前仅为合成测试视频': 'Placeholder dimming recording; currently a synthetic test video only',
+  '教师总结或课件归纳': 'Teacher summary or slide-based recap',
+  '开场只提出问题，不提前给出错误结论': 'The introduction asks the question without presenting an incorrect conclusion',
+  '三组波形周期一致': 'All three waveforms have the same period',
+  '高电平宽度依次增加': 'High-level pulse widths increase in sequence',
+  '占空比顺序为 10%、50%、90%': 'Duty cycles appear in the order 10%, 50%, 90%',
+  '实拍出处可回查': 'The source of the live footage is traceable',
+  '不得把合成占位视频标为真实课堂实录': 'Do not label the synthetic placeholder as genuine classroom footage',
+  '总结同时包含周期不变和占空比增加两个条件': 'The summary states both constant period and increasing duty cycle',
+  '保留真实人物、设备或实验过程，不用生成画面冒充真实现场': 'Preserve real people, equipment or experiments; never substitute generated imagery for a real scene',
+  '结构、参数或波形可由确定性二维场景表达': 'The structure, parameters or waveform can be represented by deterministic 2D graphics',
+  '课件与教师画面可确定性合成': 'Slides and teacher footage can be composited deterministically',
+  '教师开场实拍未随契约样例提供': 'Teacher introduction footage was not included in this contract fixture',
+  '场景 scene-opening 缺少可用的真实视频素材': 'Scene scene-opening lacks usable live-action video',
+  '场景 scene-summary 缺少可用的真实视频素材': 'Scene scene-summary lacks usable live-action video',
+  'plan_approved': 'Plan approved', 'pending_acceptance': 'Pending teaching review', 'running': 'Running',
+  'failed': 'Failed', 'received': 'Received', 'needs_material': 'Materials required', 'needs_review': 'Review required',
+  'candidate': 'Candidate', 'pending': 'Pending', 'approved': 'Approved', 'deprecated': 'Deprecated',
+  'discovery_only': 'Discovery only', 'reference_only': 'Reference only', 'own': 'Owned', 'licensed': 'Licensed',
+  'documentation-reference': 'Documentation reference',
+  '火山引擎': 'Volcano Engine', '本人自制': 'Created by me', '已获授权': 'Licensed',
+  '候选': 'Candidate', '待复核': 'Pending review', '高职': 'Vocational education',
+  '算法': 'Algorithm', '代码执行': 'Code execution', '真实输出': 'Real output',
+  '光学': 'Optics', '光路': 'Ray paths', '确定性2D': 'Deterministic 2D',
+  '二分查找的边界与执行过程': 'Binary search boundaries and execution trace',
+  '凸透镜成像光路': 'Convex-lens imaging ray paths', 'PWM 占空比与 LED 调光': 'PWM duty cycle and LED dimming',
+  '通过受控代码执行展示二分查找的比较、边界和真实输出。候选 Skill，需补齐执行环境与测试用例。': 'Demonstrate binary-search comparisons, boundaries and real output through controlled execution. This candidate Skill still requires an execution environment and test cases.',
+  '按焦距、物距和光线关系生成确定性凸透镜光路。候选 Skill，需完成参数和成像结论复核。': 'Generate deterministic convex-lens ray paths from focal length, object distance and ray relationships. Parameters and imaging conclusions require review.',
+  '用确定性程序生成周期一致的 PWM 波形，并与真实调光素材组合。候选 Skill，未完成教研批准。': 'Generate PWM waveforms with invariant periods using deterministic code and combine them with real dimming footage. This candidate Skill has not been approved for teaching production.',
+  'Python 官方语言参考': 'Python official language reference', '现有透镜光路渲染实现': 'Existing lens ray-path renderer', '现有 PWM 渲染实现': 'Existing PWM renderer',
+  '观察二分查找的比较过程、边界条件和真实执行结果': 'Observe binary-search comparisons, boundary conditions and real execution output',
+  '观察物距变化与凸透镜成像光路的关系': 'Observe how object distance affects convex-lens imaging ray paths',
+  '观察周期不变时占空比与平均亮度的关系': 'Observe the relationship between duty cycle and average brightness with an invariant period',
+  '输入必须有序，代码、输入、预期输出和真实输出必须同时可回查。': 'Input must be sorted. Code, input, expected output and actual output must all be traceable.',
+  '边界更新必须无死循环，空输入、重复值和左右边界必须有测试。': 'Boundary updates must terminate. Test empty input, duplicates and both boundary positions.',
+  '不得使用代码截图或模型描述代替真实执行，失败结果必须保留并说明。': 'Never replace real execution with code screenshots or model descriptions. Preserve and explain failures.',
+  '入射光、折射光和焦点方向必须正确，不得出现无依据的反向光路。': 'Incident rays, refracted rays and focal directions must be correct; unsupported reverse ray paths are forbidden.',
+  '焦距、物距和像距必须使用一致单位，成像结论必须与光路和公式一致。': 'Focal length, object distance and image distance must use consistent units. Conclusions must match both ray paths and formulas.',
+  '真实实验画面必须能回查出处，不能用生成式图片冒充真实透镜实验。': 'Real experiment footage must be traceable; generated images must not impersonate a real lens experiment.',
+  '所有比较波形的周期必须一致，不能只检查画面是否类似方波。': 'All compared waveforms must have identical periods; visual similarity to a square wave is insufficient.',
+  '高电平持续时间与占空比序列必须按同一方向变化，不得把频率增加当作占空比增加。': 'High-level duration must follow the duty-cycle sequence; increasing frequency must not be presented as increasing duty cycle.',
+  '口播、字幕和波形数值必须一致，真实调光素材必须有可回查来源和授权。': 'Narration, subtitles and waveform values must match. Real dimming footage must have traceable provenance and authorization.',
+  '边界更新符合代码': 'Boundary updates match the code', '输出与预期一致': 'Output matches expectations', '异常输入得到明确处理': 'Invalid input is handled explicitly',
+  '光线方向正确': 'Ray directions are correct', '焦点位置可核对': 'Focal positions are verifiable', '成像结论与光路一致': 'Imaging conclusions match the ray paths',
+  '周期一致': 'Invariant period', '高电平宽度按序列变化': 'High-level widths follow the sequence', '口播与波形一致': 'Narration matches the waveform',
+  '不得虚构执行结果': 'Never fabricate execution results', '不得省略空输入与越界测试': 'Do not omit empty-input or out-of-range tests',
+  '不得改变焦距和物距含义': 'Do not change the meaning of focal length or object distance', '不得生成与公式矛盾的光线': 'Do not generate rays that contradict the formula',
+  '不得改变周期': 'Do not change the period', '不得把频率变化表现为占空比变化': 'Do not present frequency changes as duty-cycle changes',
+  '教师备课参考；不得直接作为科学真值或生产素材': 'Lesson-preparation reference only; not scientific ground truth or production media',
+  '验证审核记录保存与刷新回查；候选仍缺科学证据卡，需教研员复核。': 'Verified review persistence and refresh recovery. Scientific evidence cards are still missing and require teaching review.',
+  '待教研指定': 'Reviewer to be assigned',
+}
+
+export function localizedContent(text: unknown, language: Language): string {
+  const value = String(text ?? '')
+  return language === 'en' ? contentEn[value] ?? value : value
+}
+
+export function localizedList(values: unknown, language: Language): string {
+  if (!Array.isArray(values)) return ''
+  return values.map(value => localizedContent(value, language)).join(language === 'zh' ? '；' : '; ')
+}

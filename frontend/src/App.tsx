@@ -8,6 +8,7 @@ import '@xyflow/react/dist/style.css'
 import { api } from './api'
 import TrainingLibrary from './TrainingLibrary'
 import { localizedRoute, useI18n } from './I18n'
+import { localizedContent } from './contentI18n'
 
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
 const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
@@ -249,7 +250,7 @@ function JojoNode({ id, data, selected }: NodeProps) {
 const nodeTypes = { jojo: JojoNode }
 
 export default function App() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [projectId, setProjectId] = useState('')
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([])
   const [bnodes, setBnodes] = useState<Record<string, BNode>>({})
@@ -320,11 +321,12 @@ export default function App() {
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null)
   // ── 鉴权 / 手感升级新状态 ──
   const [authRole, setAuthRole] = useState<'checking' | 'none' | 'admin' | 'invite'>('checking')
-  const [authInfo, setAuthInfo] = useState<{ auth_enabled?: boolean; limits?: { daily_video_limit: number; daily_cost_limit_cny: number }; usage_today?: { videos: number; cost: number } }>({})
+  const [authInfo, setAuthInfo] = useState<{ auth_enabled?: boolean; account?: string; limits?: { daily_video_limit: number; daily_cost_limit_cny: number }; usage_today?: { videos: number; cost: number } }>({})
   const [loginMode, setLoginMode] = useState<'admin' | 'invite'>('admin')
   const [loginU, setLoginU] = useState(''); const [loginP, setLoginP] = useState(''); const [loginCode, setLoginCode] = useState('')
   const [loginErr, setLoginErr] = useState(''); const [loginBusy, setLoginBusy] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [invites, setInvites] = useState<{ code: string; label: string; daily_video_limit: number; daily_cost_limit_cny: number; disabled: number; usage_today?: { videos: number; cost: number } }[]>([])
   const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null)
   const [connectMenu, setConnectMenu] = useState<{ x: number; y: number; fx: number; fy: number; src: string } | null>(null)
@@ -1320,6 +1322,7 @@ export default function App() {
 
   const authBar = (
     <div className="auth-bar">
+      <button onClick={() => setAccountOpen(true)}>👤 {localizedContent(authInfo.account || t('账号'), language)}</button>
       {authRole === 'admin' && authInfo.auth_enabled !== false && (
         <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 {t('邀请码管理')}</button>
       )}
@@ -1329,9 +1332,27 @@ export default function App() {
           · ¥{authInfo.usage_today.cost.toFixed(1)}/{authInfo.limits?.daily_cost_limit_cny ?? '-'}
         </span>
       )}
-      {authInfo.auth_enabled !== false && (
-        <button onClick={async () => { await api.authLogout(); setAuthRole('none') }}>{t('退出')}</button>
-      )}
+    </div>
+  )
+
+  const accountModal = accountOpen && (
+    <div className="lightbox" onClick={() => setAccountOpen(false)}>
+      <div className="lightbox-inner account-panel" onClick={e => e.stopPropagation()}>
+        <div className="lightbox-head">
+          <b>👤 {t('账号与登录')}</b>
+          <button onClick={() => setAccountOpen(false)}>✕ {t('关闭')}</button>
+        </div>
+        <div className="seg">
+          <div>{t('当前账号')}：<b>{localizedContent(authInfo.account || t('账号'), language)}</b></div>
+          <div className="muted">{authRole === 'admin' ? t('管理员账号') : t('测试账号')}</div>
+        </div>
+        <p className="muted">{t('退出后可使用管理员账号或其他受邀账号重新登录。')}</p>
+        <button className="accent" onClick={async () => {
+          await api.authLogout()
+          setAccountOpen(false)
+          setAuthRole('none')
+        }}>{t('退出登录 / 切换账号')}</button>
+      </div>
     </div>
   )
 
@@ -1381,6 +1402,7 @@ export default function App() {
       {offlineBanner}
       {authBar}
       {inviteModal}
+      {accountModal}
       <div className="home-center">
         <img className="home-logo" src={publicAsset('jojo-director-lockup.svg')} alt="JOJO Director — Scientific Scene Production Engine" />
         <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>
@@ -1397,7 +1419,7 @@ export default function App() {
                 setAgentModel(e.target.value)
                 localStorage.setItem('jojo_agent_model', e.target.value)
               }}>
-                {agentModels.map(m => <option key={m.model} value={m.model}>{m.label}</option>)}
+                {agentModels.map(m => <option key={m.model} value={m.model}>{localizedContent(m.label, language)}</option>)}
               </select>
             )}
             <input ref={yukeFileRef} type="file" accept=".zip,application/zip" hidden
@@ -1451,7 +1473,7 @@ export default function App() {
             <div key={p.id} className="proj-card"
               onClick={async () => { await switchProject(p.id); setView('canvas') }}>
               {thumbs[p.id] ? <img src={assetUrl(thumbs[p.id])} alt="" loading="lazy" /> : <div className="ph">🎬</div>}
-              <div className="pname">{p.title}</div>
+              <div className="pname">{localizedContent(p.title, language)}</div>
             </div>
           ))}
         </div>
@@ -1466,7 +1488,7 @@ export default function App() {
       {offlineBanner}
       <div className="review-head">
         <button onClick={() => setView('canvas')}>← {t('返回画布')}</button>
-        <h1>🩺 {t('验收台')} · {projects.find(p => p.id === projectId)?.title}</h1>
+        <h1>🩺 {t('验收台')} · {localizedContent(projects.find(p => p.id === projectId)?.title, language)}</h1>
         <div className="review-actions">
           <button onClick={loadReview}>↻ {t('刷新')}</button>
           {review.failures.some(f => f.error_class === 'infra') && (
@@ -1552,7 +1574,7 @@ export default function App() {
         </div>
         <div className="project-bar">
           <select value={projectId} onChange={e => switchProject(e.target.value)}>
-            {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+            {projects.map(p => <option key={p.id} value={p.id}>{localizedContent(p.title, language)}</option>)}
           </select>
           <button className="mini" title="新建项目" onClick={newProject}>＋</button>
         </div>
@@ -1612,7 +1634,7 @@ export default function App() {
             </div>
             <div className="divider" />
             {Object.entries(TYPE_META).map(([t, m]) => (
-              <button key={t} onClick={() => addNode(t)}>{m.icon} 添加{m.label}节点</button>
+              <button key={t} onClick={() => addNode(t)}>{m.icon} 添加{localizedContent(m.label, language)}节点</button>
             ))}
             <div className="tips">
               <b>操作提示</b><br />
@@ -1940,7 +1962,7 @@ export default function App() {
           </div>
         )}
         {selected && taskMode && teachingNode && (
-          <h2>{selectedSceneTitle ? `📍 ${selectedSceneTitle}` : `📦 ${t('教学视频任务包')}`}
+          <h2>{selectedSceneTitle ? `📍 ${localizedContent(selectedSceneTitle, language)}` : `📦 ${t('教学视频任务包')}`}
             <span className="status-chip running">
               {(teachingNode.outputs.importReview as { confirmation?: unknown }).confirmation ? t('方案已确认 · 无需付费生成') : t('已接收 · 待方案确认')}
             </span>
@@ -2188,7 +2210,7 @@ export default function App() {
                 setAgentModel(e.target.value)
                 localStorage.setItem('jojo_agent_model', e.target.value)
               }}>
-                {agentModels.map(m => <option key={m.model} value={m.model}>{m.label}</option>)}
+                {agentModels.map(m => <option key={m.model} value={m.model}>{localizedContent(m.label, language)}</option>)}
               </select>
             )}
             <label className="check-line" title={t('先联网查真实事实再规划（需开通方舟联网插件）')}>
@@ -2345,7 +2367,7 @@ function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
       <div className="timeline-head">
         <div>
           <span className="eyebrow">{t('教学视频任务包')} · {value.manifest?.packageVersion}</span>
-          <h2>{value.manifest?.teachingGoal}</h2>
+          <h2>{localizedContent(value.manifest?.teachingGoal, language)}</h2>
         </div>
         <span className="status-chip running">
           {audit.confirmation ? t('方案已确认 · 无需付费生成') : t('已接收 · 待方案确认')}
@@ -2357,9 +2379,9 @@ function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
             onClick={() => onOpen(scene.sceneId)}>
             <span className="scene-order">{index + 1}</span>
             <span className="scene-time">{scene.targetSeconds}s</span>
-            <b>{scene.title}</b>
+            <b>{localizedContent(scene.title, language)}</b>
             <span className="scene-route">{localizedRoute(scene.route, language)}</span>
-            <span className="scene-narration">{scene.narration || scene.visual}</span>
+            <span className="scene-narration">{localizedContent(scene.narration || scene.visual, language)}</span>
           </button>
         ))}
       </div>
@@ -2372,7 +2394,7 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, produ
   production?: TeachingProduction
   onProduce: () => void; producing: boolean; onRevise: (scene: Record<string, unknown>) => void }) {
   const { t, language } = useI18n()
-  const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string }
+  const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string; contentLanguage?: string }
     scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
       assertions?: string[]; routeStatus?: string; evidenceRefs?: string[]; narrationRefs?: string[]
       slideRefs?: string[]; visualSpec?: Record<string, unknown> }[] }
@@ -2383,8 +2405,8 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, produ
   return (
     <div className="result">
       <label>{t('教学视频任务包')} · {value.manifest?.packageId} / {value.manifest?.packageVersion}</label>
-      <div>{value.manifest?.teachingGoal}</div>
-      <div className="muted">{t('导入任务：')}{audit.importTaskId} · {t('状态：')}{audit.status}</div>
+      <div>{localizedContent(value.manifest?.teachingGoal, language)}</div>
+      <div className="muted">{t('导入任务：')}{audit.importTaskId} · {t('状态：')}{localizedContent(audit.status, language)}</div>
       <div className="muted">{t('包哈希：')}{audit.packageHash}</div>
       {!audit.confirmation && (
         <button className="accent" disabled={confirming} onClick={onConfirm}>
@@ -2410,28 +2432,29 @@ function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, produ
         <div className="seg">
           <b>{language === 'zh' ? '候选视频' : 'Candidate video'} v{production.version} · {t('待教学验收')}</b>
           {production.videoUrl && <video src={assetUrl(production.videoUrl)} controls style={{ width: '100%' }} />}
+          {language === 'en' && (value.manifest?.contentLanguage ?? 'zh-CN').startsWith('zh') && <div className="muted">{t('原始候选视频语言：中文；切换中文可查看原始口播与证据文本。')}</div>}
           <div className="muted">{t('成片已生成，尚未表示教学验收通过。')}</div>
-          {production.subtitleAssetId && <a href={assetUrl(`/assets/${production.subtitleAssetId}.srt`)} download>{t('下载字幕 SRT')}</a>}
+          {production.subtitleAssetId && <a href={assetUrl(`/assets/${production.subtitleAssetId}.srt`)} download>{language === 'en' && (value.manifest?.contentLanguage ?? 'zh-CN').startsWith('zh') ? 'Download Chinese SRT subtitles' : t('下载字幕 SRT')}</a>}
           {(production.unchangedSceneIds?.length ?? 0) > 0 &&
             <div className="muted">{t('未修改场景哈希保持一致：')}{production.unchangedSceneIds!.join('、')}</div>}
           {(production.missingEvidence?.length ?? 0) > 0 &&
-            <div className="muted">{t('未生成场景：')}{production.missingEvidence!.map(x => `${x.sceneId}（${x.reason}）`).join('；')}</div>}
+            <div className="muted">{t('未生成场景：')}{production.missingEvidence!.map(x => `${x.sceneId} (${localizedContent(x.reason, language)})`).join(language === 'zh' ? '；' : '; ')}</div>}
         </div>
       )}
       {audit.fixtureOnly && <div className="muted">{t('本包含合成契约素材，不能作为真实课堂验收证据。')}</div>}
       {(audit.missingEvidence?.length ?? 0) > 0 && (
         <div className="seg"><b>{t('待补项')}</b>{audit.missingEvidence!.map((item, i) =>
-          <div key={i}>{item.required ? t('必需') : t('可选')}：{item.description}</div>)}</div>
+          <div key={i}>{item.required ? t('必需') : t('可选')}：{localizedContent(item.description, language)}</div>)}</div>
       )}
       {scenes?.map(scene => (
         <div key={scene.sceneId} className="seg">
-          <b>{scene.title} · {scene.targetSeconds}s</b>
-          <div>{language === 'zh' ? '路线：' : 'Route: '}{localizedRoute(scene.route, language)} —— {scene.routeReason}</div>
+          <b>{localizedContent(scene.title, language)} · {scene.targetSeconds}s</b>
+          <div>{language === 'zh' ? '路线：' : 'Route: '}{localizedRoute(scene.route, language)} —— {localizedContent(scene.routeReason, language)}</div>
           {scene.routeStatus === 'needs_review' && <div className="muted">{t('方案与教学断言待老师复核')}</div>}
           {(scene.evidenceRefs?.length ?? 0) > 0 && <div className="muted">{t('依据：')}{scene.evidenceRefs!.join('、')}</div>}
           {(scene.narrationRefs?.length ?? 0) > 0 && <div className="muted">{t('口播定位：')}{scene.narrationRefs!.join('、')}</div>}
           {(scene.slideRefs?.length ?? 0) > 0 && <div className="muted">{t('课件定位：')}{scene.slideRefs!.join('、')}</div>}
-          {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">{t('核查：')}{assertion}</div>)}
+          {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">{t('核查：')}{localizedContent(assertion, language)}</div>)}
           {scene.visualSpec && <details><summary>{t('科学场景规格')}</summary>
             <pre>{JSON.stringify(scene.visualSpec, null, 2)}</pre></details>}
           {production?.status === 'pending_acceptance' && (

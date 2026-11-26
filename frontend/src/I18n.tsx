@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-type Language = 'zh' | 'en'
+export type Language = 'zh' | 'en'
 type I18nValue = { language: Language; setLanguage: (language: Language) => void; t: (text: string) => string }
 
 const en: Record<string, string> = {
@@ -80,6 +80,11 @@ const en: Record<string, string> = {
   '审核记录已保存；候选投产状态未被修改': 'Review saved; production status was not changed',
   '审核历史': 'Review history', '未勾选检查项': 'No checks selected', '尚无人工抽检记录。': 'No manual review records yet.',
   '正在读取训练库…': 'Loading training library…',
+  '请填写审核人姓名或单位': 'Enter the reviewer name or organization',
+  '当前账号': 'Current account', '管理员账号': 'Administrator', '测试账号': 'Test account',
+  '邀请码用户': 'Invited user', '开发模式': 'Development mode', '退出登录': 'Sign out', '退出登录 / 切换账号': 'Sign out / Switch account',
+  '切换账号': 'Switch account', '退出后可使用管理员账号或其他受邀账号重新登录。': 'After signing out, you can sign in as the administrator or another invited user.',
+  '账号与登录': 'Account and sign-in',
   '（新学科…）': '(New subject…)', '课题（可选，如 迈克尔逊干涉）': 'Topic (optional, e.g. Michelson interference)',
   '新学科目录名（如 电子类）': 'New subject folder (e.g. Electronics)',
   '本人自制': 'Created by me', '已获授权': 'Licensed', '仅参考不进片': 'Reference only; not for production',
@@ -89,6 +94,7 @@ const en: Record<string, string> = {
   '后端服务未运行，当前内容可查看，但生成和保存会失败。': 'The backend is unavailable. Content can be viewed, but generation and saving will fail.',
   '和 Agent 对话继续创作：加镜头、改脚本、重新规划……': 'Continue with the Agent: add scenes, revise scripts or replan…',
   '例：给这条微课加一段 PWM 波形的代码渲染镜头': 'Example: add a code-rendered PWM waveform scene to this lesson',
+  '原始候选视频语言：中文；切换中文可查看原始口播与证据文本。': 'Original candidate video language: Chinese. Switch to Chinese to inspect the original narration and evidence text.',
   '先联网查真实事实再规划（需开通方舟联网插件）': 'Research real sources before planning (requires the Ark web plugin)',
 }
 

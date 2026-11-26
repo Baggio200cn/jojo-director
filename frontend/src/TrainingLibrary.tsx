@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from './api'
 import { localizedRoute, useI18n } from './I18n'
+import { localizedContent, localizedList } from './contentI18n'
 
 type Review = {
   id: string; reviewer: string; decision: 'sample_passed' | 'needs_evidence' | 'needs_revision'
@@ -96,7 +97,7 @@ export default function TrainingLibrary({ onBack }: { onBack: () => void }) {
   }, [selectedKey])
 
   const submitReview = async () => {
-    if (!selected || !reviewer.trim()) { setError('请填写审核人姓名或单位'); return }
+    if (!selected || !reviewer.trim()) { setError(t('请填写审核人姓名或单位')); return }
     setBusy(true); setError(''); setMessage('')
     try {
       await api.submitTrainingReview({
@@ -166,7 +167,7 @@ export default function TrainingLibrary({ onBack }: { onBack: () => void }) {
           <div className="training-cards">
             {items.map(item => {
               const key = `${item.kind}:${item.objectId}`
-              const title = item.kind === 'skill' ? item.manifest.title : item.title
+              const title = item.kind === 'skill' ? localizedContent(item.manifest.title, language) : item.title
               return <button key={key} className={`training-card${selectedKey === key ? ' on' : ''}`} onClick={() => setSelectedKey(key)}>
                 <b>{title}</b><code>{item.objectId}</code>
                 <span className={`review-state ${item.latestReview?.decision ?? 'pending'}`}>
@@ -182,7 +183,7 @@ export default function TrainingLibrary({ onBack }: { onBack: () => void }) {
         <main className="training-detail">
           {selected && <>
             <div className="training-detail-head">
-              <div><span className="training-kind">{selected.kind === 'skill' ? t('候选 Skill') : t('外部发现参考')}</span><h2>{selected.kind === 'skill' ? selected.manifest.title : selected.title}</h2></div>
+              <div><span className="training-kind">{selected.kind === 'skill' ? t('候选 Skill') : t('外部发现参考')}</span><h2>{selected.kind === 'skill' ? localizedContent(selected.manifest.title, language) : selected.title}</h2></div>
               <span className={`review-state ${selected.latestReview?.decision ?? 'pending'}`}>{selected.latestReview ? decisionName(selected.latestReview.decision) : t('待人工抽检')}</span>
             </div>
             <code className="training-id">{selected.objectId} · {t('版本')} {selected.version}</code>
@@ -207,7 +208,7 @@ export default function TrainingLibrary({ onBack }: { onBack: () => void }) {
               <h3>{t('审核历史')} ({selected.reviews.length})</h3>
               {selected.reviews.map(review => <div className="review-record" key={review.id}>
                 <b>{decisionName(review.decision)}</b><span>{review.reviewer} · {new Date(review.created_at).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US')}</span>
-                {review.comment && <p>{review.comment}</p>}
+                {review.comment && <p>{localizedContent(review.comment, language)}</p>}
                 <small>{review.checks.map(key => t(checkNames[key])).filter(Boolean).join('；') || t('未勾选检查项')}</small>
               </div>)}
               {!selected.reviews.length && <p className="muted">{t('尚无人工抽检记录。')}</p>}
@@ -223,29 +224,29 @@ function SkillDetail({ item }: { item: SkillItem }) {
   const { t, language } = useI18n()
   const m = item.manifest
   return <div className="training-sections">
-    <section><h3>{t('用途与边界')}</h3><p>{m.description}</p><p><b>{t('教学目的：')}</b>{item.spec.teachingGoal}</p>
-      <div className="training-tags">{m.classification.labels.map(x => <span key={x}>{x}</span>)}</div>
+    <section><h3>{t('用途与边界')}</h3><p>{localizedContent(m.description, language)}</p><p><b>{t('教学目的：')}</b>{localizedContent(item.spec.teachingGoal, language)}</p>
+      <div className="training-tags">{m.classification.labels.map(x => <span key={x}>{localizedContent(x, language)}</span>)}</div>
       <p><b>{t('可选路线：')}</b>{m.routeCandidates.map(x => localizedRoute(x, language)).join(language === 'zh' ? '、' : ', ')}<br /><b>{t('禁止路线：')}</b>{m.forbiddenRoutes.map(x => localizedRoute(x, language)).join(language === 'zh' ? '、' : ', ')}</p>
     </section>
     <section><h3>{t('来源')} ({m.source.length})</h3>{m.source.map((source, index) => <div className="source-row" key={`${source.id}-${index}`}>
-      <b>{source.locator}</b><code>{source.id}</code><span>{source.type} · {t('权利：')}{source.rights}</span>
+      <b>{localizedContent(source.locator, language)}</b><code>{source.id}</code><span>{source.type} · {t('权利：')}{localizedContent(source.rights, language)}</span>
     </div>)}</section>
     <section><h3>{t('输入与验收')}</h3><p>{m.inputs.map(x => `${x.name}${x.unit ? `（${x.unit}）` : ''}${x.required ? ` · ${t('必需')}` : ''}`).join('；')}</p>
-      <ul>{item.qc.rules.map(rule => <li key={rule.id}><b>{rule.id}</b> {rule.check}</li>)}</ul>
-      <p><b>{t('观察点：')}</b>{item.spec.observations.join('；')}</p><p><b>{t('不变量：')}</b>{item.spec.invariants.join('；')}</p>
+      <ul>{item.qc.rules.map(rule => <li key={rule.id}><b>{rule.id}</b> {localizedContent(rule.check, language)}</li>)}</ul>
+      <p><b>{t('观察点：')}</b>{localizedList(item.spec.observations, language)}</p><p><b>{t('不变量：')}</b>{localizedList(item.spec.invariants, language)}</p>
     </section>
     <div className="training-warning">{t('证据卡')} {m.evidenceCards.length} {t('张；科学断言')} {item.spec.assertions.length} {t('条；正样本')} {m.qc.positiveSamples}{t('、负样本')} {m.qc.negativeSamples}{t('。缺少的内容必须补齐，当前不得批准投产。')}</div>
   </div>
 }
 
 function DiscoveryDetail({ item }: { item: DiscoveryItem }) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   return <div className="training-sections">
     <section><h3>{t('发现信息')}</h3><p><b>{item.channel}</b></p><p>{item.summary}</p>
       <a href={item.url} target="_blank" rel="noreferrer">{t('打开原始视频页面')}</a>
       <div className="training-tags">{item.categories.map(x => <span key={x.id}>{x.name}</span>)}</div>
     </section>
-    <section><h3>{t('使用边界')}</h3><p>{item.usage}</p><p><b>{t('证据状态：')}</b>{item.evidenceStatus}<br /><b>{t('权利状态：')}</b>{item.rights}</p></section>
+    <section><h3>{t('使用边界')}</h3><p>{localizedContent(item.usage, language)}</p><p><b>{t('证据状态：')}</b>{localizedContent(item.evidenceStatus, language)}<br /><b>{t('权利状态：')}</b>{localizedContent(item.rights, language)}</p></section>
     <div className="training-warning">{t('标题、AI 摘要和社区标签只能帮助发现候选。须另找教材、标准、论文或实测证据，才能形成科学论断与 Skill。')}</div>
   </div>
 }

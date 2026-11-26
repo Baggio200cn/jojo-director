@@ -4,6 +4,7 @@
 """
 import asyncio
 import json
+import os
 import re as _re
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -153,8 +154,11 @@ def auth_me(request: Request):
     if not s:
         return JSONResponse({"detail": "未登录"}, status_code=401)
     out = {"role": s["role"], "auth_enabled": auth.enabled()}
+    if s["role"] == "admin":
+        out["account"] = os.getenv("ADMIN_USER", "").strip() if auth.enabled() else "开发模式"
     if s["role"] == "invite":
         rows = db.query("invite_codes", "code=?", (s["invite_code"],))
+        out["account"] = (rows[0]["label"] or "邀请码用户") if rows else "邀请码用户"
         if rows:
             out["limits"] = {"daily_video_limit": rows[0]["daily_video_limit"],
                              "daily_cost_limit_cny": rows[0]["daily_cost_limit_cny"]}
