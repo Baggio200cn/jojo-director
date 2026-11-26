@@ -10,12 +10,10 @@ export default function BrandFilm() {
     <div className="brand-film-media">
       {playing ? <video src={`${base}/brand-evolution.mp4`} poster={poster} controls autoPlay muted playsInline
         onEnded={() => setPlaying(false)} onError={() => setPlaying(false)} />
-        : <>
+        : <button className="brand-film-poster" onClick={() => setPlaying(true)} aria-label={t('播放品牌演变过程')}>
           <img src={poster} alt={t('JOJO Director 最终品牌标识')} />
-          <button className="brand-film-play" onClick={() => setPlaying(true)} aria-label={t('播放品牌演变过程')}>
-            <span>▶</span> {t('播放品牌演变过程')}
-          </button>
-        </>}
+          <span className="brand-film-play" aria-hidden="true">▶</span>
+        </button>}
     </div>
     <div className="brand-film-caption">
       <b>{t('从一条轨道，到科学场景生产引擎')}</b>

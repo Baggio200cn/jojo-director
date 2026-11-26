@@ -1549,11 +1549,13 @@ export default function App() {
             </div>
             {uploadForm}
           </div>
-          <div className="jojo-ad jojo-ad-static">
-            <div className="jojo-ad-stage"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /></div>
+          <div className="jojo-ad" aria-hidden="true">
+            <div className="jojo-ad-stage">
+              <img className="base" src={publicAsset('jojo-director-mark.svg')} alt="" />
+            </div>
             <div className="jojo-ad-text">
-              <b>{t('品牌标识：场景、生产与验证的统一')}</b>
-              <span>{t('轨道与节点构成科学场景系统，青色、品红与橙色分别对应场景组织、生产执行和质量验证。')}</span>
+              <b>{t('JOJO 的“自我学习”是什么？')}</b>
+              <span>{t('机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。')}</span>
             </div>
           </div>
         </div>
