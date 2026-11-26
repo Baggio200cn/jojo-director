@@ -1344,7 +1344,7 @@ export default function App() {
         </div>
         <div className="seg">
           <div>{t('当前账号')}：<b>{localizedContent(authInfo.account || t('账号'), language)}</b></div>
-          <div className="muted">{authRole === 'admin' ? t('管理员账号') : t('测试账号')}</div>
+          <div className="muted">{authInfo.auth_enabled === false ? t('开发模式') : authRole === 'admin' ? t('管理员账号') : t('测试账号')}</div>
         </div>
         <p className="muted">{t('退出后可使用管理员账号或其他受邀账号重新登录。')}</p>
         <button className="accent" onClick={async () => {
@@ -1590,7 +1590,7 @@ export default function App() {
             {(teachingNode.outputs.teachingVideo as { scenes: { sceneId: string; title: string }[] }).scenes.map(scene => (
               <button key={scene.sceneId} className={selectedSceneId === scene.sceneId ? 'on' : ''}
                 onClick={() => { setSelectedId(teachingNode.id); setSelectedSceneId(scene.sceneId); setTab('nodes') }}>
-                {selectedSceneId === scene.sceneId ? '● ' : '○ '}{scene.title}
+                {selectedSceneId === scene.sceneId ? '● ' : '○ '}{localizedContent(scene.title, language)}
               </button>
             ))}
             {projCost != null && <div className="cost-chip">💰 {t('本项目已花')} ¥{projCost.toFixed(2)}</div>}
