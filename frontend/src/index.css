@@ -600,7 +600,7 @@ body {
 .lib-upload > input { font-size: 12px; padding: 4px 8px;
   border: 1px solid #d9dde3; border-radius: 6px; background: #ffffff; color: #1f2937; }
 
-/* ── 首页双栏：教师投稿 + JOJO 动画标识卡 ── */
+/* ── 首页双栏：教师投稿 + JOJO 品牌说明卡 ── */
 .home-dual {
   width: 100%; margin-top: 22px; display: grid; gap: 14px;
   grid-template-columns: 1fr 1fr;
@@ -618,7 +618,7 @@ body {
   border-radius: 5px; background: #ffffff; color: #2563eb; cursor: pointer;
 }
 
-/* JOJO 标识动画卡：logo 隐现 → 圆圈变红 → 文字出现，12s 循环 */
+/* JOJO 品牌说明卡 */
 .jojo-ad {
   border: 1px solid #e2e5ea; border-radius: 12px; background: #ffffff;
   padding: 14px; display: flex; align-items: center; gap: 14px; overflow: hidden;
@@ -857,6 +857,10 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .upload-report-row.rejected > span, .upload-report-row.duplicate > span { color: #b45309; }
 
 
+.home-brand-film { width: min(720px, 86vw); margin-bottom: 22px; }
+.home-brand-film .brand-film-media { border: 1px solid var(--jojo-line); border-radius: 16px; box-shadow: 0 12px 36px rgba(26,26,26,.055); }
+.home-brand-film .brand-film-caption { padding: 0 4px; }
+.jojo-ad-static .jojo-ad-text { animation: none; }
 .brand-film { display: flex; flex-direction: column; gap: 10px; }
 .brand-film-media { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: #f7f5ef; }
 .brand-film-media img, .brand-film-media video { width: 100%; height: 100%; object-fit: cover; display: block; }

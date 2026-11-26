@@ -21,9 +21,5 @@ export default function BrandFilm() {
       <b>{t('从一条轨道，到科学场景生产引擎')}</b>
       <span>{t('约 30 秒；点击播放，结束后回到最终标识。')}</span>
     </div>
-    <div className="jojo-ad-text">
-      <b>{t('品牌标识：场景、生产与验证的统一')}</b>
-      <span>{t('轨道与节点构成科学场景系统，青色、品红与橙色分别对应场景组织、生产执行和质量验证。')}</span>
-    </div>
   </div>
 }

@@ -1493,7 +1493,7 @@ export default function App() {
       {inviteModal}
       {accountModal}
       <div className="home-center">
-        <img className="home-logo" src={publicAsset('jojo-director-lockup.svg')} alt="JOJO Director — Scientific Scene Production Engine" />
+        <div className="home-brand-film"><BrandFilm /></div>
         <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>
         <h1 className="home-title">{t('把科学场景，转化为可验证的教学影像。')}</h1>
         <p className="home-intro">{t('从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。')}</p>
@@ -1549,8 +1549,12 @@ export default function App() {
             </div>
             {uploadForm}
           </div>
-          <div className="jojo-ad">
-            <BrandFilm />
+          <div className="jojo-ad jojo-ad-static">
+            <div className="jojo-ad-stage"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /></div>
+            <div className="jojo-ad-text">
+              <b>{t('品牌标识：场景、生产与验证的统一')}</b>
+              <span>{t('轨道与节点构成科学场景系统，青色、品红与橙色分别对应场景组织、生产执行和质量验证。')}</span>
+            </div>
           </div>
         </div>
         <div className="proj-grid">
