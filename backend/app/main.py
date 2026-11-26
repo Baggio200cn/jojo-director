@@ -15,8 +15,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import (asset_ingest, auth, db, document_library, embeddings, executors, teaching_video_confirm,
-               teaching_video_import, teaching_video_produce, training_library, yuke_import)
+from . import (asset_ingest, auth, db, document_library, embeddings, executors, ingestion_review,
+               teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
 
@@ -77,6 +77,7 @@ async def lifespan(_app: FastAPI):
     db.init_db()
     auth.init()
     _migrate()
+    ingestion_review.backfill_legacy_batches()
     _reset_stuck_nodes()
     yield
 
@@ -1183,11 +1184,12 @@ async def upload_to_library(file: UploadFile = File(...), folder: str = Form("")
 
 
 @app.post("/api/assets/upload_folder")
-async def upload_folder_to_library(files: list[UploadFile] = File(...),
+async def upload_folder_to_library(request: Request, files: list[UploadFile] = File(...),
                                    paths: list[str] = Form(...),
                                    folder: str = Form("__auto__"), rights: str = Form("own"),
                                    note: str = Form("")):
     """文件夹投稿：本地检查、去重、保留相对路径并给出待审核归类。"""
+    session = auth.require(request)
     if not files or len(files) != len(paths):
         raise HTTPException(400, "文件与相对路径数量不一致")
     if len(files) > asset_ingest.MAX_FILES:
@@ -1209,9 +1211,29 @@ async def upload_folder_to_library(files: list[UploadFile] = File(...),
                                                 note, batch_id, seen_hashes))
     summary = {state: sum(1 for x in results if x["status"] == state)
                for state in ("accepted", "rejected", "duplicate")}
+    ingestion_review.create_batch(batch_id, results, folder, rights, note,
+                                  session.get("role", "unknown"))
     return {"batchId": batch_id, "results": results, "summary": summary,
-            "reviewRequired": True, "paidModelCalled": False,
+            "status": "analyzed_pending_teacher", "reviewRequired": True, "paidModelCalled": False,
             "analysisScope": "格式签名、文件名、相对路径与备注；不代替专业内容审核"}
+
+
+@app.get("/api/assets/ingestion-batches")
+def list_ingestion_batches():
+    return ingestion_review.list_batches()
+
+
+@app.post("/api/assets/ingestion-batches/{batch_id}/review")
+def review_ingestion_batch(batch_id: str, body: dict, request: Request):
+    session = auth.require(request)
+    try:
+        return ingestion_review.review_batch(
+            batch_id, str(body.get("action") or ""), str(body.get("comment") or ""),
+            session.get("role", "unknown"))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
 
 
 class SuggestIn(BaseModel):

@@ -8,12 +8,20 @@ import '@xyflow/react/dist/style.css'
 import { api } from './api'
 import TrainingLibrary from './TrainingLibrary'
 import DocumentView from './DocumentView'
+import BrandFilm from './BrandFilm'
 import { localizedRoute, useI18n } from './I18n'
 import { localizedContent } from './contentI18n'
 
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
 const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
 const publicAsset = (name: string) => `${BASE_PATH}/${name}`
+
+type IngestionBatch = {
+  batchId?: string; id?: string; status?: string
+  results: { status: string; path: string; folder?: string; reason?: string }[]
+  summary: { accepted: number; rejected: number; duplicate: number; receiptIncomplete?: boolean }
+  reviews?: { id: string; action: string; comment: string; actor_role: string; created_at: string }[]
+}
 
 type TeachingProduction = {
   candidateId: string; version: number; status: string; videoUrl?: string
@@ -309,7 +317,9 @@ export default function App() {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [upFile, setUpFile] = useState<File | null>(null)
   const [upFiles, setUpFiles] = useState<File[]>([])
-  const [upReport, setUpReport] = useState<{ batchId: string; results: { status: string; path: string; folder?: string; reason?: string }[]; summary: { accepted: number; rejected: number; duplicate: number } } | null>(null)
+  const [upReport, setUpReport] = useState<IngestionBatch | null>(null)
+  const [recentBatches, setRecentBatches] = useState<IngestionBatch[]>([])
+  const [upReviewComment, setUpReviewComment] = useState('')
   const [upDomain, setUpDomain] = useState('光学类')
   const [upDomainCustom, setUpDomainCustom] = useState('')
   const [upTopic, setUpTopic] = useState('')
@@ -777,7 +787,10 @@ export default function App() {
 
   // 首页投稿板块也需要目录树
   useEffect(() => {
-    if (view === 'home') api.listAssetFolders().then(setLibFolders).catch(() => {})
+    if (view === 'home') {
+      api.listAssetFolders().then(setLibFolders).catch(() => {})
+      api.listIngestionBatches().then(setRecentBatches).catch(() => {})
+    }
   }, [view])
 
   const toggleStar = async (aid: string, starred: boolean) => {
@@ -847,6 +860,7 @@ export default function App() {
     if (!dom) { setUpMsg(t('请填写学科目录')); say(t('请填写学科目录')); return }
     const folder = upDomain === '__auto__' ? '__auto__' : upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
     setUpBusy(true); setUpReport(null)
+    setUpMsg(upFiles.length ? t('正在上传并分析文件夹，请保持当前页面…') : t('正在上传文件，请保持当前页面…'))
     try {
       if (upFiles.length) {
         const report = await api.uploadFolderToLibrary(upFiles, { folder, rights: upRights, note: upNote })
@@ -860,8 +874,26 @@ export default function App() {
       }
       setUploadOpen(false); setUpFile(null); setUpFiles([]); setUpTopic(''); setUpNote(''); setUpSuggest(null)
       api.listAssetFolders().then(setLibFolders).catch(() => {})
+      api.listIngestionBatches().then(setRecentBatches).catch(() => {})
       loadAssets()
     } catch (e) { setUpMsg(`${t('投稿失败')}: ${e}`); say(`${t('投稿失败')}: ${e}`) } finally { setUpBusy(false) }
+  }
+
+  const submitIngestionReview = async (action: 'needs_revision' | 'confirm_archive' | 'admin_alignment') => {
+    const id = upReport?.id || upReport?.batchId
+    if (!id) return
+    if (action === 'needs_revision' && !upReviewComment.trim()) {
+      setUpMsg(t('请先填写具体修改意见')); return
+    }
+    setUpBusy(true)
+    try {
+      const updated = await api.reviewIngestionBatch(id, action, upReviewComment)
+      setUpReport(updated)
+      setUpReviewComment('')
+      setUpMsg(t('审核状态与意见已保存'))
+      setRecentBatches(await api.listIngestionBatches())
+    } catch (e) { setUpMsg(`${t('审核失败')}: ${e}`) }
+    finally { setUpBusy(false) }
   }
 
   // ── A4：节点历史版本切换 ──
@@ -927,15 +959,39 @@ export default function App() {
         {upBusy ? t('正在上传并分析…') : upFiles.length ? t('上传并分析文件夹') : t('提交入库')}
       </button>
       {upReport && <div className="upload-report">
-        <b>{t('批次回执')}：{upReport.batchId}</b>
-        <div>{t('接收')} {upReport.summary.accepted} · {t('拒绝')} {upReport.summary.rejected} · {t('重复')} {upReport.summary.duplicate}</div>
+        <div className="upload-report-summary">
+          <b>{t('批次回执')}：{upReport.id || upReport.batchId}</b>
+          <div>{t('接收')} {upReport.summary.accepted} · {t('拒绝')} {upReport.summary.rejected} · {t('重复')} {upReport.summary.duplicate}</div>
+          {upReport.status && <div>{t('当前状态')}：{t(upReport.status)}</div>}
+          {upReport.summary.receiptIncomplete && <div className="muted">{t('历史批次仅保留通过文件，拒绝与重复数量不可回推。')}</div>}
+        </div>
         {upReport.results.map((result, index) => <div className={`upload-report-row ${result.status}`} key={`${result.path}-${index}`}>
           <span>{result.status === 'accepted' ? t('已接收') : result.status === 'duplicate' ? t('重复') : t('未接收')}</span>
           <code>{result.path}</code>
           <small>{result.folder ? `${t('目录')}：${result.folder}` : result.reason}</small>
         </div>)}
         <div className="muted">{t('本地规则分析不等于专业内容审核；全部结果均待人工复核。')}</div>
+        <div className="upload-review-actions">
+          <label>{t('修改意见或审核说明')}<textarea rows={2} value={upReviewComment} onChange={e => setUpReviewComment(e.target.value)}
+            placeholder={t('指出需要调整的目录、依据、素材或规则；仅确认归档可留空')} /></label>
+          <div><button disabled={upBusy} onClick={() => void submitIngestionReview('needs_revision')}>{t('提出修改意见')}</button>
+            <button disabled={upBusy || !upReport.summary.accepted} onClick={() => void submitIngestionReview('confirm_archive')}>{t('确认并暂时归档')}</button>
+            {authRole === 'admin' && <button disabled={upBusy} onClick={() => void submitIngestionReview('admin_alignment')}>{t('管理员对齐')}</button>}
+          </div>
+          {(upReport.reviews?.length ?? 0) > 0 && <div className="upload-review-history">
+            <b>{t('审核历史')}</b>{upReport.reviews!.slice(-3).map(review => <div key={review.id}>
+              <span>{t(review.action)} · {review.actor_role} · {new Date(review.created_at).toLocaleString()}</span>
+              {review.comment && <small>{review.comment}</small>}
+            </div>)}
+          </div>}
+        </div>
       </div>}
+      {recentBatches.length > 0 && <details className="recent-batches">
+        <summary>{t('最近上传批次与审核状态')}</summary>
+        {recentBatches.map(batch => <button key={batch.id} onClick={() => setUpReport(batch)}>
+          <span>{batch.id}</span><small>{t(batch.status || '')} · {t('接收')} {batch.summary.accepted}</small>
+        </button>)}
+      </details>}
     </div>
   )
 
@@ -1493,14 +1549,8 @@ export default function App() {
             </div>
             {uploadForm}
           </div>
-          <div className="jojo-ad" aria-hidden="true">
-            <div className="jojo-ad-stage">
-              <img className="base" src={publicAsset('jojo-director-mark.svg')} alt="" />
-            </div>
-            <div className="jojo-ad-text">
-              <b>{t('JOJO 的“自我学习”是什么？')}</b>
-              <span>{t('机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。')}</span>
-            </div>
+          <div className="jojo-ad">
+            <BrandFilm />
           </div>
         </div>
         <div className="proj-grid">

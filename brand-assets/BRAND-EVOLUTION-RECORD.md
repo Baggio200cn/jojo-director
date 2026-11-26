@@ -10,4 +10,4 @@
 7. Positioning confirmed: **Scientific Scene Production Engine**.
 
 ## Video record
-A 16:9, 1920×1080 film has been produced for archival use. It documents the original mark, poster study, A/B/C comparison, A+C selection, refinement and current identity system. The MP4 is part of the downloadable archive, not a binary file committed into this source folder.
+A 16:9, 1920×1080 film has been produced for archival use. It documents the original mark, poster study, A/B/C comparison, A+C selection, refinement and current identity system. The MP4 and final-identity poster are available at `frontend/public/brand-evolution.mp4` and `frontend/public/brand-evolution-poster.png`, and are presented on the home page with click-to-play behavior and no autoplay loop.

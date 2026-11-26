@@ -115,6 +115,9 @@ export const api = {
     fd.append('note', meta.note)
     return request('/api/assets/upload_folder', { method: 'POST', body: fd }).then(j)
   },
+  listIngestionBatches: () => request('/api/assets/ingestion-batches').then(j),
+  reviewIngestionBatch: (batchId: string, action: string, comment: string) =>
+    post(`/api/assets/ingestion-batches/${batchId}/review`, { action, comment }),
   suggestFolder: (text: string): Promise<{ folder: string; score: number; matches: { ref_id: string; text: string; score: number }[] }> =>
     post('/api/assets/suggest_folder', { text }),
   createAssetFolder: (path: string) => post('/api/assets/folders', { path }),

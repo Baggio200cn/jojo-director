@@ -68,6 +68,31 @@ def main():
         mismatch = client.post("/api/assets/upload_folder", files=[files[0]],
                                data={"paths": ["a.md", "b.md"]})
         check("文件与路径数量不匹配被拒绝", mismatch.status_code == 400)
+
+        batch_id = result["batchId"]
+        persisted = client.get("/api/assets/ingestion-batches")
+        check("批次与结果已持久化", persisted.status_code == 200
+              and persisted.json()[0]["id"] == batch_id
+              and persisted.json()[0]["status"] == "analyzed_pending_teacher")
+        check("空修改意见被拒绝", client.post(f"/api/assets/ingestion-batches/{batch_id}/review",
+              json={"action": "needs_revision", "comment": ""}).status_code == 400)
+        revised = client.post(f"/api/assets/ingestion-batches/{batch_id}/review",
+                              json={"action": "needs_revision", "comment": "调整 PWM 目录并补充教材出处"})
+        check("教师修改意见已记录", revised.status_code == 200
+              and revised.json()["status"] == "teacher_changes_requested")
+        archived = client.post(f"/api/assets/ingestion-batches/{batch_id}/review",
+                               json={"action": "confirm_archive", "comment": "教师侧核对完成"})
+        check("教师确认后暂时归档", archived.status_code == 200
+              and archived.json()["status"] == "teacher_archived")
+        aligned = client.post(f"/api/assets/ingestion-batches/{batch_id}/review",
+                              json={"action": "admin_alignment", "comment": "管理员与技术团队核对目录"})
+        check("管理员对齐完成", aligned.status_code == 200
+              and aligned.json()["status"] == "admin_alignment"
+              and len(aligned.json()["reviews"]) == 3)
+        check("对齐不自动批准投产", aligned.json()["summary"]["accepted"] == 2
+              and not db.query("model_tasks"))
+        check("未知批次审核被拒绝", client.post("/api/assets/ingestion-batches/unknown/review",
+              json={"action": "confirm_archive", "comment": ""}).status_code == 400)
         client.close()
         import gc
         gc.collect()

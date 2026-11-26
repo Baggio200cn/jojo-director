@@ -82,6 +82,17 @@ CREATE TABLE IF NOT EXISTS training_reviews (
 );
 CREATE INDEX IF NOT EXISTS idx_training_reviews_object
   ON training_reviews(object_type, object_id, created_at);
+CREATE TABLE IF NOT EXISTS ingestion_batches (
+  id TEXT PRIMARY KEY, status TEXT NOT NULL, summary TEXT NOT NULL,
+  results TEXT NOT NULL, folder TEXT DEFAULT '', rights TEXT DEFAULT 'own',
+  note TEXT DEFAULT '', uploader_role TEXT DEFAULT '', created_at TEXT, updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS ingestion_reviews (
+  id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, action TEXT NOT NULL,
+  comment TEXT DEFAULT '', actor_role TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ingestion_reviews_batch
+  ON ingestion_reviews(batch_id, created_at);
 """
 
 
