@@ -1013,3 +1013,10 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 
 .upload-community-next { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; border: 1px solid rgba(0,179,166,.35); border-radius: 7px; background: #F2FAF8; color: #087F78; font-size: 11px; line-height: 1.6; }
 .upload-community-next button { flex: none; border: 0; background: none; color: #087F78; font-weight: 700; cursor: pointer; }
+
+.home { position: relative; }
+.home-center { padding-top: max(76px, 5vh); }
+.auth-bar { flex-wrap: wrap; justify-content: flex-end; max-width: calc(100vw - 36px); isolation: isolate; }
+.auth-bar button { flex: 0 0 auto; margin: 0; border: 1px solid var(--jojo-line); border-radius: 7px; background: #fff; color: var(--jojo-ink); white-space: nowrap; }
+.auth-bar button:hover { border-color: var(--jojo-scene); color: #087F78; }
+@media (max-width: 720px) { .home-center { padding-top: 96px; } .auth-bar { right: 12px; max-width: calc(100vw - 24px); gap: 6px; } }
