@@ -8,6 +8,7 @@ This folder stores the current approved visual direction as editable SVG source 
 ## Assets
 - `jojo-director-mark.svg` — standalone symbol for app icon, favicon and compact UI use.
 - `jojo-director-lockup.svg` — horizontal primary lockup with descriptor.
+- `jojo-director-readme-hero.svg` — README hero artwork with calibration ticks; documentation display only, not a replacement for the app mark.
 - `JOJO-DIRECTOR-BRAND-IDENTITY.md` — construction logic, palette, usage rules and release checklist.
 
 ## Functional palette
