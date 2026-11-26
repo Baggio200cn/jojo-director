@@ -7,6 +7,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import { api } from './api'
 import TrainingLibrary from './TrainingLibrary'
+import DocumentView from './DocumentView'
 import { localizedRoute, useI18n } from './I18n'
 import { localizedContent } from './contentI18n'
 
@@ -262,7 +263,8 @@ export default function App() {
   const [leftW, setLeftW] = useState(() => Number(localStorage.getItem('jojo_left_width')) || 250)
   const [rightW, setRightW] = useState(() => Number(localStorage.getItem('jojo_right_width')) || 390)
   const [tab, setTab] = useState<'nodes' | 'assets'>('nodes')
-  const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training'>('home')
+  const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training' | 'document'>('home')
+  const [documentName, setDocumentName] = useState<'project' | 'guide'>('project')
   type ReviewItem = {
     qc_node_id: string; qc_title: string; target_node_id: string
     target_title: string; target_type: string; asset_url: string
@@ -1438,6 +1440,20 @@ export default function App() {
           </div>
         </div>
         {homeErr && <div className="home-err">{homeErr}</div>}
+        <div className="home-documents">
+          <section className="home-document-card">
+            <h3>{t('项目介绍')}</h3>
+            <p>{t('项目定位、技术架构、当前能力与验收边界。')}</p>
+            <div><button onClick={() => { setDocumentName('project'); setView('document') }}>{t('在线阅读')}</button>
+              <a href={api.documentDownload('project')} download>{t('下载 Markdown 文件')}</a></div>
+          </section>
+          <section className="home-document-card">
+            <h3>{t('教师投稿合作手册')}</h3>
+            <p>{t('素材准备、上传步骤、规则审核、退回补证与联系方式。')}</p>
+            <div><button onClick={() => { setDocumentName('guide'); setView('document') }}>{t('在线阅读')}</button>
+              <a href={api.documentDownload('guide')} download>{t('下载 Markdown 文件')}</a></div>
+          </section>
+        </div>
         <div className="home-dual">
           <div className="home-upload">
             <h3>📤 {t('教师投稿')}</h3>
@@ -1482,6 +1498,8 @@ export default function App() {
   )
 
   if (view === 'training') return <TrainingLibrary onBack={() => setView('home')} />
+
+  if (view === 'document') return <DocumentView name={documentName} onBack={() => setView('home')} />
 
   if (view === 'review') return (
     <div className="review notranslate" translate="no">

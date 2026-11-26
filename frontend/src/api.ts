@@ -45,6 +45,8 @@ export const api = {
     request(`/api/projects/${pid}/teaching-video/candidates`).then(j),
   trainingLibrary: () => request('/api/training/library').then(j),
   submitTrainingReview: (body: object) => post('/api/training/reviews', body),
+  getDocument: (name: 'project' | 'guide') => request(`/api/docs/${name}`).then(j),
+  documentDownload: (name: 'project' | 'guide') => `${BASE_PATH}/api/docs/${name}/download`,
   getGraph: (pid: string) => request(`/api/projects/${pid}/graph`).then(j),
   createNode: (pid: string, node: object) => post(`/api/projects/${pid}/nodes`, node),
   updateNode: (nid: string, body: object) => patch(`/api/nodes/${nid}`, body),

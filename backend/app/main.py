@@ -11,11 +11,11 @@ from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import (auth, db, embeddings, executors, teaching_video_confirm,
+from . import (auth, db, document_library, embeddings, executors, teaching_video_confirm,
                teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
@@ -307,6 +307,33 @@ def create_training_review(payload: training_library.ReviewIn, request: Request)
         return training_library.add_review(payload, session)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/docs/{name}")
+def read_project_document(name: str):
+    try:
+        return document_library.document(name)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@app.get("/api/docs/{name}/download")
+def download_project_document(name: str):
+    try:
+        item = document_library.document(name)
+        return FileResponse(document_library.document_path(name),
+                            media_type="text/markdown; charset=utf-8",
+                            filename=item["filename"])
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@app.get("/api/docs/assets/{name}")
+def read_document_asset(name: str):
+    try:
+        return FileResponse(document_library.asset_path(name))
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
 
 
 class ProjectPatch(BaseModel):
