@@ -1051,3 +1051,48 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .upload-preflight.error { border-color: #FECACA; background: #FEF2F2; color: #B91C1C; }
 .upload-preflight span { color: #66635D; }
 .upload-preflight.error span { color: #991B1B; }
+
+.repository-importer { margin-bottom: 12px; border: 1px solid #D8EAE7; border-radius: 8px; background: #F5FAF8; }
+.repository-importer summary { padding: 10px; color: #087F78; cursor: pointer; font-size: 12px; }
+.repository-importer > p, .repository-importer > input, .repository-import-actions, .repository-jojo-example, .repository-inspection { margin: 0 10px 10px; }
+.repository-importer > p { color: #66635D; font-size: 10px; line-height: 1.6; }
+.repository-importer > input { width: calc(100% - 20px); }
+.repository-import-actions { display: flex; gap: 6px; }
+.repository-import-actions input { flex: 1; }
+.repository-import-actions button, .repository-select-actions button, .repository-jojo-example, .repository-import-confirm { border: 1px solid #CBD5E1; border-radius: 6px; background: #fff; color: #087F78; padding: 7px 9px; cursor: pointer; font-size: 11px; }
+.repository-jojo-example { width: calc(100% - 20px); }
+.repository-inspection { padding-top: 10px; border-top: 1px solid #D8EAE7; }
+.repository-inspection-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px; }
+.repository-inspection-head span, .repository-inspection > small { color: #66635D; font-size: 10px; word-break: break-all; }
+.repository-inspection > input { width: 100%; margin: 10px 0 6px; }
+.repository-warning { margin: 6px 0; color: #B45309; font-size: 10px; }
+.repository-select-actions { display: flex; gap: 6px; margin-bottom: 6px; }
+.repository-tree { max-height: 300px; overflow-y: auto; border: 1px solid #E2E0DA; border-radius: 6px; background: #fff; }
+.repository-tree label { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-bottom: 1px solid #F0EDE7; font-size: 10px; }
+.repository-tree label span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repository-tree label small { color: #8A867E; }
+.repository-import-confirm { width: 100%; margin-top: 8px; background: var(--jojo-ink); color: #fff; }
+.repository-browser { margin-top: 18px; overflow: hidden; border: 1px solid var(--jojo-line); border-radius: 10px; }
+.repository-browser-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; background: #FAF9F6; }
+.repository-browser-head > div { display: flex; flex-direction: column; gap: 4px; }
+.repository-browser-head span { color: #66635D; font-size: 10px; }
+.repository-browser-head a { color: #087F78; font-size: 11px; text-decoration: none; }
+.repository-browser-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 420px; border-top: 1px solid #ECE9E2; }
+.repository-browser-layout > aside { padding: 10px; border-right: 1px solid #ECE9E2; }
+.repository-browser-layout > aside > input { width: 100%; margin-bottom: 8px; }
+.repository-file-list { max-height: 520px; overflow-y: auto; }
+.repository-file-list button { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 7px; border: 0; border-radius: 5px; background: none; color: #4B4741; text-align: left; font-size: 10px; word-break: break-all; }
+.repository-file-list button.on { background: #E5F5F3; color: #087F78; }
+.repository-file-list small { color: #8A867E; }
+.repository-code-pane { min-width: 0; }
+.repository-code-title { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #ECE9E2; font-size: 11px; }
+.repository-code-title span { color: #77736B; font-size: 10px; }
+.repository-code { max-height: 560px; overflow: auto; background: #172033; padding: 8px 0; }
+.repository-code button { display: grid; grid-template-columns: 48px minmax(max-content, 1fr); width: 100%; border: 0; background: none; color: #E2E8F0; text-align: left; }
+.repository-code button:hover { background: #24324A; }
+.repository-code button > span { padding-right: 10px; color: #718096; text-align: right; user-select: none; font: 11px/1.7 Consolas, monospace; }
+.repository-code code { padding-left: 12px; font: 12px/1.7 Consolas, "SFMono-Regular", monospace; white-space: pre; }
+.comment-anchor { display: block; margin-top: 5px; color: #087F78; font-size: 10px; word-break: break-all; }
+.comment-anchor.active { margin-bottom: 8px; padding: 8px 10px; border-radius: 6px; background: #E5F5F3; }
+.comment-anchor.active button { margin-left: 8px; border: 0; background: none; color: #087F78; padding: 0; font-size: 10px; }
+@media (max-width: 720px) { .repository-browser-layout { display: block; } .repository-browser-layout > aside { border-right: 0; border-bottom: 1px solid #ECE9E2; } .repository-file-list { max-height: 220px; } .repository-code { max-height: 480px; } }

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 ASSETS_DIR = BACKEND_DIR / "assets"
+REPOSITORIES_DIR = BACKEND_DIR / "repositories"
 DB_PATH = BACKEND_DIR / "jojo.db"
 
 load_dotenv(BACKEND_DIR / ".env")

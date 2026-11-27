@@ -11,7 +11,7 @@ from . import auth, db
 router = APIRouter(prefix="/api/communities")
 REVIEW_ROLES = {"host", "reviewer"}
 BIND_ROLES = {"host", "reviewer", "technical"}
-CONTRIBUTION_KINDS = {"text", "question", "evidence", "scene", "asset"}
+CONTRIBUTION_KINDS = {"text", "question", "evidence", "scene", "asset", "repository"}
 TASK_ACTIONS = {"claim", "complete", "done", "reopen"}
 
 
@@ -137,6 +137,9 @@ def _contribution_view(row: dict) -> dict:
             out["asset"] = {"id": asset["id"], "kind": asset["kind"],
                             "url": f"/assets/{asset['filename']}", "folder": asset["folder"],
                             "rights": asset["rights"], "meta": db.jloads(asset["meta"])}
+    if row.get("kind") == "repository":
+        from . import repository
+        out["repository"] = repository.repository_for_contribution(row["id"])
     with db._conn() as conn:
         out["comment_count"] = conn.execute(
             "SELECT COUNT(*) FROM community_comments WHERE contribution_id=?", (row["id"],)).fetchone()[0]
@@ -253,9 +256,25 @@ def add_comment(community_id: str, contribution_id: str, payload: dict, session:
         parent = db.get("community_comments", parent_id)
         if not parent or parent["contribution_id"] != contribution_id:
             raise ValueError("回复目标不存在")
+    anchor_path = str(payload.get("anchor_path") or "").strip()
+    anchor_line = int(payload.get("anchor_line") or 0) or None
+    if anchor_line and not anchor_path:
+        raise ValueError("代码行评论必须同时指定文件")
+    if anchor_path:
+        from . import repository
+        anchor_path = repository.safe_path(anchor_path)
+        repo = repository.repository_for_contribution(contribution_id)
+        if not repo:
+            raise ValueError("只有代码仓库贡献支持文件评论")
+        files = db.query("code_repository_files", "repository_id=? AND path=?", (repo["id"], anchor_path))
+        if not files:
+            raise ValueError("评论文件不在仓库快照中")
+        if anchor_line and (anchor_line < 1 or anchor_line > files[0]["lines"]):
+            raise ValueError("评论代码行超出文件范围")
     row = {"id": db.new_id("comment"), "community_id": community_id,
            "contribution_id": contribution_id, "parent_id": parent_id, "body": body,
-           "author_id": actor_id, "author_name": name, "created_at": db.now()}
+           "author_id": actor_id, "author_name": name, "created_at": db.now(),
+           "anchor_path": anchor_path or None, "anchor_line": anchor_line}
     db.insert("community_comments", row)
     db.update("community_contributions", contribution_id, {"updated_at": db.now()})
     recipients = {contribution["author_id"]}
@@ -491,6 +510,8 @@ class ContributionIn(BaseModel):
 class CommentIn(BaseModel):
     body: str
     parent_id: str = ""
+    anchor_path: str = ""
+    anchor_line: int = 0
 
 
 class ReviewIn(BaseModel):

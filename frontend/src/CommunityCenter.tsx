@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { MarkdownView } from './DocumentView'
+import { RepositoryBrowser, RepositoryImporter, type RepositorySummary } from './RepositoryCenter'
 
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
 const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
@@ -15,9 +16,9 @@ type Asset = { id: string; kind: string; url: string; folder: string; rights: st
 type Contribution = {
   id: string; community_id: string; kind: string; title: string; body: string; status: string
   version: number; author_id: string; author_name: string; comment_count: number
-  asset?: Asset; bound_project_id?: string; bound_node_id?: string; updated_at: string
+  asset?: Asset; repository?: RepositorySummary; bound_project_id?: string; bound_node_id?: string; updated_at: string
 }
-type Comment = { id: string; parent_id?: string; body: string; author_id: string; author_name: string; created_at: string }
+type Comment = { id: string; parent_id?: string; body: string; author_id: string; author_name: string; created_at: string; anchor_path?: string; anchor_line?: number }
 type Review = { id: string; decision: string; comment: string; reviewer_name: string; created_at: string }
 type ContributionVersion = { id: string; version: number; body: string; note: string; author_name: string; created_at: string }
 type Task = { id: string; title: string; description: string; kind: string; status: string; assignee_id?: string; assignee_name?: string; created_by: string }
@@ -30,7 +31,7 @@ const statusLabels: Record<string, string> = {
   under_discussion: '讨论中', changes_requested: '待修改', approved_for_production: '审校通过',
   bound_to_scene: '已接驳场景', open: '待认领', in_progress: '进行中', review: '待验收', done: '已完成',
 }
-const kindLabels: Record<string, string> = { text: '文本', question: '问题', evidence: '证据', scene: '场景', asset: '素材' }
+const kindLabels: Record<string, string> = { text: '文本', question: '问题', evidence: '证据', scene: '场景', asset: '素材', repository: '代码仓库' }
 const roleLabels: Record<string, string> = { host: '主持人', reviewer: '学科审校', technical: '技术团队', teacher: '共建教师' }
 const time = (value: string) => new Date(value).toLocaleString()
 
@@ -49,6 +50,7 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
   const [contributionForm, setContributionForm] = useState({ kind: 'text', title: '', body: '' })
   const [comment, setComment] = useState('')
   const [parentId, setParentId] = useState('')
+  const [commentAnchor, setCommentAnchor] = useState<{ path: string; line: number } | null>(null)
   const [reviewComment, setReviewComment] = useState('')
   const [revision, setRevision] = useState({ body: '', note: '' })
   const [taskForm, setTaskForm] = useState({ title: '', description: '', kind: 'review' })
@@ -66,7 +68,7 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
 
   const openContribution = useCallback(async (communityId: string, contributionId: string) => {
     setSelected(await api.contributionDetail(communityId, contributionId) as ContributionDetail)
-    setComment(''); setParentId(''); setReviewComment('')
+    setComment(''); setParentId(''); setCommentAnchor(null); setReviewComment('')
   }, [])
 
   const openCommunity = useCallback(async (communityId: string, contributionId?: string) => {
@@ -200,6 +202,7 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
               setContributionForm({ kind: 'text', title: '', body: '' }); await openContribution(community.id, row.id)
             })}>提交到社区讨论</button>
           </details>}
+          {myRole && <RepositoryImporter communityId={community.id} onImported={async contributionId => { setTab('contributions'); await refresh(contributionId) }} />}
           <div className="community-feed-list">{filtered.map(item => <button className={selected?.contribution.id === item.id ? 'community-feed-item on' : 'community-feed-item'} key={item.id} onClick={() => void openContribution(community.id, item.id)}>
             <span><i>{kindLabels[item.kind]}</i><em className={`status ${item.status}`}>{statusLabels[item.status]}</em></span>
             <b>{item.title}</b><p>{item.body || item.asset?.meta.relativePath || '查看贡献内容与讨论'}</p>
@@ -208,9 +211,12 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
         </aside>
         <section className="community-detail-pane">{selected ? <ContributionView detail={selected} myRole={myRole} canReview={canReview} canBind={canBind}
           comment={comment} setComment={setComment} parentId={parentId} setParentId={setParentId}
+          commentAnchor={commentAnchor} setCommentAnchor={setCommentAnchor}
           reviewComment={reviewComment} setReviewComment={setReviewComment} revision={revision} setRevision={setRevision}
           revisionFile={revisionFile} uploadRevision={uploadRevision}
-          addComment={() => void run(() => api.addContributionComment(community.id, selected.contribution.id, { body: comment, parent_id: parentId }), selected.contribution.id)}
+          addComment={() => void run(() => api.addContributionComment(community.id, selected.contribution.id, {
+            body: comment, parent_id: parentId, anchor_path: commentAnchor?.path || '', anchor_line: commentAnchor?.line || 0,
+          }), selected.contribution.id)}
           review={(decision: string) => void run(() => api.reviewContribution(community.id, selected.contribution.id, { decision, comment: reviewComment }), selected.contribution.id)}
           revise={() => void run(() => api.reviseContribution(community.id, selected.contribution.id, revision), selected.contribution.id)}
           projects={projects} nodes={nodes} binding={binding} setBinding={setBinding} loadProjects={loadProjects} chooseProject={chooseProject}
@@ -265,10 +271,12 @@ function AssetPreview({ asset, title }: { asset: Asset; title: string }) {
 }
 
 function ContributionView({ detail, canReview, canBind, comment, setComment, parentId, setParentId,
-  reviewComment, setReviewComment, revision, setRevision, revisionFile, uploadRevision, addComment, review, revise,
+  commentAnchor, setCommentAnchor, reviewComment, setReviewComment, revision, setRevision, revisionFile, uploadRevision, addComment, review, revise,
   projects, nodes, binding, setBinding, loadProjects, chooseProject, bind }: {
   detail: ContributionDetail; myRole: string; canReview: boolean; canBind: boolean
   comment: string; setComment: (value: string) => void; parentId: string; setParentId: (value: string) => void
+  commentAnchor: { path: string; line: number } | null
+  setCommentAnchor: (value: { path: string; line: number } | null) => void
   reviewComment: string; setReviewComment: (value: string) => void
   revision: { body: string; note: string }; setRevision: (value: { body: string; note: string }) => void
   revisionFile: React.RefObject<HTMLInputElement | null>; uploadRevision: (file: File) => Promise<void>
@@ -280,15 +288,20 @@ function ContributionView({ detail, canReview, canBind, comment, setComment, par
   const { contribution, comments, reviews, versions } = detail
   return <div className="contribution-view">
     <div className="contribution-title"><span>{kindLabels[contribution.kind]} · V{contribution.version}</span><h2>{contribution.title}</h2><p>{contribution.author_name} · {time(contribution.updated_at)}</p><b className={`status ${contribution.status}`}>{statusLabels[contribution.status]}</b></div>
+    {contribution.repository && <RepositoryBrowser repository={contribution.repository} onDiscuss={(path, line) => {
+      setCommentAnchor({ path, line }); setComment(`关于 ${path} 第 ${line} 行：\n`)
+      setTimeout(() => document.getElementById('contribution-comment-input')?.focus(), 0)
+    }} />}
     {contribution.asset && <div className="contribution-asset"><AssetPreview asset={contribution.asset} title={contribution.title} /><small>{contribution.asset.meta.relativePath || contribution.asset.meta.orig_name} · {contribution.asset.folder}</small></div>}
     {contribution.body && <div className="contribution-body">{contribution.body}</div>}
     {contribution.bound_node_id && <div className="contribution-binding">已接驳项目 {contribution.bound_project_id} · 场景 {contribution.bound_node_id}</div>}
-    <section className="contribution-section"><h3>讨论与协作</h3>{comments.map(item => <div className={item.parent_id ? 'contribution-comment reply' : 'contribution-comment'} key={item.id}><b>{item.author_name}</b><small>{time(item.created_at)}</small><p>{item.body}</p><button onClick={() => { setParentId(item.id); setComment(`回复 ${item.author_name}：`) }}>回复</button></div>)}
-      <textarea placeholder={parentId ? '回复选中的讨论' : '补充依据、提出问题或给出修改建议'} value={comment} onChange={e => setComment(e.target.value)} />
+    <section className="contribution-section"><h3>讨论与协作</h3>{comments.map(item => <div className={item.parent_id ? 'contribution-comment reply' : 'contribution-comment'} key={item.id}><b>{item.author_name}</b><small>{time(item.created_at)}</small>{item.anchor_path && <span className="comment-anchor">{item.anchor_path}{item.anchor_line ? ` : ${item.anchor_line}` : ''}</span>}<p>{item.body}</p><button onClick={() => { setParentId(item.id); setComment(`回复 ${item.author_name}：`) }}>回复</button></div>)}
+      {commentAnchor && <div className="comment-anchor active">评论位置：{commentAnchor.path} : {commentAnchor.line}<button onClick={() => setCommentAnchor(null)}>取消定位</button></div>}
+      <textarea id="contribution-comment-input" placeholder={parentId ? '回复选中的讨论' : '补充依据、提出问题或给出修改建议'} value={comment} onChange={e => setComment(e.target.value)} />
       <div className="contribution-actions">{parentId && <button className="secondary" onClick={() => setParentId('')}>取消回复</button>}<button disabled={!comment.trim()} onClick={addComment}>发表回复</button></div>
     </section>
     <section className="contribution-section"><h3>修订记录</h3>{versions.map(item => <div className="contribution-version" key={item.id}><b>V{item.version} · {item.author_name}</b><span>{item.note || '内容更新'} · {time(item.created_at)}</span></div>)}
-      {contribution.asset ? <><input placeholder="本次修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><input ref={revisionFile} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadRevision(file); e.target.value = '' }} /><button onClick={() => revisionFile.current?.click()}>上传文件新版本</button></> : <><textarea placeholder="修订后的完整内容" value={revision.body} onChange={e => setRevision({ ...revision, body: e.target.value })} /><input placeholder="修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><button disabled={!revision.body.trim()} onClick={revise}>提交内容新版本</button></>}
+      {contribution.kind !== 'repository' && (contribution.asset ? <><input placeholder="本次修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><input ref={revisionFile} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadRevision(file); e.target.value = '' }} /><button onClick={() => revisionFile.current?.click()}>上传文件新版本</button></> : <><textarea placeholder="修订后的完整内容" value={revision.body} onChange={e => setRevision({ ...revision, body: e.target.value })} /><input placeholder="修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><button disabled={!revision.body.trim()} onClick={revise}>提交内容新版本</button></>)}
     </section>
     {canReview && <section className="contribution-section review"><h3>学科审校</h3>{reviews.map(item => <div className="contribution-review" key={item.id}><b>{item.reviewer_name} · {item.decision === 'approved' ? '通过' : '退回修改'}</b><p>{item.comment}</p><small>{time(item.created_at)}</small></div>)}<textarea placeholder="审校意见；退回修改时必填" value={reviewComment} onChange={e => setReviewComment(e.target.value)} /><div className="contribution-actions"><button onClick={() => review('approved')}>通过学科审校</button><button className="secondary" onClick={() => review('changes_requested')}>退回修改</button></div></section>}
     {canBind && ['approved_for_production', 'bound_to_scene'].includes(contribution.status) && <section className="contribution-section"><h3>接驳教学场景</h3><div className="contribution-binding-form"><select value={binding.project_id} onFocus={() => { if (!projects.length) void loadProjects() }} onChange={e => void chooseProject(e.target.value)}><option value="">选择项目</option>{projects.map(project => <option value={project.id} key={project.id}>{project.title}</option>)}</select><select value={binding.node_id} onChange={e => setBinding({ ...binding, node_id: e.target.value })}><option value="">选择场景节点</option>{nodes.map(node => <option value={node.id} key={node.id}>{node.title || node.type}</option>)}</select><button disabled={!binding.project_id || !binding.node_id} onClick={bind}>确认接驳</button></div></section>}

@@ -119,7 +119,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_community_contribution_asset
 CREATE TABLE IF NOT EXISTS community_comments (
   id TEXT PRIMARY KEY, community_id TEXT NOT NULL, contribution_id TEXT NOT NULL,
   parent_id TEXT, body TEXT NOT NULL, author_id TEXT NOT NULL,
-  author_name TEXT NOT NULL, created_at TEXT NOT NULL
+  author_name TEXT NOT NULL, created_at TEXT NOT NULL,
+  anchor_path TEXT, anchor_line INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_community_comments_contribution
   ON community_comments(contribution_id, created_at);
@@ -146,6 +147,22 @@ CREATE TABLE IF NOT EXISTS community_versions (
   created_by TEXT NOT NULL, creator_name TEXT NOT NULL, created_at TEXT NOT NULL,
   UNIQUE(community_id, version)
 );
+CREATE TABLE IF NOT EXISTS code_repositories (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, contribution_id TEXT NOT NULL,
+  source_url TEXT NOT NULL, owner TEXT NOT NULL, repo TEXT NOT NULL,
+  branch TEXT NOT NULL, default_branch TEXT NOT NULL, commit_sha TEXT NOT NULL,
+  file_count INTEGER DEFAULT 0, total_bytes INTEGER DEFAULT 0,
+  author_id TEXT NOT NULL, author_name TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_code_repositories_community
+  ON code_repositories(community_id, created_at);
+CREATE TABLE IF NOT EXISTS code_repository_files (
+  id TEXT PRIMARY KEY, repository_id TEXT NOT NULL, path TEXT NOT NULL,
+  size INTEGER NOT NULL, lines INTEGER NOT NULL, language TEXT NOT NULL,
+  sha TEXT DEFAULT '', UNIQUE(repository_id, path)
+);
+CREATE INDEX IF NOT EXISTS idx_code_repository_files_repo
+  ON code_repository_files(repository_id, path);
 CREATE TABLE IF NOT EXISTS community_notifications (
   id TEXT PRIMARY KEY, recipient_id TEXT NOT NULL, community_id TEXT NOT NULL,
   contribution_id TEXT, kind TEXT NOT NULL, message TEXT NOT NULL,

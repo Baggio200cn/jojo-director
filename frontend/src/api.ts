@@ -169,6 +169,12 @@ export const api = {
   setCommunityMemberRole: (id: string, memberId: string, role: string) =>
     post(`/api/communities/${id}/members/${memberId}/${role}`),
   readCommunityNotifications: (id: string) => post(`/api/communities/${id}/notifications/read`),
+  inspectRepository: (body: { source_url: string; branch?: string }) => post('/api/repositories/inspect', body),
+  importRepository: (body: { source_url: string; branch?: string; community_id: string; paths: string[] }) =>
+    post('/api/repositories/import', body),
+  repositoryFiles: (id: string) => request(`/api/repositories/${id}/files`).then(j),
+  repositoryFile: (id: string, path: string) =>
+    request(`/api/repositories/${id}/file?path=${encodeURIComponent(path)}`).then(j),
   importCommunityBatch: (id: string, batchId: string) => post(`/api/communities/${id}/import-batch`, { batch_id: batchId }),
   suggestFolder: (text: string): Promise<{ folder: string; score: number; matches: { ref_id: string; text: string; score: number }[] }> =>
     post('/api/assets/suggest_folder', { text }),
