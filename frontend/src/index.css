@@ -1096,3 +1096,22 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .comment-anchor.active { margin-bottom: 8px; padding: 8px 10px; border-radius: 6px; background: #E5F5F3; }
 .comment-anchor.active button { margin-left: 8px; border: 0; background: none; color: #087F78; padding: 0; font-size: 10px; }
 @media (max-width: 720px) { .repository-browser-layout { display: block; } .repository-browser-layout > aside { border-right: 0; border-bottom: 1px solid #ECE9E2; } .repository-file-list { max-height: 220px; } .repository-code { max-height: 480px; } }
+
+.comment-screenshot-composer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.comment-screenshot-composer > span { flex: 1; min-width: 220px; color: #77736B; font-size: 10px; line-height: 1.6; }
+.comment-screenshot-draft { flex: 0 0 100%; overflow: hidden; border: 1px solid var(--jojo-line); border-radius: 8px; background: #fff; }
+.comment-screenshot-draft > img { display: block; max-width: 100%; max-height: 420px; margin: 0 auto; background: #F4F2ED; }
+.comment-screenshot-draft-actions { display: flex; gap: 8px; padding: 10px; }
+.comment-screenshot-draft-actions button { border: 0; border-radius: 6px; background: var(--jojo-ink); color: #fff; padding: 7px 11px; }
+.comment-screenshot-draft-actions .secondary { background: #ECE9E2; color: #4B4741; }
+.screenshot-analysis { padding: 12px; border-top: 1px solid #ECE9E2; background: #F5FAF8; }
+.screenshot-analysis b { color: #087F78; font-size: 11px; }
+.screenshot-analysis p { margin: 8px 0; line-height: 1.75; white-space: pre-wrap; }
+.screenshot-analysis small { color: #77736B; }
+.screenshot-error { display: block; padding: 10px; color: #B91C1C; }
+.comment-screenshot { margin: 10px 0; }
+.comment-screenshot > img { display: block; max-width: min(100%, 720px); max-height: 520px; border: 1px solid var(--jojo-line); border-radius: 8px; }
+.comment-screenshot details { margin-top: 6px; }
+.comment-screenshot summary { color: #087F78; cursor: pointer; font-size: 11px; }
+.comment-screenshot details p { line-height: 1.75; white-space: pre-wrap; }
+.comment-screenshot details small { color: #77736B; }

@@ -163,6 +163,17 @@ CREATE TABLE IF NOT EXISTS code_repository_files (
 );
 CREATE INDEX IF NOT EXISTS idx_code_repository_files_repo
   ON code_repository_files(repository_id, path);
+CREATE TABLE IF NOT EXISTS comment_screenshots (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, contribution_id TEXT NOT NULL,
+  comment_id TEXT, filename TEXT NOT NULL, orig_name TEXT NOT NULL,
+  mime TEXT NOT NULL, size INTEGER NOT NULL, analysis_status TEXT DEFAULT 'uploaded',
+  analysis_text TEXT DEFAULT '', analysis_model TEXT DEFAULT '', analysis_error TEXT DEFAULT '',
+  author_id TEXT NOT NULL, created_at TEXT NOT NULL, analyzed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_comment_screenshots_comment
+  ON comment_screenshots(comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_screenshots_contribution
+  ON comment_screenshots(contribution_id, created_at);
 CREATE TABLE IF NOT EXISTS community_notifications (
   id TEXT PRIMARY KEY, recipient_id TEXT NOT NULL, community_id TEXT NOT NULL,
   contribution_id TEXT, kind TEXT NOT NULL, message TEXT NOT NULL,

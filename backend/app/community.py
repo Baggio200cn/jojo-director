@@ -237,8 +237,11 @@ def contribution_detail(community_id: str, contribution_id: str, session: dict) 
     row = db.get("community_contributions", contribution_id)
     if not row or row["community_id"] != community_id:
         raise ValueError("贡献不存在")
+    from . import screenshots
+    comments = db.query("community_comments", "contribution_id=? ORDER BY created_at", (contribution_id,))
     return {"contribution": _contribution_view(row),
-            "comments": db.query("community_comments", "contribution_id=? ORDER BY created_at", (contribution_id,)),
+            "comments": [{**comment, "screenshots": screenshots.screenshots_for_comment(comment["id"])}
+                         for comment in comments],
             "reviews": db.query("community_reviews", "contribution_id=? ORDER BY created_at", (contribution_id,)),
             "versions": db.query("contribution_versions", "contribution_id=? ORDER BY version DESC", (contribution_id,))}
 
@@ -246,8 +249,9 @@ def contribution_detail(community_id: str, contribution_id: str, session: dict) 
 def add_comment(community_id: str, contribution_id: str, payload: dict, session: dict) -> dict:
     actor_id, name, _ = _member(community_id, session)
     body = str(payload.get("body") or "").strip()
-    if not body:
-        raise ValueError("回复内容不能为空")
+    screenshot_ids = list(payload.get("screenshot_ids") or [])
+    if not body and not screenshot_ids:
+        raise ValueError("回复内容或截图不能为空")
     contribution = db.get("community_contributions", contribution_id)
     if not contribution or contribution["community_id"] != community_id:
         raise ValueError("贡献不存在")
@@ -271,11 +275,14 @@ def add_comment(community_id: str, contribution_id: str, payload: dict, session:
             raise ValueError("评论文件不在仓库快照中")
         if anchor_line and (anchor_line < 1 or anchor_line > files[0]["lines"]):
             raise ValueError("评论代码行超出文件范围")
+    from . import screenshots
+    screenshots.validate_attachments(screenshot_ids, community_id, contribution_id, session)
     row = {"id": db.new_id("comment"), "community_id": community_id,
            "contribution_id": contribution_id, "parent_id": parent_id, "body": body,
            "author_id": actor_id, "author_name": name, "created_at": db.now(),
            "anchor_path": anchor_path or None, "anchor_line": anchor_line}
     db.insert("community_comments", row)
+    screenshots.attach_to_comment(screenshot_ids, community_id, contribution_id, row["id"], session)
     db.update("community_contributions", contribution_id, {"updated_at": db.now()})
     recipients = {contribution["author_id"]}
     if parent_id:
@@ -512,6 +519,7 @@ class CommentIn(BaseModel):
     parent_id: str = ""
     anchor_path: str = ""
     anchor_line: int = 0
+    screenshot_ids: list[str] = []
 
 
 class ReviewIn(BaseModel):

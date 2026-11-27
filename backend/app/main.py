@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import (asset_ingest, auth, community, db, document_library, document_text, embeddings, executors, ingestion_review,
-               repository, teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
+               repository, screenshots, teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
 
@@ -91,6 +91,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="JOJO Studio API", version="0.1.0", lifespan=lifespan)
 app.include_router(community.router)
 app.include_router(repository.router)
+app.include_router(screenshots.router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 ASSETS_DIR.mkdir(exist_ok=True)  # StaticFiles 挂载要求目录在 import 期已存在

@@ -156,6 +156,12 @@ export const api = {
     request(`/api/communities/${id}/contributions/${contributionId}`).then(j),
   addContributionComment: (id: string, contributionId: string, body: object) =>
     post(`/api/communities/${id}/contributions/${contributionId}/comments`, body),
+  uploadCommentScreenshot: (id: string, contributionId: string, file: File) => {
+    const fd = new FormData(); fd.append('file', file)
+    return request(`/api/communities/${id}/contributions/${contributionId}/screenshots`, { method: 'POST', body: fd }).then(j)
+  },
+  analyzeCommentScreenshot: (screenshotId: string, note: string) =>
+    post(`/api/communities/screenshots/${screenshotId}/analyze`, { note }),
   reviewContribution: (id: string, contributionId: string, body: object) =>
     post(`/api/communities/${id}/contributions/${contributionId}/review`, body),
   reviseContribution: (id: string, contributionId: string, body: object) =>
