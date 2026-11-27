@@ -16,6 +16,9 @@ import { localizedContent } from './contentI18n'
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
 const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
 const publicAsset = (name: string) => `${BASE_PATH}/${name}`
+const MAX_UPLOAD_FILES = 200
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024
+const UPLOAD_EXTENSIONS = new Set(['mp4', 'mov', 'webm', 'png', 'jpg', 'jpeg', 'webp', 'pdf', 'docx', 'txt', 'md', 'csv'])
 
 type IngestionBatch = {
   batchId?: string; id?: string; status?: string
@@ -864,6 +867,7 @@ export default function App() {
 
   const doUpload = async () => {
     if (!upFile && !upFiles.length) { setUpMsg(t('先选择要上传的文件或文件夹')); say(t('先选择要上传的文件或文件夹')); return }
+    if (upFilesError) { setUpMsg(upFilesError); say(upFilesError); return }
     const dom = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
     if (!dom) { setUpMsg(t('请填写学科目录')); say(t('请填写学科目录')); return }
     const folder = upDomain === '__auto__' ? '__auto__' : upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
@@ -937,6 +941,15 @@ export default function App() {
     setVersionDlg({ nid, list })
   }
 
+  const upFilesTotalBytes = upFiles.reduce((total, file) => total + file.size, 0)
+  const upFilesUnsupported = upFiles.filter(file => !UPLOAD_EXTENSIONS.has(file.name.split('.').pop()?.toLowerCase() || ''))
+  const upFilesError = upFiles.length > MAX_UPLOAD_FILES
+    ? `已选择 ${upFiles.length} 个文件，超过单批 ${MAX_UPLOAD_FILES} 个上限，请拆分后重新选择。`
+    : upFilesTotalBytes > MAX_UPLOAD_BYTES
+      ? `所选文件共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB，超过单批 500MB 上限，请拆分后重新选择。`
+      : upFiles.length > 0 && upFilesUnsupported.length === upFiles.length
+        ? '所选文件均不在支持格式范围内，请重新选择教学资料。'
+        : ''
   const uploadTargetDomain = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
   const uploadTargetFolder = upDomain === '__auto__' ? '自动归类（待审核）' : upTopic.trim() ? `${uploadTargetDomain}/${upTopic.trim()}` : uploadTargetDomain || '待确认'
   const uploadedFolders = [...new Set(upReport?.results.filter(item => item.status === 'accepted' && item.folder).map(item => item.folder!) || [])]
@@ -959,6 +972,13 @@ export default function App() {
       </select>
       {upFile && <div className="muted upload-selection">{upFile.name}</div>}
       {upFiles.length > 0 && <div className="muted upload-selection">{upFiles[0].webkitRelativePath || upFiles[0].name} · {upFiles.length} {t('个文件')}</div>}
+      {upFiles.length > 0 && <div className={`upload-preflight ${upFilesError ? 'error' : ''}`} role={upFilesError ? 'alert' : 'status'}>
+        <b>{upFilesError || `预检通过：${upFiles.length} 个文件，共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB`}</b>
+        {upFilesUnsupported.length > 0 && upFilesUnsupported.length < upFiles.length && <span>
+          {upFilesUnsupported.length} 个不支持格式的文件将在上传时被拒绝：{upFilesUnsupported.slice(0, 3).map(file => file.name).join('、')}{upFilesUnsupported.length > 3 ? ' 等' : ''}
+        </span>}
+        {!upFilesError && <span>单批最多 200 个文件、总大小不超过 500MB；建议按课次拆分并排除 .git、依赖和缓存文件。</span>}
+      </div>}
       <div className="lib-filter">
         <select value={upDomain} onChange={e => setUpDomain(e.target.value)}>
           {[...new Set(libFolders.map(f => f.split('/')[0]))].map(d => (
@@ -1000,7 +1020,7 @@ export default function App() {
       <div className="muted" style={{ fontSize: 11 }}>
         {t('可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案 · docx Word 文档')}
       </div>
-      <button disabled={upBusy} onClick={doUpload}>
+      <button disabled={upBusy || !!upFilesError} onClick={doUpload}>
         {upBusy ? t('正在上传并分析…') : upFiles.length ? t('上传并分析文件夹') : t('提交入库')}
       </button>
       {upProgress && <div className="upload-progress" role="status" aria-live="polite">

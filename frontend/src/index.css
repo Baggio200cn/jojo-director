@@ -1045,3 +1045,9 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .upload-move { display: flex; gap: 6px; margin-top: 4px; }
 .upload-move select { flex: 1; min-width: 0; }
 .upload-move button { flex: none; border: 1px solid #CBD5E1; border-radius: 5px; background: #fff; color: #087F78; cursor: pointer; }
+
+.upload-preflight { display: flex; flex-direction: column; gap: 4px; padding: 9px 10px; border: 1px solid rgba(0,179,166,.3); border-radius: 7px; background: #F2FAF8; color: #087F78; font-size: 10px; line-height: 1.6; }
+.upload-preflight b { font-size: 11px; }
+.upload-preflight.error { border-color: #FECACA; background: #FEF2F2; color: #B91C1C; }
+.upload-preflight span { color: #66635D; }
+.upload-preflight.error span { color: #991B1B; }
