@@ -24,6 +24,28 @@ const jsonReq = (method: string) => (url: string, body?: object) =>
 const post = jsonReq('POST')
 const patch = jsonReq('PATCH')
 
+const uploadWithProgress = (path: string, body: FormData, onProgress?: (percent: number) => void) =>
+  new Promise<any>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${BASE_PATH}${path}`)
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable) onProgress?.(Math.min(100, Math.round(event.loaded / event.total * 100)))
+    }
+    xhr.onerror = () => reject(new Error('网络连接中断，请检查网络后重试'))
+    xhr.onabort = () => reject(new Error('上传已取消'))
+    xhr.onload = () => {
+      let data: any = {}
+      try { data = xhr.responseText ? JSON.parse(xhr.responseText) : {} } catch { data = {} }
+      if (xhr.status === 401) window.dispatchEvent(new CustomEvent('jojo-auth-required'))
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(data?.detail ? String(data.detail) : `HTTP ${xhr.status}`))
+        return
+      }
+      resolve(data)
+    }
+    xhr.send(body)
+  })
+
 export const api = {
   listProjects: () => request('/api/projects').then(j),
   createProject: (title: string) => post('/api/projects', { title }),
@@ -106,7 +128,7 @@ export const api = {
     if (meta.contributionId) fd.append('contribution_id', meta.contributionId)
     return request('/api/assets/upload', { method: 'POST', body: fd }).then(j)
   },
-  uploadFolderToLibrary: (files: File[], meta: { folder: string; rights: string; note: string; communityId?: string }) => {
+  uploadFolderToLibrary: (files: File[], meta: { folder: string; rights: string; note: string; communityId?: string; onProgress?: (percent: number) => void }) => {
     const fd = new FormData()
     files.forEach(file => {
       fd.append('files', file)
@@ -116,13 +138,15 @@ export const api = {
     fd.append('rights', meta.rights)
     fd.append('note', meta.note)
     if (meta.communityId) fd.append('community_id', meta.communityId)
-    return request('/api/assets/upload_folder', { method: 'POST', body: fd }).then(j)
+    return uploadWithProgress('/api/assets/upload_folder', fd, meta.onProgress)
   },
   listIngestionBatches: () => request('/api/assets/ingestion-batches').then(j),
   assetText: (assetId: string): Promise<{ text: string; format: 'markdown' | 'text'; truncated: boolean; parser: string }> =>
     request(`/api/assets/${assetId}/text`).then(j),
   reviewIngestionBatch: (batchId: string, action: string, comment: string) =>
     post(`/api/assets/ingestion-batches/${batchId}/review`, { action, comment }),
+  moveIngestionBatch: (batchId: string, folder: string) =>
+    post(`/api/assets/ingestion-batches/${batchId}/move`, { folder }),
   listCommunities: () => request('/api/communities').then(j),
   createCommunity: (body: object) => post('/api/communities', body),
   communityDetail: (id: string) => request(`/api/communities/${id}`).then(j),

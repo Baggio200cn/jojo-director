@@ -1032,3 +1032,16 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .asset-readable-content > pre { margin: 0; color: #253047; font: 12px/1.85 "Segoe UI", "Microsoft YaHei", sans-serif; white-space: pre-wrap; word-break: break-word; }
 .asset-preview-note { padding: 10px 14px; border-top: 1px solid #ECE9E2; color: #77736B; font-size: 11px; }
 @media (max-width: 720px) { .asset-readable-content { padding: 6px 12px 14px; } .asset-pdf-frame { height: 60vh; } }
+
+.upload-progress { padding: 10px; border: 1px solid rgba(0,179,166,.35); border-radius: 7px; background: #F2FAF8; }
+.upload-progress > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #087F78; font-size: 11px; line-height: 1.6; }
+.upload-progress b { flex: none; }
+.upload-progress progress { display: block; width: 100%; height: 7px; margin-top: 7px; accent-color: var(--jojo-scene); }
+.upload-target { display: flex; flex-direction: column; gap: 3px; color: #66635D; font-size: 10px; line-height: 1.55; }
+.upload-target b { color: #087F78; font-size: 11px; }
+.upload-destination { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; padding: 10px; border: 1px solid rgba(0,179,166,.28); border-radius: 7px; background: #F5FAF8; font-size: 11px; line-height: 1.6; }
+.upload-destination > b { color: #087F78; }
+.upload-destination > span { color: #475569; word-break: break-all; }
+.upload-move { display: flex; gap: 6px; margin-top: 4px; }
+.upload-move select { flex: 1; min-width: 0; }
+.upload-move button { flex: none; border: 1px solid #CBD5E1; border-radius: 5px; background: #fff; color: #087F78; cursor: pointer; }

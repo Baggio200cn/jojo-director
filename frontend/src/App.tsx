@@ -332,6 +332,8 @@ export default function App() {
   const [upMsg, setUpMsg] = useState('')
   const [upCommunityId, setUpCommunityId] = useState('')
   const [upLastCommunityId, setUpLastCommunityId] = useState('')
+  const [upProgress, setUpProgress] = useState<{ percent: number; label: string } | null>(null)
+  const [upMoveFolder, setUpMoveFolder] = useState('')
   const [upSuggest, setUpSuggest] = useState<{ folder: string; score: number } | null>(null)
   // ── QC 改判沉淀：人工终裁与机器原判不一致时，收集类型+原因进学习库 ──
   const [overrideDlg, setOverrideDlg] = useState<{ nid: string; verdict: string; orig: string } | null>(null)
@@ -865,13 +867,20 @@ export default function App() {
     const dom = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
     if (!dom) { setUpMsg(t('请填写学科目录')); say(t('请填写学科目录')); return }
     const folder = upDomain === '__auto__' ? '__auto__' : upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
-    setUpBusy(true); setUpReport(null); setUpLastCommunityId('')
+    setUpBusy(true); setUpReport(null); setUpLastCommunityId(''); setUpMoveFolder('')
+    setUpProgress(upFiles.length ? { percent: 0, label: `准备上传 ${upFiles.length} 个文件…` } : null)
     setUpMsg(upFiles.length ? t('正在上传并分析文件夹，请保持当前页面…') : t('正在上传文件，请保持当前页面…'))
     try {
       if (upFiles.length) {
-        const report = await api.uploadFolderToLibrary(upFiles, { folder, rights: upRights, note: upNote, communityId: upCommunityId || undefined })
+        const uploadPromise = api.uploadFolderToLibrary(upFiles, {
+          folder, rights: upRights, note: upNote, communityId: upCommunityId || undefined,
+          onProgress: percent => setUpProgress({ percent, label: `正在上传 ${upFiles.length} 个文件，请保持当前页面…` }),
+        })
+        setUpProgress({ percent: 100, label: '文件已发送，服务器正在校验、去重、解析与归类…' })
+        const report = await uploadPromise
         setUpReport(report)
         if (report.communityId) setUpLastCommunityId(report.communityId)
+        setUpProgress({ percent: 100, label: '上传与分析完成，目录回执如下。' })
         setUpMsg(t('文件夹处理完成，请逐项核对分析与归类结果；全部内容仍需人工审核'))
         say(t('文件夹上传与分析已完成'))
       } else {
@@ -884,7 +893,7 @@ export default function App() {
       api.listAssetFolders().then(setLibFolders).catch(() => {})
       api.listIngestionBatches().then(setRecentBatches).catch(() => {})
       loadAssets()
-    } catch (e) { setUpMsg(`${t('投稿失败')}: ${e}`); say(`${t('投稿失败')}: ${e}`) } finally { setUpBusy(false) }
+    } catch (e) { setUpProgress(null); setUpMsg(`${t('投稿失败')}: ${e}`); say(`${t('投稿失败')}: ${e}`) } finally { setUpBusy(false) }
   }
 
   const submitIngestionReview = async (action: 'needs_revision' | 'confirm_archive' | 'admin_alignment') => {
@@ -904,6 +913,22 @@ export default function App() {
     finally { setUpBusy(false) }
   }
 
+  const moveUploadBatch = async () => {
+    const id = upReport?.id || upReport?.batchId
+    if (!id || !upMoveFolder) return
+    setUpBusy(true)
+    try {
+      const updated = await api.moveIngestionBatch(id, upMoveFolder)
+      setUpReport(updated)
+      setUpMsg(`已将 ${updated.movedCount} 个接收文件整理到：${upMoveFolder}`)
+      setUpMoveFolder('')
+      setRecentBatches(await api.listIngestionBatches())
+      api.listAssetFolders().then(setLibFolders).catch(() => {})
+      loadAssets()
+    } catch (e) { setUpMsg(`目录整理失败：${e}`) }
+    finally { setUpBusy(false) }
+  }
+
   // ── A4：节点历史版本切换 ──
   const openVersions = async (nid: string) => {
     setMenu(null)
@@ -912,14 +937,18 @@ export default function App() {
     setVersionDlg({ nid, list })
   }
 
+  const uploadTargetDomain = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
+  const uploadTargetFolder = upDomain === '__auto__' ? '自动归类（待审核）' : upTopic.trim() ? `${uploadTargetDomain}/${upTopic.trim()}` : uploadTargetDomain || '待确认'
+  const uploadedFolders = [...new Set(upReport?.results.filter(item => item.status === 'accepted' && item.folder).map(item => item.folder!) || [])]
+
   // ── 教师投稿表单（首页投稿板块 & 画布素材库面板共用）──
   const uploadForm = (
     <div className="lib-upload">
       <input ref={singleUploadRef} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx"
-        onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpFiles([]); setUpSuggest(null); setUpReport(null); setUpMsg('') }} />
+        onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpFiles([]); setUpSuggest(null); setUpReport(null); setUpProgress(null); setUpMsg('') }} />
       <input ref={node => { folderUploadRef.current = node; node?.setAttribute('webkitdirectory', '') }}
         type="file" hidden multiple accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx,.txt,.md,.csv"
-        onChange={e => { const files = Array.from(e.target.files ?? []); setUpFiles(files); setUpFile(null); setUpSuggest(null); setUpReport(null); setUpMsg(files.length ? `${files.length} ${t('个文件待上传')}` : '') }} />
+        onChange={e => { const files = Array.from(e.target.files ?? []); setUpFiles(files); setUpFile(null); setUpSuggest(null); setUpReport(null); setUpProgress(null); setUpMsg(files.length ? `${files.length} ${t('个文件待上传')}` : '') }} />
       <div className="upload-source-buttons">
         <button type="button" onClick={() => singleUploadRef.current?.click()}>{t('选择文件')}</button>
         <button type="button" onClick={() => folderUploadRef.current?.click()}>{t('选择文件夹')}</button>
@@ -938,13 +967,17 @@ export default function App() {
           <option value="__custom__">{t('（新学科…）')}</option>
           <option value="__auto__">{t('自动归类（待审核）')}</option>
         </select>
-        <input placeholder={t('课题（可选，如 迈克尔逊干涉）')} value={upTopic}
+        <input placeholder={t('课题（可选，如 迈克尔逊干涉）')} value={upTopic} list="existing-topic-folders"
           onChange={e => setUpTopic(e.target.value)} />
+        <datalist id="existing-topic-folders">{libFolders.filter(path => path.startsWith(`${uploadTargetDomain}/`)).map(path => (
+          <option key={path} value={path.slice(uploadTargetDomain.length + 1)}>{path}</option>
+        ))}</datalist>
       </div>
       {upDomain === '__custom__' && (
         <input placeholder={t('新学科目录名（如 电子类）')} value={upDomainCustom}
           onChange={e => setUpDomainCustom(e.target.value)} />
       )}
+      <div className="upload-target"><b>目标目录：{uploadTargetFolder}</b><span>选择已有课题即合并到原目录；同名不同内容不会覆盖，重复内容自动跳过。</span></div>
       <div className="lib-filter">
         <select value={upRights} onChange={e => setUpRights(e.target.value)}>
           <option value="own">{t('本人自制')}</option>
@@ -970,12 +1003,28 @@ export default function App() {
       <button disabled={upBusy} onClick={doUpload}>
         {upBusy ? t('正在上传并分析…') : upFiles.length ? t('上传并分析文件夹') : t('提交入库')}
       </button>
+      {upProgress && <div className="upload-progress" role="status" aria-live="polite">
+        <div><span>{upProgress.label}</span><b>{upProgress.percent}%</b></div>
+        <progress max={100} value={upProgress.percent} />
+      </div>}
       {upReport && <div className="upload-report">
         <div className="upload-report-summary">
           <b>{t('批次回执')}：{upReport.id || upReport.batchId}</b>
           <div>{t('接收')} {upReport.summary.accepted} · {t('拒绝')} {upReport.summary.rejected} · {t('重复')} {upReport.summary.duplicate}</div>
           {upReport.status && <div>{t('当前状态')}：{t(upReport.status)}</div>}
           {upReport.summary.receiptIncomplete && <div className="muted">{t('历史批次仅保留通过文件，拒绝与重复数量不可回推。')}</div>}
+        </div>
+        <div className="upload-destination">
+          <b>{uploadedFolders.length ? '新文件已保存到素材库目录' : '本批没有新文件写入素材目录'}</b>
+          {uploadedFolders.length > 0 && <span>{uploadedFolders.join('；')}</span>}
+          {!uploadedFolders.length && <span>重复文件仍保留在原目录，拒绝文件不会写入。</span>}
+          {uploadedFolders.length > 0 && <div className="upload-move">
+            <select value={upMoveFolder} onChange={e => setUpMoveFolder(e.target.value)}>
+              <option value="">将本批接收文件整理到已有目录…</option>
+              {libFolders.map(path => <option key={path} value={path}>{path}</option>)}
+            </select>
+            <button disabled={upBusy || !upMoveFolder} onClick={() => void moveUploadBatch()}>确认整理</button>
+          </div>}
         </div>
         {upReport.results.map((result, index) => <div className={`upload-report-row ${result.status}`} key={`${result.path}-${index}`}>
           <span>{result.status === 'accepted' ? t('已接收') : result.status === 'duplicate' ? t('重复') : t('未接收')}</span>

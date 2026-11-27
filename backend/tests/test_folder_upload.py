@@ -72,6 +72,12 @@ def main():
         check("文件与路径数量不匹配被拒绝", mismatch.status_code == 400)
 
         batch_id = result["batchId"]
+        moved = client.post(f"/api/assets/ingestion-batches/{batch_id}/move",
+                            json={"folder": "人工智能（AI）/CWC"})
+        check("整批整理到已有目录并持久化", moved.status_code == 200
+              and moved.json()["movedCount"] == 2
+              and all(x["folder"] == "人工智能（AI）/CWC" for x in moved.json()["results"] if x["status"] == "accepted")
+              and all(x["folder"] == "人工智能（AI）/CWC" for x in db.query("assets")))
         persisted = client.get("/api/assets/ingestion-batches")
         check("批次与结果已持久化", persisted.status_code == 200
               and persisted.json()[0]["id"] == batch_id

@@ -1298,6 +1298,14 @@ def review_ingestion_batch(batch_id: str, body: dict, request: Request):
         raise HTTPException(403, str(exc)) from exc
 
 
+@app.post("/api/assets/ingestion-batches/{batch_id}/move")
+def move_ingestion_batch(batch_id: str, body: dict):
+    try:
+        return ingestion_review.move_batch(batch_id, str(body.get("folder") or ""))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 class SuggestIn(BaseModel):
     text: str
 

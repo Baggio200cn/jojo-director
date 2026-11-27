@@ -58,6 +58,41 @@ def list_batches() -> list[dict]:
         "ingestion_batches", "1=1 ORDER BY created_at DESC LIMIT 20")]
 
 
+def move_batch(batch_id: str, folder: str) -> dict:
+    folder = folder.strip().strip("/")
+    parts = folder.split("/") if folder else []
+    if not parts or any(not part or part in (".", "..") for part in parts) or folder in ("__auto__", "__custom__"):
+        raise ValueError("请选择有效的已有素材目录")
+    row = db.get("ingestion_batches", batch_id)
+    if not row:
+        raise ValueError("批次不存在")
+    results = db.jloads(row["results"])
+    if not any(item.get("status") == "accepted" for item in results):
+        raise ValueError("本批没有可整理的接收文件")
+    batch_assets = db.query("assets", "json_extract(meta,'$.uploadBatchId')=?", (batch_id,))
+    by_path = {db.jloads(asset["meta"]).get("relativePath"): asset for asset in batch_assets}
+    moved = 0
+    for result in results:
+        if result.get("status") != "accepted":
+            continue
+        asset_id = result.get("assetId")
+        if not asset_id:
+            asset = by_path.get(result.get("path"))
+            asset_id = asset["id"] if asset else None
+        if not asset_id or not db.get("assets", asset_id):
+            raise ValueError(f"找不到待整理素材：{result.get('path')}")
+        db.update("assets", asset_id, {"folder": folder})
+        result["folder"] = folder
+        moved += 1
+    with db._conn() as conn:
+        conn.execute("INSERT OR IGNORE INTO library_folders (path,created_at) VALUES (?,?)",
+                     (folder, db.now()))
+    db.update("ingestion_batches", batch_id, {
+        "results": json.dumps(results, ensure_ascii=False), "folder": folder, "updated_at": db.now(),
+    })
+    return {**batch_view(db.get("ingestion_batches", batch_id)), "movedCount": moved}
+
+
 def review_batch(batch_id: str, action: str, comment: str, actor_role: str) -> dict:
     row = db.get("ingestion_batches", batch_id)
     if not row:
