@@ -56,7 +56,6 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
   const [commentScreenshots, setCommentScreenshots] = useState<Screenshot[]>([])
   const [screenshotBusy, setScreenshotBusy] = useState(false)
   const [analyzingScreenshot, setAnalyzingScreenshot] = useState('')
-  const screenshotInput = useRef<HTMLInputElement>(null)
   const [reviewComment, setReviewComment] = useState('')
   const [revision, setRevision] = useState({ body: '', note: '' })
   const [taskForm, setTaskForm] = useState({ title: '', description: '', kind: 'review' })
@@ -144,14 +143,15 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
     setRevision({ body: '', note: '' })
   }
 
-  const uploadScreenshot = async (file: File) => {
-    if (!detail || !selected) return
-    if (file.size > 8 * 1024 * 1024) { setError('单张截图不能超过 8MB'); return }
+  const uploadScreenshot = async (file: File): Promise<Screenshot | null> => {
+    if (!detail || !selected) return null
+    if (file.size > 8 * 1024 * 1024) { setError('单张截图不能超过 8MB'); return null }
     setScreenshotBusy(true); setError('')
     try {
       const row = await api.uploadCommentScreenshot(detail.community.id, selected.contribution.id, file) as Screenshot
       setCommentScreenshots(previous => [...previous, row])
-    } catch (e) { setError(String(e).replace('Error: ', '')) }
+      return row
+    } catch (e) { setError(String(e).replace('Error: ', '')); return null }
     finally { setScreenshotBusy(false) }
   }
 
@@ -165,6 +165,11 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
       const refreshed = await api.contributionDetail(detail!.community.id, selected!.contribution.id) as ContributionDetail
       setSelected(refreshed)
     } finally { setAnalyzingScreenshot('') }
+  }
+
+  const pasteScreenshot = async (file: File) => {
+    const row = await uploadScreenshot(file)
+    if (row) await analyzeScreenshot(row.id)
   }
 
   const myRole = detail?.community.my_role || ''
@@ -242,8 +247,8 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
           comment={comment} setComment={setComment} parentId={parentId} setParentId={setParentId}
           commentAnchor={commentAnchor} setCommentAnchor={setCommentAnchor}
           commentScreenshots={commentScreenshots} setCommentScreenshots={setCommentScreenshots}
-          screenshotBusy={screenshotBusy} analyzingScreenshot={analyzingScreenshot} screenshotInput={screenshotInput}
-          uploadScreenshot={uploadScreenshot} analyzeScreenshot={analyzeScreenshot}
+          screenshotBusy={screenshotBusy} analyzingScreenshot={analyzingScreenshot}
+          pasteScreenshot={pasteScreenshot} analyzeScreenshot={analyzeScreenshot} setError={setError}
           reviewComment={reviewComment} setReviewComment={setReviewComment} revision={revision} setRevision={setRevision}
           revisionFile={revisionFile} uploadRevision={uploadRevision}
           addComment={() => void run(() => api.addContributionComment(community.id, selected.contribution.id, {
@@ -305,7 +310,7 @@ function AssetPreview({ asset, title }: { asset: Asset; title: string }) {
 
 function ContributionView({ detail, canReview, canBind, comment, setComment, parentId, setParentId,
   commentAnchor, setCommentAnchor, commentScreenshots, setCommentScreenshots, screenshotBusy,
-  analyzingScreenshot, screenshotInput, uploadScreenshot, analyzeScreenshot,
+  analyzingScreenshot, pasteScreenshot, analyzeScreenshot, setError,
   reviewComment, setReviewComment, revision, setRevision, revisionFile, uploadRevision, addComment, review, revise,
   projects, nodes, binding, setBinding, loadProjects, chooseProject, bind }: {
   detail: ContributionDetail; myRole: string; canReview: boolean; canBind: boolean
@@ -314,8 +319,8 @@ function ContributionView({ detail, canReview, canBind, comment, setComment, par
   setCommentAnchor: (value: { path: string; line: number } | null) => void
   commentScreenshots: Screenshot[]; setCommentScreenshots: (value: Screenshot[]) => void
   screenshotBusy: boolean; analyzingScreenshot: string
-  screenshotInput: React.RefObject<HTMLInputElement | null>
-  uploadScreenshot: (file: File) => Promise<void>; analyzeScreenshot: (id: string) => Promise<void>
+  pasteScreenshot: (file: File) => Promise<void>; analyzeScreenshot: (id: string) => Promise<void>
+  setError: (value: string) => void
   reviewComment: string; setReviewComment: (value: string) => void
   revision: { body: string; note: string }; setRevision: (value: { body: string; note: string }) => void
   revisionFile: React.RefObject<HTMLInputElement | null>; uploadRevision: (file: File) => Promise<void>
@@ -336,11 +341,17 @@ function ContributionView({ detail, canReview, canBind, comment, setComment, par
     {contribution.bound_node_id && <div className="contribution-binding">已接驳项目 {contribution.bound_project_id} · 场景 {contribution.bound_node_id}</div>}
     <section className="contribution-section"><h3>讨论与协作</h3>{comments.map(item => <div className={item.parent_id ? 'contribution-comment reply' : 'contribution-comment'} key={item.id}><b>{item.author_name}</b><small>{time(item.created_at)}</small>{item.anchor_path && <span className="comment-anchor">{item.anchor_path}{item.anchor_line ? ` : ${item.anchor_line}` : ''}</span>}<p>{item.body}</p>{item.screenshots?.map(shot => <div className="comment-screenshot" key={shot.id}><img src={screenshotUrl(shot.url)} alt={shot.orig_name} />{shot.analysis_text && <details><summary>查看 AI 截图分析{shot.analysis_model ? ` · ${shot.analysis_model}` : ''}</summary><p>{shot.analysis_text}</p><small>AI 辅助分析可能误判，请结合原图和教学依据核对。</small></details>}</div>)}<button onClick={() => { setParentId(item.id); setComment(`回复 ${item.author_name}：`) }}>回复</button></div>)}
       {commentAnchor && <div className="comment-anchor active">评论位置：{commentAnchor.path} : {commentAnchor.line}<button onClick={() => setCommentAnchor(null)}>取消定位</button></div>}
-      <textarea id="contribution-comment-input" placeholder={parentId ? '回复选中的讨论' : '补充依据、提出问题或给出修改建议'} value={comment} onChange={e => setComment(e.target.value)} />
+      <textarea id="contribution-comment-input" placeholder={parentId ? '回复选中的讨论' : '输入评论，或直接 Ctrl+V 粘贴截图并自动分析'} value={comment} onChange={e => setComment(e.target.value)}
+        onPaste={e => {
+          const images = Array.from(e.clipboardData.files).filter(file => file.type.startsWith('image/'))
+          if (!images.length) return
+          e.preventDefault()
+          if (images.length > 1) { setError('每次请粘贴一张截图'); return }
+          if (screenshotBusy || analyzingScreenshot) { setError('当前截图仍在处理，请完成后再粘贴下一张'); return }
+          void pasteScreenshot(images[0])
+        }} />
       <div className="comment-screenshot-composer">
-        <input ref={screenshotInput} type="file" hidden accept=".png,.jpg,.jpeg,.webp" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadScreenshot(file); e.target.value = '' }} />
-        <button className="secondary" disabled={screenshotBusy} onClick={() => screenshotInput.current?.click()}>{screenshotBusy ? '正在上传截图…' : '添加截图'}</button>
-        <span>上传不会自动分析；点击“分析截图”才调用视觉模型，可能产生少量费用。</span>
+        <span>{screenshotBusy ? '正在上传粘贴的截图…' : analyzingScreenshot ? '正在自动分析截图，您可以继续输入评论…' : '可直接 Ctrl+V 粘贴截图，自动上传并分析（可能产生少量费用）；也可以直接输入评论。'}</span>
         {commentScreenshots.map(shot => <div className="comment-screenshot-draft" key={shot.id}>
           <img src={screenshotUrl(shot.url)} alt={shot.orig_name} />
           <div className="comment-screenshot-draft-actions"><button disabled={analyzingScreenshot === shot.id || shot.analysis_status === 'analyzing'} onClick={() => void analyzeScreenshot(shot.id)}>{analyzingScreenshot === shot.id || shot.analysis_status === 'analyzing' ? '正在分析…' : shot.analysis_text ? '重新分析截图' : '分析截图'}</button><button className="secondary" onClick={() => setCommentScreenshots(commentScreenshots.filter(item => item.id !== shot.id))}>移除</button></div>
