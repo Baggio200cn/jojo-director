@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import (asset_ingest, auth, community, db, document_library, embeddings, executors, ingestion_review,
+from . import (asset_ingest, auth, community, db, document_library, document_text, embeddings, executors, ingestion_review,
                teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
@@ -1149,7 +1149,7 @@ async def upload_to_library(request: Request, file: UploadFile = File(...), fold
                             subject_id: str = Form(""), community_id: str = Form(""),
                             contribution_id: str = Form("")):
     """教师投稿：文件直接入素材库（library=1），权利声明入库即声明。
-    可提交类型：mp4/mov/webm 实验录屏、png/jpg 图片、pdf 教案/讲义。"""
+    可提交类型：mp4/mov/webm 实验录屏、png/jpg 图片、pdf 教案/讲义、docx Word 文档。"""
     session = auth.require(request)
     if contribution_id and not community_id:
         raise HTTPException(400, "提交贡献新版本时必须指定课题社区")
@@ -1164,9 +1164,12 @@ async def upload_to_library(request: Request, file: UploadFile = File(...), fold
     ext = Path(file.filename or "").suffix.lower()
     kind = {".mp4": "video", ".mov": "video", ".webm": "video",
             ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
-            ".pdf": "doc"}.get(ext)
+            ".pdf": "doc", ".docx": "doc"}.get(ext)
     if not kind:
-        raise HTTPException(400, "仅支持 mp4/mov/webm 视频、png/jpg 图片、pdf 教案")
+        raise HTTPException(400, "仅支持 mp4/mov/webm 视频、png/jpg 图片、pdf 教案和 docx Word 文档")
+    content = await file.read()
+    if ext == ".docx" and not document_text.valid_docx(content):
+        raise HTTPException(400, "DOCX 文件损坏或不是有效的 Word 文档")
     if rights not in ("own", "licensed", "reference_only"):
         raise HTTPException(400, "rights 只能是 own / licensed / reference_only")
     if ext in (".mov", ".webm"):
@@ -1178,7 +1181,7 @@ async def upload_to_library(request: Request, file: UploadFile = File(...), fold
                       "VALUES (?, ?)", (folder, db.now()))
     asset_id = db.new_id("asset")
     filename = f"{asset_id}{ext}"
-    (ASSETS_DIR / filename).write_bytes(await file.read())
+    (ASSETS_DIR / filename).write_bytes(content)
     meta = {"source": "teacher_upload", "note": note.strip(),
             "orig_name": Path(file.filename or "").name}
     db.insert("assets", {
@@ -1261,6 +1264,20 @@ async def upload_folder_to_library(request: Request, files: list[UploadFile] = F
             "results": results, "summary": summary,
             "status": "analyzed_pending_teacher", "reviewRequired": True, "paidModelCalled": False,
             "analysisScope": "格式签名、文件名、相对路径与备注；不代替专业内容审核"}
+
+
+@app.get("/api/assets/{asset_id}/text")
+def read_asset_text(asset_id: str):
+    row = db.get("assets", asset_id)
+    if not row:
+        raise HTTPException(404, "素材不存在")
+    extension = Path(row["filename"]).suffix.lower()
+    try:
+        result = document_text.extract_document(
+            (ASSETS_DIR / row["filename"]).read_bytes(), extension)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {**result, "assetId": asset_id, "filename": db.jloads(row["meta"]).get("orig_name") or row["filename"]}
 
 
 @app.get("/api/assets/ingestion-batches")

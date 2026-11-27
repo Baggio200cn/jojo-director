@@ -3,7 +3,7 @@ import hashlib
 import re
 from pathlib import Path, PurePosixPath
 
-from . import db
+from . import db, document_text
 from .config import ASSETS_DIR
 
 MAX_FILES = 200
@@ -11,7 +11,7 @@ MAX_TOTAL_BYTES = 500 * 1024 * 1024
 EXTENSIONS = {
     ".mp4": "video", ".mov": "video", ".webm": "video",
     ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
-    ".pdf": "doc", ".txt": "doc", ".md": "doc", ".csv": "doc",
+    ".pdf": "doc", ".docx": "doc", ".txt": "doc", ".md": "doc", ".csv": "doc",
 }
 DOMAIN_RULES = {
     "人工智能（AI）": ["人工智能", "机器学习", "深度学习", "神经网络", "大语言模型", "大模型", "生成式ai", "aigc", "智能体", "自然语言处理", "计算机视觉", "ai", "machine learning", "deep learning", "neural network", "llm", "agent"],
@@ -40,6 +40,7 @@ def signature_valid(ext: str, content: bytes) -> bool:
     if ext in (".jpg", ".jpeg"): return content.startswith(b"\xff\xd8\xff")
     if ext == ".webp": return len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP"
     if ext == ".pdf": return content.startswith(b"%PDF-")
+    if ext == ".docx": return document_text.valid_docx(content)
     if ext in (".mp4", ".mov"): return len(content) >= 12 and content[4:8] == b"ftyp"
     if ext == ".webm": return content.startswith(b"\x1a\x45\xdf\xa3")
     if ext in (".txt", ".md", ".csv"):
@@ -97,7 +98,7 @@ def ingest_file(content: bytes, relative_path: str, folder: str, rights: str,
         return {"status": "duplicate", "path": relative_path,
                 "reason": "素材库已有相同内容", "assetId": existing["id"]}
 
-    text_content = content.decode("utf-8-sig")[:65536] if ext in (".txt", ".md", ".csv") else ""
+    text_content = document_text.extract_document(content, ext)["text"][:65536] if ext in (".txt", ".md", ".csv", ".docx") else ""
     classification = classify(relative_path, note, text_content)
     parent = PurePosixPath(relative_path).parent.as_posix()
     topic = "" if parent == "." else parent
@@ -113,7 +114,7 @@ def ingest_file(content: bytes, relative_path: str, folder: str, rights: str,
     filename = f"{asset_id}{asset_ext}"
     (ASSETS_DIR / filename).write_bytes(content)
     analysis = {
-        "method": "local_rules_v1", "contentScope": "filename_path_note_and_utf8_text" if text_content else "format_signature_filename_path_note",
+        "method": "local_rules_v1", "contentScope": "filename_path_note_and_document_text" if text_content else "format_signature_filename_path_note",
         "signatureValid": True, "sizeBytes": len(content),
         "classification": classification, "reviewRequired": True,
     }

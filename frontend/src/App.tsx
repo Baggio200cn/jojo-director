@@ -915,10 +915,10 @@ export default function App() {
   // ── 教师投稿表单（首页投稿板块 & 画布素材库面板共用）──
   const uploadForm = (
     <div className="lib-upload">
-      <input ref={singleUploadRef} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf"
+      <input ref={singleUploadRef} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx"
         onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpFiles([]); setUpSuggest(null); setUpReport(null); setUpMsg('') }} />
       <input ref={node => { folderUploadRef.current = node; node?.setAttribute('webkitdirectory', '') }}
-        type="file" hidden multiple accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.txt,.md,.csv"
+        type="file" hidden multiple accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx,.txt,.md,.csv"
         onChange={e => { const files = Array.from(e.target.files ?? []); setUpFiles(files); setUpFile(null); setUpSuggest(null); setUpReport(null); setUpMsg(files.length ? `${files.length} ${t('个文件待上传')}` : '') }} />
       <div className="upload-source-buttons">
         <button type="button" onClick={() => singleUploadRef.current?.click()}>{t('选择文件')}</button>
@@ -965,7 +965,7 @@ export default function App() {
       </div>
       {upMsg && <div className="muted" style={{ fontSize: 11 }}>{upMsg}</div>}
       <div className="muted" style={{ fontSize: 11 }}>
-        {t('可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案')}
+        {t('可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案 · docx Word 文档')}
       </div>
       <button disabled={upBusy} onClick={doUpload}>
         {upBusy ? t('正在上传并分析…') : upFiles.length ? t('上传并分析文件夹') : t('提交入库')}

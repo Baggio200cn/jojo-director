@@ -27,7 +27,7 @@ function asset(path: string): string {
   return path
 }
 
-function MarkdownView({ source }: { source: string }) {
+export function MarkdownView({ source }: { source: string }) {
   const lines = source.replace(/\r\n/g, '\n').split('\n')
   const blocks: ReactNode[] = []
   let i = 0

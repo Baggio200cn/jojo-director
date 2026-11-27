@@ -98,7 +98,7 @@ const en: Record<string, string> = {
   '新学科目录名（如 电子类）': 'New subject folder (e.g. Electronics)',
   '本人自制': 'Created by me', '已获授权': 'Licensed', '仅参考不进片': 'Reference only; not for production',
   '简述（可选）': 'Short note (optional)', '智能建议目录': 'Suggest a folder', '建议：': 'Suggestion: ',
-  '采用': 'Use', '可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案': 'Accepted: MP4/MOV/WebM experiment recordings · PNG/JPG images · PDF lesson plans',
+  '采用': 'Use', '可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案 · docx Word 文档': 'Accepted: MP4/MOV/WebM recordings · PNG/JPG images · PDF lesson plans · DOCX Word documents',
   '上传中…': 'Uploading…', '提交入库': 'Add to library',
   '选择文件': 'Choose file', '选择文件夹': 'Choose folder', '自动归类（待审核）': 'Auto-classify (review required)',
   '个文件待上传': 'files ready', '个文件': 'files', '先选择要上传的文件或文件夹': 'Choose a file or folder first',

@@ -119,6 +119,8 @@ export const api = {
     return request('/api/assets/upload_folder', { method: 'POST', body: fd }).then(j)
   },
   listIngestionBatches: () => request('/api/assets/ingestion-batches').then(j),
+  assetText: (assetId: string): Promise<{ text: string; format: 'markdown' | 'text'; truncated: boolean; parser: string }> =>
+    request(`/api/assets/${assetId}/text`).then(j),
   reviewIngestionBatch: (batchId: string, action: string, comment: string) =>
     post(`/api/assets/ingestion-batches/${batchId}/review`, { action, comment }),
   listCommunities: () => request('/api/communities').then(j),

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
+import { MarkdownView } from './DocumentView'
 
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
 const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
@@ -239,6 +240,30 @@ export default function CommunityCenter({ authRole, initialCommunityId, onBack }
   </div>
 }
 
+function AssetPreview({ asset, title }: { asset: Asset; title: string }) {
+  const extension = asset.url.split('.').pop()?.toLowerCase() || ''
+  const readable = ['docx', 'md', 'txt', 'csv'].includes(extension)
+  const [data, setData] = useState<{ text: string; format: 'markdown' | 'text'; truncated: boolean } | null>(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  useEffect(() => {
+    setData(null); setError('')
+    if (!readable) return
+    setLoading(true)
+    api.assetText(asset.id).then(setData).catch(e => setError(String(e).replace('Error: ', ''))).finally(() => setLoading(false))
+  }, [asset.id, readable])
+  if (asset.kind === 'image') return <img src={assetUrl(asset.url)} alt={title} />
+  if (asset.kind === 'video') return <video src={assetUrl(asset.url)} controls />
+  if (extension === 'pdf') return <div className="asset-inline-document"><div className="asset-preview-head"><b>本页 PDF 预览</b><a href={assetUrl(asset.url)} download>下载原文件</a></div><iframe className="asset-pdf-frame" src={assetUrl(asset.url)} title={`${title} PDF 本页预览`} /></div>
+  if (!readable) return <a href={assetUrl(asset.url)} download>下载原始文件</a>
+  return <div className="asset-inline-document"><div className="asset-preview-head"><b>{extension === 'docx' ? 'Word 正文本页预览' : '文档本页预览'}</b><a href={assetUrl(asset.url)} download>下载原文件</a></div>
+    {loading && <div className="community-empty">正在解析并读取文档…</div>}
+    {error && <div className="community-error">{error}</div>}
+    {data && <div className="asset-readable-content">{data.format === 'markdown' ? <MarkdownView source={data.text} /> : <pre>{data.text}</pre>}</div>}
+    {data?.truncated && <div className="asset-preview-note">当前仅显示前 120000 个字符，完整内容请下载原文件。</div>}
+  </div>
+}
+
 function ContributionView({ detail, canReview, canBind, comment, setComment, parentId, setParentId,
   reviewComment, setReviewComment, revision, setRevision, revisionFile, uploadRevision, addComment, review, revise,
   projects, nodes, binding, setBinding, loadProjects, chooseProject, bind }: {
@@ -255,7 +280,7 @@ function ContributionView({ detail, canReview, canBind, comment, setComment, par
   const { contribution, comments, reviews, versions } = detail
   return <div className="contribution-view">
     <div className="contribution-title"><span>{kindLabels[contribution.kind]} · V{contribution.version}</span><h2>{contribution.title}</h2><p>{contribution.author_name} · {time(contribution.updated_at)}</p><b className={`status ${contribution.status}`}>{statusLabels[contribution.status]}</b></div>
-    {contribution.asset && <div className="contribution-asset">{contribution.asset.kind === 'image' ? <img src={assetUrl(contribution.asset.url)} alt={contribution.title} /> : contribution.asset.kind === 'video' ? <video src={assetUrl(contribution.asset.url)} controls /> : <a href={assetUrl(contribution.asset.url)} target="_blank" rel="noreferrer">查看或下载原始文件</a>}<small>{contribution.asset.meta.relativePath || contribution.asset.meta.orig_name} · {contribution.asset.folder}</small></div>}
+    {contribution.asset && <div className="contribution-asset"><AssetPreview asset={contribution.asset} title={contribution.title} /><small>{contribution.asset.meta.relativePath || contribution.asset.meta.orig_name} · {contribution.asset.folder}</small></div>}
     {contribution.body && <div className="contribution-body">{contribution.body}</div>}
     {contribution.bound_node_id && <div className="contribution-binding">已接驳项目 {contribution.bound_project_id} · 场景 {contribution.bound_node_id}</div>}
     <section className="contribution-section"><h3>讨论与协作</h3>{comments.map(item => <div className={item.parent_id ? 'contribution-comment reply' : 'contribution-comment'} key={item.id}><b>{item.author_name}</b><small>{time(item.created_at)}</small><p>{item.body}</p><button onClick={() => { setParentId(item.id); setComment(`回复 ${item.author_name}：`) }}>回复</button></div>)}
@@ -263,7 +288,7 @@ function ContributionView({ detail, canReview, canBind, comment, setComment, par
       <div className="contribution-actions">{parentId && <button className="secondary" onClick={() => setParentId('')}>取消回复</button>}<button disabled={!comment.trim()} onClick={addComment}>发表回复</button></div>
     </section>
     <section className="contribution-section"><h3>修订记录</h3>{versions.map(item => <div className="contribution-version" key={item.id}><b>V{item.version} · {item.author_name}</b><span>{item.note || '内容更新'} · {time(item.created_at)}</span></div>)}
-      {contribution.asset ? <><input placeholder="本次修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><input ref={revisionFile} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadRevision(file); e.target.value = '' }} /><button onClick={() => revisionFile.current?.click()}>上传文件新版本</button></> : <><textarea placeholder="修订后的完整内容" value={revision.body} onChange={e => setRevision({ ...revision, body: e.target.value })} /><input placeholder="修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><button disabled={!revision.body.trim()} onClick={revise}>提交内容新版本</button></>}
+      {contribution.asset ? <><input placeholder="本次修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><input ref={revisionFile} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadRevision(file); e.target.value = '' }} /><button onClick={() => revisionFile.current?.click()}>上传文件新版本</button></> : <><textarea placeholder="修订后的完整内容" value={revision.body} onChange={e => setRevision({ ...revision, body: e.target.value })} /><input placeholder="修订说明" value={revision.note} onChange={e => setRevision({ ...revision, note: e.target.value })} /><button disabled={!revision.body.trim()} onClick={revise}>提交内容新版本</button></>}
     </section>
     {canReview && <section className="contribution-section review"><h3>学科审校</h3>{reviews.map(item => <div className="contribution-review" key={item.id}><b>{item.reviewer_name} · {item.decision === 'approved' ? '通过' : '退回修改'}</b><p>{item.comment}</p><small>{time(item.created_at)}</small></div>)}<textarea placeholder="审校意见；退回修改时必填" value={reviewComment} onChange={e => setReviewComment(e.target.value)} /><div className="contribution-actions"><button onClick={() => review('approved')}>通过学科审校</button><button className="secondary" onClick={() => review('changes_requested')}>退回修改</button></div></section>}
     {canBind && ['approved_for_production', 'bound_to_scene'].includes(contribution.status) && <section className="contribution-section"><h3>接驳教学场景</h3><div className="contribution-binding-form"><select value={binding.project_id} onFocus={() => { if (!projects.length) void loadProjects() }} onChange={e => void chooseProject(e.target.value)}><option value="">选择项目</option>{projects.map(project => <option value={project.id} key={project.id}>{project.title}</option>)}</select><select value={binding.node_id} onChange={e => setBinding({ ...binding, node_id: e.target.value })}><option value="">选择场景节点</option>{nodes.map(node => <option value={node.id} key={node.id}>{node.title || node.type}</option>)}</select><button disabled={!binding.project_id || !binding.node_id} onClick={bind}>确认接驳</button></div></section>}
