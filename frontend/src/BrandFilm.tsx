@@ -8,7 +8,7 @@ export default function BrandFilm() {
   const poster = `${base}/brand-evolution-poster.png`
   return <div className="brand-film">
     <div className="brand-film-media">
-      {playing ? <video src={`${base}/brand-evolution.mp4`} poster={poster} controls autoPlay muted playsInline
+      {playing ? <video src={`${base}/brand-evolution-music.mp4`} poster={poster} controls autoPlay playsInline
         onEnded={() => setPlaying(false)} onError={() => setPlaying(false)} />
         : <button className="brand-film-poster" onClick={() => setPlaying(true)} aria-label={t('播放品牌演变过程')}>
           <img src={poster} alt={t('JOJO Director 最终品牌标识')} />
