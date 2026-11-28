@@ -1,0 +1,16 @@
+{
+  "sceneId": "scene-pwm-waveform",
+  "pointId": "point-pwm-duty",
+  "teachingGoal": "观察周期不变时占空比与平均亮度的关系",
+  "objects": ["LED", "PWM 波形", "占空比参数"],
+  "parameters": {
+    "period": {"required": true, "unit": "s"},
+    "dutyCycleSequence": {"required": true, "unit": "%"}
+  },
+  "initialState": {"periodInvariant": true},
+  "actions": ["按给定占空比序列依次呈现波形与亮度"],
+  "observations": ["周期一致", "高电平宽度按序列变化", "口播与波形一致"],
+  "invariants": ["不得改变周期", "不得把频率变化表现为占空比变化"],
+  "assertions": [],
+  "reviewRequired": true
+}

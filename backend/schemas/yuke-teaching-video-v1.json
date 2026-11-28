@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Baggio200cn/jojo-director/schemas/yuke-teaching-video-v1.json",
+  "title": "驭课教学视频任务包 v1",
+  "type": "object",
+  "required": ["schemaVersion", "format", "packageId", "packageVersion", "course", "lesson", "template", "teachingGoal", "studentObservation", "sourceVersions", "scenes", "assets", "paidGenerationApproved"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "format": {"const": "yuke-teaching-video/v1"},
+    "packageId": {"type": "string", "minLength": 1, "maxLength": 120},
+    "packageVersion": {"type": "string", "minLength": 1, "maxLength": 120},
+    "course": {
+      "type": "object",
+      "required": ["courseId", "title"],
+      "properties": {
+        "courseId": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1, "maxLength": 200}
+      }
+    },
+    "lesson": {
+      "type": "object",
+      "required": ["lessonId", "lessonNumber", "audience"],
+      "properties": {
+        "lessonId": {"type": "string", "minLength": 1},
+        "lessonNumber": {"type": "integer", "minimum": 1},
+        "audience": {"type": "string", "minLength": 1, "maxLength": 300}
+      }
+    },
+    "template": {"enum": ["intro", "concept_explainer", "operation_demo", "case_explainer"]},
+    "teachingGoal": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "studentObservation": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "sourceVersions": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "unusedInputs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "missingEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "description", "required"],
+        "properties": {
+          "type": {"type": "string"},
+          "description": {"type": "string", "minLength": 1},
+          "required": {"type": "boolean"}
+        }
+      }
+    },
+    "scenes": {
+      "type": "array", "minItems": 1, "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": ["sceneId", "pointId", "title", "teachingGoal", "targetSeconds", "routeCandidates", "reviewRequired"],
+        "properties": {
+          "sceneId": {"type": "string", "minLength": 1},
+          "pointId": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1, "maxLength": 200},
+          "teachingGoal": {"type": "string", "minLength": 1, "maxLength": 2000},
+          "targetSeconds": {"type": "integer", "minimum": 1, "maximum": 300},
+          "routeCandidates": {
+            "type": "array", "minItems": 1,
+            "items": {"enum": ["live_action", "slide_composite", "diagram_2d", "model_3d", "code_execution", "simulation", "generated_scene"]},
+            "uniqueItems": true
+          },
+          "evidenceRefs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "narrationRefs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "slideRefs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "narration": {"type": "string", "maxLength": 5000},
+          "visual": {"type": "string", "maxLength": 5000},
+          "assertions": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "reviewRequired": {"type": "boolean"},
+          "visualSpec": {"type": "object"}
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["assetId", "kind", "role", "uri", "contentHash", "sourceVersion", "rights", "allowedEgress", "allowedUse"],
+        "properties": {
+          "assetId": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["doc", "image", "video", "audio", "model", "data"]},
+          "role": {"type": "string", "minLength": 1},
+          "uri": {"type": "string", "minLength": 1},
+          "contentHash": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+          "sourceVersion": {"type": "string", "minLength": 1},
+          "rights": {"type": "string", "minLength": 1},
+          "allowedEgress": {"type": "string", "minLength": 1},
+          "allowedUse": {"type": "string", "minLength": 1},
+          "attribution": {"type": "string"},
+          "locator": {"type": "string"},
+          "syntheticFixture": {"type": "boolean"}
+        }
+      }
+    },
+    "acceptance": {"type": "object"},
+    "approval": {
+      "type": "object",
+      "properties": {
+        "routeStatus": {"enum": ["pending_teacher", "approved"]},
+        "generativeMedia": {"enum": ["not_authorized", "authorized"]},
+        "paidGeneration": {"enum": ["not_required", "required"]}
+      }
+    },
+    "paidGenerationApproved": {"type": "boolean"}
+  }
+}

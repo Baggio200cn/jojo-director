@@ -6,6 +6,33 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { api } from './api'
+import TrainingLibrary from './TrainingLibrary'
+import DocumentView from './DocumentView'
+import BrandFilm from './BrandFilm'
+import CommunityCenter from './CommunityCenter'
+import ProviderConfig from './ProviderConfig'
+import { localizedRoute, useI18n } from './I18n'
+import { localizedContent } from './contentI18n'
+
+const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '')
+const assetUrl = (url: string) => url.startsWith('/assets/') ? `${BASE_PATH}${url}` : url
+const publicAsset = (name: string) => `${BASE_PATH}/${name}`
+const MAX_UPLOAD_FILES = 200
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024
+const UPLOAD_EXTENSIONS = new Set(['mp4', 'mov', 'webm', 'png', 'jpg', 'jpeg', 'webp', 'pdf', 'docx', 'txt', 'md', 'csv'])
+
+type IngestionBatch = {
+  batchId?: string; id?: string; status?: string
+  results: { status: string; path: string; folder?: string; reason?: string }[]
+  summary: { accepted: number; rejected: number; duplicate: number; receiptIncomplete?: boolean }
+  reviews?: { id: string; action: string; comment: string; actor_role: string; created_at: string }[]
+}
+
+type TeachingProduction = {
+  candidateId: string; version: number; status: string; videoUrl?: string
+  subtitleAssetId?: string; unchangedSceneIds?: string[]
+  missingEvidence?: { sceneId: string; reason: string }[]
+}
 
 type BNode = {
   id: string; type: string; title: string; status: string
@@ -195,10 +222,10 @@ function JojoNode({ id, data, selected }: NodeProps) {
           <div className="err">✖ {excerpt(out.error, 80) || '执行失败'}</div>
         )}
         {typeof out.asset_url === 'string' && !(out.asset_url as string).endsWith('.mp4') && (
-          <img src={out.asset_url} alt="" draggable={false} />
+          <img src={assetUrl(out.asset_url as string)} alt="" draggable={false} />
         )}
         {typeof out.asset_url === 'string' && (out.asset_url as string).endsWith('.mp4') && (
-          <video src={out.asset_url as string} muted loop autoPlay playsInline />
+          <video src={assetUrl(out.asset_url as string)} muted loop autoPlay playsInline />
         )}
         {out.script != null && <div className="ok">📄 脚本已生成，点击查看</div>}
         {out.storyboard != null && <div className="ok">🎞 分镜已生成，点击查看</div>}
@@ -237,6 +264,7 @@ function JojoNode({ id, data, selected }: NodeProps) {
 const nodeTypes = { jojo: JojoNode }
 
 export default function App() {
+  const { t, language } = useI18n()
   const [projectId, setProjectId] = useState('')
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([])
   const [bnodes, setBnodes] = useState<Record<string, BNode>>({})
@@ -245,10 +273,13 @@ export default function App() {
   const [selectedId, setSelectedId] = useState('')
   const [draft, setDraft] = useState<Record<string, unknown>>({})
   const [toast, setToast] = useState('')
-  const [leftW, setLeftW] = useState(250)
-  const [rightW, setRightW] = useState(390)
+  const [leftW, setLeftW] = useState(() => Number(localStorage.getItem('jojo_left_width')) || 250)
+  const [rightW, setRightW] = useState(() => Number(localStorage.getItem('jojo_right_width')) || 390)
   const [tab, setTab] = useState<'nodes' | 'assets'>('nodes')
-  const [view, setView] = useState<'home' | 'canvas' | 'review'>('home')
+  const [view, setView] = useState<'home' | 'canvas' | 'review' | 'training' | 'document' | 'communities'>('home')
+  const [documentName, setDocumentName] = useState<'project' | 'guide'>('project')
+  const [communityId, setCommunityId] = useState('')
+  const [communityOptions, setCommunityOptions] = useState<{ id: string; title: string; my_role: string }[]>([])
   type ReviewItem = {
     qc_node_id: string; qc_title: string; target_node_id: string
     target_title: string; target_type: string; asset_url: string
@@ -263,6 +294,16 @@ export default function App() {
   const [thumbs, setThumbs] = useState<Record<string, string>>({})
   const [homeInput, setHomeInput] = useState('')
   const [homeBusy, setHomeBusy] = useState(false)
+  const [yukeImportBusy, setYukeImportBusy] = useState(false)
+  const [teachingImportBusy, setTeachingImportBusy] = useState(false)
+  const [teachingConfirmBusy, setTeachingConfirmBusy] = useState(false)
+  const [productionBusy, setProductionBusy] = useState(false)
+  const [revisionScene, setRevisionScene] = useState<Record<string, unknown> | null>(null)
+  const [revisionComment, setRevisionComment] = useState('')
+  const [revisionSeconds, setRevisionSeconds] = useState(10)
+  const [revisionRoute, setRevisionRoute] = useState('live_action')
+  const [revisionNarration, setRevisionNarration] = useState('')
+  const [selectedSceneId, setSelectedSceneId] = useState('')
   const [chat, setChat] = useState<{ role: string; text: string }[]>([])
   const [chatInput, setChatInput] = useState('')
   const [agentBusy, setAgentBusy] = useState(false)
@@ -282,6 +323,10 @@ export default function App() {
   // ── 教师投稿（2026-09-07）：文件直接入素材库 ──
   const [uploadOpen, setUploadOpen] = useState(false)
   const [upFile, setUpFile] = useState<File | null>(null)
+  const [upFiles, setUpFiles] = useState<File[]>([])
+  const [upReport, setUpReport] = useState<IngestionBatch | null>(null)
+  const [recentBatches, setRecentBatches] = useState<IngestionBatch[]>([])
+  const [upReviewComment, setUpReviewComment] = useState('')
   const [upDomain, setUpDomain] = useState('光学类')
   const [upDomainCustom, setUpDomainCustom] = useState('')
   const [upTopic, setUpTopic] = useState('')
@@ -289,6 +334,10 @@ export default function App() {
   const [upNote, setUpNote] = useState('')
   const [upBusy, setUpBusy] = useState(false)
   const [upMsg, setUpMsg] = useState('')
+  const [upCommunityId, setUpCommunityId] = useState('')
+  const [upLastCommunityId, setUpLastCommunityId] = useState('')
+  const [upProgress, setUpProgress] = useState<{ percent: number; label: string } | null>(null)
+  const [upMoveFolder, setUpMoveFolder] = useState('')
   const [upSuggest, setUpSuggest] = useState<{ folder: string; score: number } | null>(null)
   // ── QC 改判沉淀：人工终裁与机器原判不一致时，收集类型+原因进学习库 ──
   const [overrideDlg, setOverrideDlg] = useState<{ nid: string; verdict: string; orig: string } | null>(null)
@@ -297,23 +346,29 @@ export default function App() {
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null)
   // ── 鉴权 / 手感升级新状态 ──
   const [authRole, setAuthRole] = useState<'checking' | 'none' | 'admin' | 'invite'>('checking')
-  const [authInfo, setAuthInfo] = useState<{ auth_enabled?: boolean; limits?: { daily_video_limit: number; daily_cost_limit_cny: number }; usage_today?: { videos: number; cost: number } }>({})
+  const [authInfo, setAuthInfo] = useState<{ auth_enabled?: boolean; account?: string; limits?: { daily_video_limit: number; daily_cost_limit_cny: number }; usage_today?: { videos: number; cost: number } }>({})
   const [loginMode, setLoginMode] = useState<'admin' | 'invite'>('admin')
   const [loginU, setLoginU] = useState(''); const [loginP, setLoginP] = useState(''); const [loginCode, setLoginCode] = useState('')
   const [loginErr, setLoginErr] = useState(''); const [loginBusy, setLoginBusy] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [providerOpen, setProviderOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [invites, setInvites] = useState<{ code: string; label: string; daily_video_limit: number; daily_cost_limit_cny: number; disabled: number; usage_today?: { videos: number; cost: number } }[]>([])
   const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null)
   const [connectMenu, setConnectMenu] = useState<{ x: number; y: number; fx: number; fy: number; src: string } | null>(null)
   const connectSrcRef = useRef<string | null>(null)
   const [reviewCount, setReviewCount] = useState(0)
-  const [projCost, setProjCost] = useState<number | null>(null)
+  const [projCost, setProjCost] = useState<{ total: number; hasUnpriced: boolean } | null>(null)
   const runStartRef = useRef<Record<string, number>>({})
   const flowRef = useRef<ReactFlowInstance | null>(null)
   const focusAll = () => setTimeout(() => flowRef.current?.fitView({ padding: 0.25, duration: 400 }), 80)
   const undoRef = useRef<{ nodes: BNode[]; edges: { id: string; source: string; target: string }[] }[]>([])
   const redoRef = useRef<typeof undoRef.current>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const singleUploadRef = useRef<HTMLInputElement>(null)
+  const folderUploadRef = useRef<HTMLInputElement>(null)
+  const yukeFileRef = useRef<HTMLInputElement>(null)
+  const teachingFileRef = useRef<HTMLInputElement>(null)
   const bnodesRef = useRef(bnodes)
   bnodesRef.current = bnodes
   const rfEdgesRef = useRef(rfEdges)
@@ -324,20 +379,65 @@ export default function App() {
   selectedIdRef.current = selectedId
 
   // 拖动分隔条调整左右面板宽度
-  const startResize = (side: 'left' | 'right') => (e: React.MouseEvent) => {
+  const startResize = (side: 'left' | 'right') => (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
     const startX = e.clientX
     const startL = leftW, startR = rightW
-    const move = (ev: MouseEvent) => {
-      if (side === 'left') setLeftW(Math.min(440, Math.max(56, startL + ev.clientX - startX)))
-      else setRightW(Math.min(680, Math.max(56, startR - (ev.clientX - startX))))
+    const previousCursor = document.body.style.cursor
+    const previousSelect = document.body.style.userSelect
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const move = (ev: PointerEvent) => {
+      const delta = ev.clientX - startX
+      if (side === 'left') {
+        const max = Math.max(200, Math.min(520, window.innerWidth - startR - 420))
+        const next = Math.min(max, Math.max(200, startL + delta))
+        setLeftW(next)
+        localStorage.setItem('jojo_left_width', String(next))
+      } else {
+        const max = Math.max(300, Math.min(720, window.innerWidth - startL - 420))
+        const next = Math.min(max, Math.max(300, startR - delta))
+        setRightW(next)
+        localStorage.setItem('jojo_right_width', String(next))
+      }
     }
     const up = () => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', up)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      document.body.style.cursor = previousCursor
+      document.body.style.userSelect = previousSelect
     }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+  const resizeKeys = (side: 'left' | 'right') => (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    e.preventDefault()
+    const delta = e.key === 'ArrowRight' ? 20 : -20
+    if (side === 'left') {
+      const next = Math.min(520, Math.max(200, leftW + delta))
+      setLeftW(next)
+      localStorage.setItem('jojo_left_width', String(next))
+    } else {
+      const next = Math.min(720, Math.max(300, rightW - delta))
+      setRightW(next)
+      localStorage.setItem('jojo_right_width', String(next))
+    }
+  }
+  const resetWidths = () => {
+    setLeftW(250); setRightW(390)
+    localStorage.removeItem('jojo_left_width')
+    localStorage.removeItem('jojo_right_width')
+  }
+  const adjustRightWidth = (delta: number) => {
+    setRightW(previous => {
+      const next = Math.min(720, Math.max(300, previous + delta))
+      localStorage.setItem('jojo_right_width', String(next))
+      return next
+    })
   }
 
   const say = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000) }
@@ -365,7 +465,7 @@ export default function App() {
       }
     }
     if (transitioned) {
-      api.projectStats(pid).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
+      api.projectStats(pid).then(s => setProjCost({ total: s.total_cost_cny, hasUnpriced: s.has_unpriced_generation })).catch(() => {})
       api.reviewQueue(pid).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     }
     setBnodes(map)
@@ -457,17 +557,24 @@ export default function App() {
       let list = await api.listProjects()
       if (!list.length) list = [await api.createProject('微课示例项目')]
       list = [...list].reverse()   // 最新项目在前
+      const params = new URLSearchParams(window.location.search)
+      const requestedPid = params.get('project')
+      const requestedView = params.get('view')
+      const initial = list.find((p: { id: string }) => p.id === requestedPid) ?? list[0]
       setProjects(list)
-      setProjectId(list[0].id)
-      setChat(JSON.parse(localStorage.getItem(`jojo_chat_${list[0].id}`) ?? '[]'))
+      setProjectId(initial.id)
+      setChat(JSON.parse(localStorage.getItem(`jojo_chat_${initial.id}`) ?? '[]'))
       const models = await api.agentModels().catch(() => [])
       setAgentModels(models)
+      api.listCommunities().then(setCommunityOptions).catch(() => {})
       if (models.length && !models.some((m: { model: string }) => m.model === localStorage.getItem('jojo_agent_model'))) {
         setAgentModel(models[0].model)
       }
-      await syncGraph(list[0].id)
-      api.projectStats(list[0].id).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
-      api.reviewQueue(list[0].id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
+      await syncGraph(initial.id)
+      if (requestedView === 'training') setView('training')
+      else if (initial.id === requestedPid) setView('canvas')
+      api.projectStats(initial.id).then(s => setProjCost({ total: s.total_cost_cny, hasUnpriced: s.has_unpriced_generation })).catch(() => {})
+      api.reviewQueue(initial.id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncGraph, authRole])
@@ -486,6 +593,7 @@ export default function App() {
   }, [syncGraph])
 
   const switchProject = async (pid: string) => {
+    setSelectedSceneId('')
     setProjectId(pid)
     setSelectedId('')
     setRfNodes([])
@@ -561,17 +669,97 @@ export default function App() {
     } finally { setHomeBusy(false) }
   }
 
+  const importYuke = async (file: File) => {
+    if (yukeImportBusy) return
+    setYukeImportBusy(true)
+    setHomeErr('')
+    try {
+      const r = await api.importYuke(file)
+      setProjects(await api.listProjects())
+      await switchProject(r.project_id)
+      setView('canvas')
+      say(`已导入 ${r.shots} 镜，请先复核制作路线和教学断言；尚未发起付费生成`)
+    } catch (e) {
+      setHomeErr(`导入失败：${e}`)
+    } finally {
+      setYukeImportBusy(false)
+      if (yukeFileRef.current) yukeFileRef.current.value = ''
+    }
+  }
+
+  const importTeachingVideo = async (file: File) => {
+    if (teachingImportBusy) return
+    setTeachingImportBusy(true)
+    setHomeErr('')
+    try {
+      const r = await api.importTeachingVideo(file)
+      setProjects(await api.listProjects())
+      await switchProject(r.project_id)
+      setView('canvas')
+      say(r.reused ? '该包已导入，已返回原任务，没有重复建项目'
+        : `任务包已接收：${r.scenePlans.length} 个场景，请核对路线和待补项`)
+    } catch (e) {
+      setHomeErr(`教学视频包导入失败：${e}`)
+    } finally {
+      setTeachingImportBusy(false)
+      if (teachingFileRef.current) teachingFileRef.current.value = ''
+    }
+  }
+
+  const confirmTeachingPlan = async () => {
+    const node = Object.values(bnodesRef.current).find(n => n.outputs?.teachingVideo)
+    if (!node || teachingConfirmBusy) return
+    const review = node.outputs.importReview as { importTaskId: string; packageHash: string }
+    const data = node.outputs.teachingVideo as { scenes: { sceneId: string }[] }
+    setTeachingConfirmBusy(true)
+    try {
+      await api.confirmTeachingVideo(projectRef.current, {
+        importTaskId: review.importTaskId, packageHash: review.packageHash,
+        sceneIds: data.scenes.map(s => s.sceneId),
+        generativeMediaAuthorized: false, paidGenerationApproved: false,
+      })
+      await syncGraph(projectRef.current)
+      say('方案已确认：仅确定性 2D 与已有素材，无需付费生成')
+    } catch (e) {
+      say(`方案确认失败：${e}`)
+    } finally { setTeachingConfirmBusy(false) }
+  }
+
+  const produceTeachingVideo = async (revision?: boolean) => {
+    const node = Object.values(bnodesRef.current).find(n => n.outputs?.teachingVideo)
+    if (!node || productionBusy) return
+    setProductionBusy(true)
+    try {
+      const production = revision ? (node.outputs.production as { candidateId: string }) : null
+      await api.produceTeachingVideo(projectRef.current, revision ? {
+        revisionOf: production!.candidateId,
+        patch: {
+          sceneId: revisionScene!.sceneId,
+          comment: revisionComment,
+          targetSeconds: revisionSeconds,
+          selectedRoute: revisionRoute,
+          narration: revisionNarration,
+        },
+      } : {})
+      setRevisionScene(null)
+      await syncGraph(projectRef.current)
+      say(revision ? '已生成送修候选，原版本保留，其他场景不变' : '候选视频正在后台生成，不调用付费模型')
+    } catch (e) {
+      say(`候选生成失败：${e}`)
+    } finally { setProductionBusy(false) }
+  }
+
   // ── 后端健康监测：离线时全局红条提示 ──
   const [backendUp, setBackendUp] = useState(true)
   useEffect(() => {
-    const check = () => fetch('/api/health').then(r => setBackendUp(r.ok)).catch(() => setBackendUp(false))
+    const check = () => fetch(`${BASE_PATH}/api/health`).then(r => setBackendUp(r.ok)).catch(() => setBackendUp(false))
     check()
     const t = setInterval(check, 8000)
     return () => clearInterval(t)
   }, [])
   const offlineBanner = !backendUp && (
     <div className="offline-banner">
-      ⚠ 后端服务未运行——画布可以看，但所有生成/保存都会失败。请双击 jojo-studio 文件夹里的 <b>启动JOJO.bat</b>（会弹出 JOJO-backend-8000 窗口），几秒后本提示自动消失
+      ⚠ {t('后端服务未运行，当前内容可查看，但生成和保存会失败。')}
     </div>
   )
 
@@ -612,7 +800,10 @@ export default function App() {
 
   // 首页投稿板块也需要目录树
   useEffect(() => {
-    if (view === 'home') api.listAssetFolders().then(setLibFolders).catch(() => {})
+    if (view === 'home') {
+      api.listAssetFolders().then(setLibFolders).catch(() => {})
+      api.listIngestionBatches().then(setRecentBatches).catch(() => {})
+    }
   }, [view])
 
   const toggleStar = async (aid: string, starred: boolean) => {
@@ -658,7 +849,7 @@ export default function App() {
 
   // ── 教师投稿：选择文件 → 学科/课题 → 权利声明 → 直接入素材库 ──
   const askSuggest = async () => {
-    const text = [upNote, upFile?.name || ''].join(' ').trim()
+    const text = [upNote, upFile?.name || upFiles[0]?.name || ''].join(' ').trim()
     if (!text) { setUpMsg('先选文件或写一句简述，再让机器建议目录'); return }
     try {
       const r = await api.suggestFolder(text)
@@ -677,19 +868,71 @@ export default function App() {
   }
 
   const doUpload = async () => {
-    if (!upFile) { setUpMsg('先选择要上传的文件'); say('先选择要上传的文件'); return }
+    if (!upFile && !upFiles.length) { setUpMsg(t('先选择要上传的文件或文件夹')); say(t('先选择要上传的文件或文件夹')); return }
+    if (upFilesError) { setUpMsg(upFilesError); say(upFilesError); return }
     const dom = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
-    if (!dom) { setUpMsg('请填写学科目录'); say('请填写学科目录'); return }
-    const folder = upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
+    if (!dom) { setUpMsg(t('请填写学科目录')); say(t('请填写学科目录')); return }
+    const folder = upDomain === '__auto__' ? '__auto__' : upTopic.trim() ? `${dom}/${upTopic.trim()}` : dom
+    setUpBusy(true); setUpReport(null); setUpLastCommunityId(''); setUpMoveFolder('')
+    setUpProgress(upFiles.length ? { percent: 0, label: `准备上传 ${upFiles.length} 个文件…` } : null)
+    setUpMsg(upFiles.length ? t('正在上传并分析文件夹，请保持当前页面…') : t('正在上传文件，请保持当前页面…'))
+    try {
+      if (upFiles.length) {
+        const uploadPromise = api.uploadFolderToLibrary(upFiles, {
+          folder, rights: upRights, note: upNote, communityId: upCommunityId || undefined,
+          onProgress: percent => setUpProgress({ percent, label: `正在上传 ${upFiles.length} 个文件，请保持当前页面…` }),
+        })
+        setUpProgress({ percent: 100, label: '文件已发送，服务器正在校验、去重、解析与归类…' })
+        const report = await uploadPromise
+        setUpReport(report)
+        if (report.communityId) setUpLastCommunityId(report.communityId)
+        setUpProgress({ percent: 100, label: '上传与分析完成，目录回执如下。' })
+        setUpMsg(t('文件夹处理完成，请逐项核对分析与归类结果；全部内容仍需人工审核'))
+        say(t('文件夹上传与分析已完成'))
+      } else {
+        const result = await api.uploadToLibrary(upFile!, { folder, rights: upRights, note: upNote, communityId: upCommunityId || undefined })
+        if (result.communityId) setUpLastCommunityId(result.communityId)
+        setUpMsg(`${t('投稿成功：已入库')} ${folder}`)
+        say(`${t('投稿成功：已入库')} ${folder}`)
+      }
+      setUploadOpen(false); setUpFile(null); setUpFiles([]); setUpTopic(''); setUpNote(''); setUpSuggest(null)
+      api.listAssetFolders().then(setLibFolders).catch(() => {})
+      api.listIngestionBatches().then(setRecentBatches).catch(() => {})
+      loadAssets()
+    } catch (e) { setUpProgress(null); setUpMsg(`${t('投稿失败')}: ${e}`); say(`${t('投稿失败')}: ${e}`) } finally { setUpBusy(false) }
+  }
+
+  const submitIngestionReview = async (action: 'needs_revision' | 'confirm_archive' | 'admin_alignment') => {
+    const id = upReport?.id || upReport?.batchId
+    if (!id) return
+    if (action === 'needs_revision' && !upReviewComment.trim()) {
+      setUpMsg(t('请先填写具体修改意见')); return
+    }
     setUpBusy(true)
     try {
-      await api.uploadToLibrary(upFile, { folder, rights: upRights, note: upNote })
-      setUpMsg(`✅ 投稿成功：已入库 ${folder}`)
-      say(`投稿成功：已入库 ${folder}`)
-      setUploadOpen(false); setUpFile(null); setUpTopic(''); setUpNote(''); setUpSuggest(null)
+      const updated = await api.reviewIngestionBatch(id, action, upReviewComment)
+      setUpReport(updated)
+      setUpReviewComment('')
+      setUpMsg(t('审核状态与意见已保存'))
+      setRecentBatches(await api.listIngestionBatches())
+    } catch (e) { setUpMsg(`${t('审核失败')}: ${e}`) }
+    finally { setUpBusy(false) }
+  }
+
+  const moveUploadBatch = async () => {
+    const id = upReport?.id || upReport?.batchId
+    if (!id || !upMoveFolder) return
+    setUpBusy(true)
+    try {
+      const updated = await api.moveIngestionBatch(id, upMoveFolder)
+      setUpReport(updated)
+      setUpMsg(`已将 ${updated.movedCount} 个接收文件整理到：${upMoveFolder}`)
+      setUpMoveFolder('')
+      setRecentBatches(await api.listIngestionBatches())
       api.listAssetFolders().then(setLibFolders).catch(() => {})
       loadAssets()
-    } catch (e) { setUpMsg(`投稿失败: ${e}`); say(`投稿失败: ${e}`) } finally { setUpBusy(false) }
+    } catch (e) { setUpMsg(`目录整理失败：${e}`) }
+    finally { setUpBusy(false) }
   }
 
   // ── A4：节点历史版本切换 ──
@@ -700,50 +943,143 @@ export default function App() {
     setVersionDlg({ nid, list })
   }
 
+  const upFilesTotalBytes = upFiles.reduce((total, file) => total + file.size, 0)
+  const upFilesUnsupported = upFiles.filter(file => !UPLOAD_EXTENSIONS.has(file.name.split('.').pop()?.toLowerCase() || ''))
+  const upFilesError = upFiles.length > MAX_UPLOAD_FILES
+    ? language === 'en' ? `Selected ${upFiles.length} files, exceeding the ${MAX_UPLOAD_FILES}-file batch limit. Split the folder and select again.` : `已选择 ${upFiles.length} 个文件，超过单批 ${MAX_UPLOAD_FILES} 个上限，请拆分后重新选择。`
+    : upFilesTotalBytes > MAX_UPLOAD_BYTES
+      ? language === 'en' ? `Selected files total ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB, exceeding the 500MB batch limit. Split the folder and select again.` : `所选文件共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB，超过单批 500MB 上限，请拆分后重新选择。`
+      : upFiles.length > 0 && upFilesUnsupported.length === upFiles.length
+        ? language === 'en' ? 'None of the selected files have a supported format. Choose teaching materials instead.' : '所选文件均不在支持格式范围内，请重新选择教学资料。'
+        : ''
+  const uploadTargetDomain = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
+  const uploadTargetFolder = upDomain === '__auto__' ? '自动归类（待审核）' : upTopic.trim() ? `${uploadTargetDomain}/${upTopic.trim()}` : uploadTargetDomain || '待确认'
+  const uploadedFolders = [...new Set(upReport?.results.filter(item => item.status === 'accepted' && item.folder).map(item => item.folder!) || [])]
+  const localizedFolder = (folder: string) => folder.split('/').map(part => t(part)).join('/')
+
   // ── 教师投稿表单（首页投稿板块 & 画布素材库面板共用）──
   const uploadForm = (
     <div className="lib-upload">
-      <input type="file" accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf"
-        onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpSuggest(null); setUpMsg('') }} />
+      <input ref={singleUploadRef} type="file" hidden accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx"
+        onChange={e => { setUpFile(e.target.files?.[0] ?? null); setUpFiles([]); setUpSuggest(null); setUpReport(null); setUpProgress(null); setUpMsg('') }} />
+      <input ref={node => { folderUploadRef.current = node; node?.setAttribute('webkitdirectory', '') }}
+        type="file" hidden multiple accept=".mp4,.mov,.webm,.png,.jpg,.jpeg,.webp,.pdf,.docx,.txt,.md,.csv"
+        onChange={e => { const files = Array.from(e.target.files ?? []); setUpFiles(files); setUpFile(null); setUpSuggest(null); setUpReport(null); setUpProgress(null); setUpMsg(files.length ? `${files.length} ${t('个文件待上传')}` : '') }} />
+      <div className="upload-source-buttons">
+        <button type="button" onClick={() => singleUploadRef.current?.click()}>{t('选择文件')}</button>
+        <button type="button" onClick={() => folderUploadRef.current?.click()}>{t('选择文件夹')}</button>
+      </div>
+      <select value={upCommunityId} onChange={e => setUpCommunityId(e.target.value)}>
+        <option value="">{t('仅提交素材库（不关联课题社区）')}</option>
+        {communityOptions.filter(item => item.my_role).map(item => <option key={item.id} value={item.id}>{t('投稿到课题：')}{item.title}</option>)}
+      </select>
+      {upFile && <div className="muted upload-selection">{upFile.name}</div>}
+      {upFiles.length > 0 && <div className="muted upload-selection">{upFiles[0].webkitRelativePath || upFiles[0].name} · {upFiles.length} {t('个文件')}</div>}
+      {upFiles.length > 0 && <div className={`upload-preflight ${upFilesError ? 'error' : ''}`} role={upFilesError ? 'alert' : 'status'}>
+        <b>{upFilesError || (language === 'en' ? `Preflight passed: ${upFiles.length} files, ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB total` : `预检通过：${upFiles.length} 个文件，共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB`)}</b>
+        {upFilesUnsupported.length > 0 && upFilesUnsupported.length < upFiles.length && <span>
+          {language === 'en' ? `${upFilesUnsupported.length} unsupported files will be rejected: ` : `${upFilesUnsupported.length} 个不支持格式的文件将在上传时被拒绝：`}{upFilesUnsupported.slice(0, 3).map(file => file.name).join('、')}{upFilesUnsupported.length > 3 ? ' 等' : ''}
+        </span>}
+        {!upFilesError && <span>{t('单批最多 200 个文件、总大小不超过 500MB；建议按课次拆分并排除 .git、依赖和缓存文件。')}</span>}
+      </div>}
       <div className="lib-filter">
         <select value={upDomain} onChange={e => setUpDomain(e.target.value)}>
           {[...new Set(libFolders.map(f => f.split('/')[0]))].map(d => (
-            <option key={d} value={d}>{d}</option>
+            <option key={d} value={d}>{t(d)}</option>
           ))}
-          <option value="__custom__">（新学科…）</option>
+          <option value="__custom__">{t('（新学科…）')}</option>
+          <option value="__auto__">{t('自动归类（待审核）')}</option>
         </select>
-        <input placeholder="课题（可选，如 迈克尔逊干涉）" value={upTopic}
+        <input placeholder={t('课题（可选，如 迈克尔逊干涉）')} value={upTopic} list="existing-topic-folders"
           onChange={e => setUpTopic(e.target.value)} />
+        <datalist id="existing-topic-folders">{libFolders.filter(path => path.startsWith(`${uploadTargetDomain}/`)).map(path => (
+          <option key={path} value={path.slice(uploadTargetDomain.length + 1)}>{path}</option>
+        ))}</datalist>
       </div>
       {upDomain === '__custom__' && (
-        <input placeholder="新学科目录名（如 电子类）" value={upDomainCustom}
+        <input placeholder={t('新学科目录名（如 电子类）')} value={upDomainCustom}
           onChange={e => setUpDomainCustom(e.target.value)} />
       )}
+      <div className="upload-target"><b>{t('目标目录：')}{localizedFolder(uploadTargetFolder)}</b><span>{t('选择已有课题即合并到原目录；同名不同内容不会覆盖，重复内容自动跳过。')}</span></div>
       <div className="lib-filter">
         <select value={upRights} onChange={e => setUpRights(e.target.value)}>
-          <option value="own">本人自制</option>
-          <option value="licensed">已获授权</option>
-          <option value="reference_only">仅参考不进片</option>
+          <option value="own">{t('本人自制')}</option>
+          <option value="licensed">{t('已获授权')}</option>
+          <option value="reference_only">{t('仅参考不进片')}</option>
         </select>
-        <input placeholder="简述（可选）" value={upNote}
+        <input placeholder={t('简述（可选）')} value={upNote}
           onChange={e => setUpNote(e.target.value)} />
       </div>
       <div className="lib-filter">
-        <button onClick={askSuggest}>✨ 智能建议目录</button>
+        <button onClick={askSuggest}>✨ {t('智能建议目录')}</button>
         {upSuggest && (
           <span className="up-suggest">
-            建议：<b>{upSuggest.folder}</b>（{upSuggest.score.toFixed(2)}）
-            <button className="mini" onClick={adoptSuggest}>采用</button>
+            {t('建议：')}<b>{upSuggest.folder}</b>（{upSuggest.score.toFixed(2)}）
+            <button className="mini" onClick={adoptSuggest}>{t('采用')}</button>
           </span>
         )}
       </div>
       {upMsg && <div className="muted" style={{ fontSize: 11 }}>{upMsg}</div>}
       <div className="muted" style={{ fontSize: 11 }}>
-        可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案
+        {t('可提交：mp4/mov/webm 实验录屏 · png/jpg 图片 · pdf 教案 · docx Word 文档')}
       </div>
-      <button disabled={upBusy} onClick={doUpload}>
-        {upBusy ? '上传中…' : '提交入库'}
+      <button disabled={upBusy || !!upFilesError} onClick={doUpload}>
+        {upBusy ? t('正在上传并分析…') : upFiles.length ? t('上传并分析文件夹') : t('提交入库')}
       </button>
+      {upProgress && <div className="upload-progress" role="status" aria-live="polite">
+        <div><span>{upProgress.label}</span><b>{upProgress.percent}%</b></div>
+        <progress max={100} value={upProgress.percent} />
+      </div>}
+      {upReport && <div className="upload-report">
+        <div className="upload-report-summary">
+          <b>{t('批次回执')}：{upReport.id || upReport.batchId}</b>
+          <div>{t('接收')} {upReport.summary.accepted} · {t('拒绝')} {upReport.summary.rejected} · {t('重复')} {upReport.summary.duplicate}</div>
+          {upReport.status && <div>{t('当前状态')}：{t(upReport.status)}</div>}
+          {upReport.summary.receiptIncomplete && <div className="muted">{t('历史批次仅保留通过文件，拒绝与重复数量不可回推。')}</div>}
+        </div>
+        <div className="upload-destination">
+          <b>{uploadedFolders.length ? t('新文件已保存到素材库目录') : t('本批没有新文件写入素材目录')}</b>
+          {uploadedFolders.length > 0 && <span>{uploadedFolders.map(localizedFolder).join('；')}</span>}
+          {!uploadedFolders.length && <span>{t('重复文件仍保留在原目录，拒绝文件不会写入。')}</span>}
+          {uploadedFolders.length > 0 && <div className="upload-move">
+            <select value={upMoveFolder} onChange={e => setUpMoveFolder(e.target.value)}>
+              <option value="">{t('将本批接收文件整理到已有目录…')}</option>
+              {libFolders.map(path => <option key={path} value={path}>{localizedFolder(path)}</option>)}
+            </select>
+            <button disabled={upBusy || !upMoveFolder} onClick={() => void moveUploadBatch()}>{t('确认整理')}</button>
+          </div>}
+        </div>
+        {upReport.results.map((result, index) => <div className={`upload-report-row ${result.status}`} key={`${result.path}-${index}`}>
+          <span>{result.status === 'accepted' ? t('已接收') : result.status === 'duplicate' ? t('重复') : t('未接收')}</span>
+          <code>{result.path}</code>
+          <small>{result.folder ? `${t('目录')}：${result.folder}` : result.reason}</small>
+        </div>)}
+        <div className="muted">{t('本地规则分析不等于专业内容审核；全部结果均待人工复核。')}</div>
+        <div className="upload-review-actions">
+          <label>{t('修改意见或审核说明')}<textarea rows={2} value={upReviewComment} onChange={e => setUpReviewComment(e.target.value)}
+            placeholder={t('指出需要调整的目录、依据、素材或规则；仅确认归档可留空')} /></label>
+          <div><button disabled={upBusy} onClick={() => void submitIngestionReview('needs_revision')}>{t('提出修改意见')}</button>
+            <button disabled={upBusy || !upReport.summary.accepted} onClick={() => void submitIngestionReview('confirm_archive')}>{t('确认并暂时归档')}</button>
+            {authRole === 'admin' && <button disabled={upBusy} onClick={() => void submitIngestionReview('admin_alignment')}>{t('管理员对齐')}</button>}
+          </div>
+          {(upReport.reviews?.length ?? 0) > 0 && <div className="upload-review-history">
+            <b>{t('审核历史')}</b>{upReport.reviews!.slice(-3).map(review => <div key={review.id}>
+              <span>{t(review.action)} · {review.actor_role} · {new Date(review.created_at).toLocaleString()}</span>
+              {review.comment && <small>{review.comment}</small>}
+            </div>)}
+          </div>}
+        </div>
+      </div>}
+      {upLastCommunityId && <div className="upload-community-next">
+        <b>素材已进入课题社区，接下来邀请老师一起讨论和审校。</b>
+        <button onClick={() => { setCommunityId(upLastCommunityId); setView('communities') }}>进入课题继续共建 →</button>
+      </div>}
+      {recentBatches.length > 0 && <details className="recent-batches">
+        <summary>{t('最近上传批次与审核状态')}</summary>
+        {recentBatches.map(batch => <button key={batch.id} onClick={() => setUpReport(batch)}>
+          <span>{batch.id}</span><small>{t(batch.status || '')} · {t('接收')} {batch.summary.accepted}</small>
+        </button>)}
+      </details>}
     </div>
   )
 
@@ -899,7 +1235,8 @@ export default function App() {
   // 轮询：有节点在运行时每 3 秒刷新
   useEffect(() => {
     const t = setInterval(() => {
-      if (Object.values(bnodesRef.current).some(n => n.status === 'running')) {
+      if (Object.values(bnodesRef.current).some(n => n.status === 'running' ||
+        (n.outputs.production as { status?: string } | undefined)?.status === 'running')) {
         syncGraph(projectRef.current)
       }
     }, 3000)
@@ -1049,6 +1386,12 @@ export default function App() {
 
   const selected = bnodes[selectedId]
   const meta = selected ? TYPE_META[selected.type] : null
+  const teachingNode = Object.values(bnodes).find(n => n.outputs?.teachingVideo)
+  const taskMode = Boolean(teachingNode)
+  const selectedSceneTitle = selectedSceneId && teachingNode
+    ? (teachingNode.outputs.teachingVideo as { scenes: { sceneId: string; title: string }[] }).scenes
+      .find(scene => scene.sceneId === selectedSceneId)?.title
+    : ''
 
   // 画布上所有已有成果的图像节点，供参考图/首尾帧下拉选择
   const imageAssets = Object.values(bnodes)
@@ -1116,38 +1459,38 @@ export default function App() {
 
   // ── 登录页（管理员账密 / 邀请码 双通道） ──
   if (authRole === 'checking') return (
-    <div className="login-page"><div className="login-card"><h1>科学场景生产与验收</h1><div className="muted">正在验证登录状态…</div></div></div>
+    <div className="login-page"><div className="login-card"><h1>{t('科学场景生产与验收')}</h1><div className="muted">{t('正在验证登录状态…')}</div></div></div>
   )
   if (authRole === 'none') return (
     <div className="login-page notranslate" translate="no">
       <div className="login-card">
-        <img src="/jojo-director-mark.svg" alt="JOJO Director" className="login-logo" />
-        <h1>科学场景生产与验收</h1>
+        <img src={publicAsset('jojo-director-mark.svg')} alt="JOJO Director" className="login-logo" />
+        <h1>{t('科学场景生产与验收')}</h1>
         <div className="sub">JOJO Director · Scientific Scene Production Engine</div>
         <div className="tab-bar login-tabs">
-          <button className={loginMode === 'admin' ? 'on' : ''} onClick={() => { setLoginMode('admin'); setLoginErr('') }}>管理员</button>
-          <button className={loginMode === 'invite' ? 'on' : ''} onClick={() => { setLoginMode('invite'); setLoginErr('') }}>邀请码进入</button>
+          <button className={loginMode === 'admin' ? 'on' : ''} onClick={() => { setLoginMode('admin'); setLoginErr('') }}>{t('管理员')}</button>
+          <button className={loginMode === 'invite' ? 'on' : ''} onClick={() => { setLoginMode('invite'); setLoginErr('') }}>{t('邀请码进入')}</button>
         </div>
         {loginMode === 'admin' ? (
           <>
-            <input type="text" placeholder="账号" value={loginU} autoComplete="username"
+            <input type="text" placeholder={t('账号')} value={loginU} autoComplete="username"
               onChange={e => setLoginU(e.target.value)} />
-            <input type="password" placeholder="密码" value={loginP} autoComplete="current-password"
+            <input type="password" placeholder={t('密码')} value={loginP} autoComplete="current-password"
               onChange={e => setLoginP(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && doLogin()} />
           </>
         ) : (
-          <input type="text" placeholder="输入邀请码，如 JOJO-A1B2C3" value={loginCode}
+          <input type="text" placeholder={t('输入邀请码，如 JOJO-A1B2C3')} value={loginCode}
             onChange={e => setLoginCode(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && doLogin()} />
         )}
         {loginErr && <div className="login-err">{loginErr}</div>}
         <button className="accent login-go" disabled={loginBusy} onClick={doLogin}>
-          {loginBusy ? '登录中…' : '进入画布'}
+          {loginBusy ? t('登录中…') : t('进入画布')}
         </button>
         {loginMode === 'invite' && (
           <div className="muted" style={{ fontSize: 12 }}>
-            邀请码由管理员发放，含每日生成额度；生成费用由平台承担
+            {t('邀请码由管理员发放，含每日生成额度；生成费用由平台承担')}
           </div>
         )}
       </div>
@@ -1156,8 +1499,10 @@ export default function App() {
 
   const authBar = (
     <div className="auth-bar">
+      <button onClick={() => setAccountOpen(true)}>👤 {localizedContent(authInfo.account || t('账号'), language)}</button>
+      {authRole === 'admin' && <button onClick={() => setProviderOpen(true)}>API 配置</button>}
       {authRole === 'admin' && authInfo.auth_enabled !== false && (
-        <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 邀请码管理</button>
+        <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 {t('邀请码管理')}</button>
       )}
       {authRole === 'invite' && authInfo.usage_today && (
         <span className="muted" style={{ fontSize: 12 }}>
@@ -1165,9 +1510,27 @@ export default function App() {
           · ¥{authInfo.usage_today.cost.toFixed(1)}/{authInfo.limits?.daily_cost_limit_cny ?? '-'}
         </span>
       )}
-      {authInfo.auth_enabled !== false && (
-        <button onClick={async () => { await api.authLogout(); setAuthRole('none') }}>退出</button>
-      )}
+    </div>
+  )
+
+  const accountModal = accountOpen && (
+    <div className="lightbox" onClick={() => setAccountOpen(false)}>
+      <div className="lightbox-inner account-panel" onClick={e => e.stopPropagation()}>
+        <div className="lightbox-head">
+          <b>👤 {t('账号与登录')}</b>
+          <button onClick={() => setAccountOpen(false)}>✕ {t('关闭')}</button>
+        </div>
+        <div className="seg">
+          <div>{t('当前账号')}：<b>{localizedContent(authInfo.account || t('账号'), language)}</b></div>
+          <div className="muted">{authInfo.auth_enabled === false ? t('开发模式') : authRole === 'admin' ? t('管理员账号') : t('测试账号')}</div>
+        </div>
+        <p className="muted">{t('退出后可使用管理员账号或其他受邀账号重新登录。')}</p>
+        <button className="accent" onClick={async () => {
+          await api.authLogout()
+          setAccountOpen(false)
+          setAuthRole('none')
+        }}>{t('退出登录 / 切换账号')}</button>
+      </div>
     </div>
   )
 
@@ -1217,14 +1580,16 @@ export default function App() {
       {offlineBanner}
       {authBar}
       {inviteModal}
+      {accountModal}
+      <ProviderConfig open={providerOpen} onClose={() => setProviderOpen(false)} />
       <div className="home-center">
-        <img className="home-logo" src="/jojo-director-lockup.svg" alt="JOJO Director — Scientific Scene Production Engine" />
+        <div className="home-brand-film"><BrandFilm /></div>
         <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>
-        <h1 className="home-title">把科学场景，转化为可验证的教学影像。</h1>
-        <p className="home-intro">从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。</p>
+        <h1 className="home-title">{t('把科学场景，转化为可验证的教学影像。')}</h1>
+        <p className="home-intro">{t('从教学证据与场景规范出发，调度真实素材、2D、3D、代码与生成式媒体，完成逐镜生产与质量验收。')}</p>
         <div className="home-box">
           <textarea rows={3} value={homeInput}
-            placeholder="一句话描述你要的微课，例：讲清楚 PWM 调光原理，60 秒，最后拼成完整视频"
+            placeholder={t('一句话描述你要的微课，例：讲清楚 PWM 调光原理，60 秒，最后拼成完整视频')}
             onChange={e => setHomeInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitHome() } }} />
           <div className="home-box-foot">
@@ -1233,47 +1598,79 @@ export default function App() {
                 setAgentModel(e.target.value)
                 localStorage.setItem('jojo_agent_model', e.target.value)
               }}>
-                {agentModels.map(m => <option key={m.model} value={m.model}>{m.label}</option>)}
+                {agentModels.map(m => <option key={m.model} value={m.model}>{localizedContent(m.label, language)}</option>)}
               </select>
             )}
+            <input ref={yukeFileRef} type="file" accept=".zip,application/zip" hidden
+              onChange={e => { const f = e.target.files?.[0]; if (f) void importYuke(f) }} />
+            <button disabled={yukeImportBusy} onClick={() => yukeFileRef.current?.click()}>
+              {yukeImportBusy ? t('导入中…') : t('导入驭课 ZIP')}
+            </button>
+            <input ref={teachingFileRef} type="file" accept=".zip,application/zip" hidden
+              onChange={e => { const f = e.target.files?.[0]; if (f) void importTeachingVideo(f) }} />
+            <button disabled={teachingImportBusy} onClick={() => teachingFileRef.current?.click()}>
+              {teachingImportBusy ? t('审核中…') : t('导入教学视频包')}
+            </button>
             <button className="send" disabled={homeBusy || !homeInput.trim()} onClick={submitHome}>
-              {homeBusy ? '规划中…' : '↑ 开工'}
+              {homeBusy ? t('规划中…') : t('↑ 开工')}
             </button>
           </div>
         </div>
         {homeErr && <div className="home-err">{homeErr}</div>}
+        <section className="community-entry">
+          <div><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><div><h2>{t('课题共建社区')}</h2><p>{t('不止上传素材：参与讨论、认领任务、学科审校、场景接驳与版本发布。')}</p></div></div>
+          <button onClick={() => { setCommunityId(''); setView('communities') }}>{t('进入共建 →')}</button>
+        </section>
+        <div className="home-documents">
+          <section className="home-document-card">
+            <h3 className="brand-section-title scene"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('项目介绍')}</span></h3>
+            <p>{t('项目定位、技术架构、当前能力与验收边界。')}</p>
+            <div><button onClick={() => { setDocumentName('project'); setView('document') }}>{t('在线阅读')}</button>
+              <a href={api.documentDownload('project')} download>{t('下载 Markdown 文件')}</a></div>
+          </section>
+          <section className="home-document-card">
+            <h3 className="brand-section-title produce"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('教师投稿合作手册')}</span></h3>
+            <p>{t('素材准备、上传步骤、规则审核、退回补证与联系方式。')}</p>
+            <div><button onClick={() => { setDocumentName('guide'); setView('document') }}>{t('在线阅读')}</button>
+              <a href={api.documentDownload('guide')} download>{t('下载 Markdown 文件')}</a></div>
+          </section>
+        </div>
         <div className="home-dual">
           <div className="home-upload">
-            <h3>📤 教师投稿</h3>
+            <h3 className="brand-section-title verify"><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><span>{t('教师投稿')}</span></h3>
             <div className="muted" style={{ fontSize: 12 }}>
-              把您的实验录屏 / 图片 / 教案投进素材库，丰富 JOJO 的训练素材
+              {t('把您的实验录屏 / 图片 / 教案投进素材库，丰富 JOJO 的训练素材')}
             </div>
             {uploadForm}
           </div>
           <div className="jojo-ad" aria-hidden="true">
             <div className="jojo-ad-stage">
-              <img className="base" src="/jojo-director-mark.svg" alt="" />
+              <img className="base" src={publicAsset('jojo-director-mark.svg')} alt="" />
             </div>
             <div className="jojo-ad-text">
-              <b>JOJO 的“自我学习”是什么？</b>
-              <span>机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。</span>
+              <b>{t('JOJO 的“自我学习”是什么？')}</b>
+              <span>{t('机器“学会”的不是梯度，而是越来越厚的规则库 + 样例库 + 改判记录。')}</span>
             </div>
           </div>
         </div>
         <div className="proj-grid">
           <div className="proj-card new" onClick={newProject}>
             <div className="plus">＋</div>
-            <div className="pname">新建空白项目</div>
+            <div className="pname">{t('新建空白项目')}</div>
+          </div>
+          <div className="proj-card" onClick={() => setView('training')}>
+            <div className="ph">SCI</div>
+            <div className="pname">{t('科学素材训练库 · 浏览与人工抽检')}</div>
           </div>
           <div className="proj-card" onClick={() => window.open('/agents-md-course/', '_blank')}>
             <div className="ph">📖</div>
-            <div className="pname">教师研修报告 · AGENTS.md 七条军规</div>
+            <div className="pname">{t('教师研修报告 · AGENTS.md 七条军规')}</div>
           </div>
           {projects.slice(0, 11).map(p => (
             <div key={p.id} className="proj-card"
               onClick={async () => { await switchProject(p.id); setView('canvas') }}>
-              {thumbs[p.id] ? <img src={thumbs[p.id]} alt="" loading="lazy" /> : <div className="ph">🎬</div>}
-              <div className="pname">{p.title}</div>
+              {thumbs[p.id] ? <img src={assetUrl(thumbs[p.id])} alt="" loading="lazy" /> : <div className="ph">🎬</div>}
+              <div className="pname">{localizedContent(p.title, language)}</div>
             </div>
           ))}
         </div>
@@ -1281,19 +1678,25 @@ export default function App() {
     </div>
   )
 
+  if (view === 'communities') return <CommunityCenter authRole={authRole} initialCommunityId={communityId} onBack={() => { setView('home'); void api.listCommunities().then(setCommunityOptions) }} />
+
+  if (view === 'training') return <TrainingLibrary onBack={() => setView('home')} />
+
+  if (view === 'document') return <DocumentView name={documentName} onBack={() => setView('home')} />
+
   if (view === 'review') return (
     <div className="review notranslate" translate="no">
       {offlineBanner}
       <div className="review-head">
-        <button onClick={() => setView('canvas')}>← 返回画布</button>
-        <h1>🩺 验收台 · {projects.find(p => p.id === projectId)?.title}</h1>
+        <button onClick={() => setView('canvas')}>← {t('返回画布')}</button>
+        <h1>🩺 {t('验收台')} · {localizedContent(projects.find(p => p.id === projectId)?.title, language)}</h1>
         <div className="review-actions">
-          <button onClick={loadReview}>↻ 刷新</button>
+          <button onClick={loadReview}>↻ {t('刷新')}</button>
           {review.failures.some(f => f.error_class === 'infra') && (
-            <button onClick={retryInfraAll}>🔁 重试全部网络失败
+            <button onClick={retryInfraAll}>🔁 {t('重试全部网络失败')}
               （{review.failures.filter(f => f.error_class === 'infra').length}）</button>
           )}
-          <button className="accent" onClick={resumeLineAll}>▶ 续跑产线</button>
+          <button className="accent" onClick={resumeLineAll}>▶ {t('续跑产线')}</button>
         </div>
       </div>
       <div className="review-hint">
@@ -1307,8 +1710,8 @@ export default function App() {
         {review.reviews.map(it => (
           <div key={it.qc_node_id} className="review-card">
             {it.asset_url && (it.asset_url.endsWith('.mp4')
-              ? <video src={it.asset_url} controls muted />
-              : <img src={it.asset_url} alt="" loading="lazy" />)}
+              ? <video src={assetUrl(it.asset_url)} controls muted />
+              : <img src={assetUrl(it.asset_url)} alt="" loading="lazy" />)}
             <div className="rc-body">
               <div className="rc-title">
                 {it.target_title || it.qc_title}
@@ -1364,7 +1767,7 @@ export default function App() {
       {offlineBanner}
       <div className="toolbar" style={{ width: leftW }}>
         <div className="brand-row" onClick={() => setView('home')} title="返回首页">
-          <img src="/jojo-director-mark.svg" alt="JOJO Director" />
+          <img src={publicAsset('jojo-director-mark.svg')} alt="JOJO Director" />
           <div>
             <h1>JOJO DIRECTOR</h1>
             <div className="sub">Scientific Scene Production Engine</div>
@@ -1372,15 +1775,33 @@ export default function App() {
         </div>
         <div className="project-bar">
           <select value={projectId} onChange={e => switchProject(e.target.value)}>
-            {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+            {projects.map(p => <option key={p.id} value={p.id}>{localizedContent(p.title, language)}</option>)}
           </select>
           <button className="mini" title="新建项目" onClick={newProject}>＋</button>
         </div>
-        <div className="tab-bar">
+        {taskMode && teachingNode && (
+          <div className="task-nav">
+            <button className={tab === 'nodes' ? 'on' : ''} onClick={() => {
+              setTab('nodes'); setSelectedId(teachingNode.id); setSelectedSceneId('')
+            }}>📦 {t('任务包')}</button>
+            <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>📚 {t('素材与依据')}</button>
+            <button onClick={openReview} className="badge-host">🩺 {t('验收记录')}
+              {reviewCount > 0 && <span className="count-badge">{reviewCount}</span>}
+            </button>
+            {(teachingNode.outputs.teachingVideo as { scenes: { sceneId: string; title: string }[] }).scenes.map(scene => (
+              <button key={scene.sceneId} className={selectedSceneId === scene.sceneId ? 'on' : ''}
+                onClick={() => { setSelectedId(teachingNode.id); setSelectedSceneId(scene.sceneId); setTab('nodes') }}>
+                {selectedSceneId === scene.sceneId ? '● ' : '○ '}{localizedContent(scene.title, language)}
+              </button>
+            ))}
+            {projCost != null && <div className="cost-chip">💰 {t('本项目已花')} {projCost.hasUnpriced ? t('费用待核算') : `¥${projCost.total.toFixed(2)}`}</div>}
+          </div>
+        )}
+        {!taskMode && <div className="tab-bar">
           <button className={tab === 'nodes' ? 'on' : ''} onClick={() => setTab('nodes')}>节点</button>
           <button className={tab === 'assets' ? 'on' : ''} onClick={() => setTab('assets')}>素材库</button>
-        </div>
-        {tab === 'nodes' && (
+        </div>}
+        {tab === 'nodes' && !taskMode && (
           <>
             <button className="accent" onClick={buildChain}>⚡ 一键搭建微课链</button>
             <button onClick={openReview} className="badge-host">🩺 验收台
@@ -1389,7 +1810,7 @@ export default function App() {
             <button onClick={tidyLayout}>🧹 一键整理布局</button>
             {projCost != null && (
               <div className="cost-chip" title="本项目累计模型调用成本（MAAO 台账实时计）">
-                💰 本项目已花 ¥{projCost.toFixed(2)}
+                💰 {t('本项目已花')} {projCost.hasUnpriced ? t('费用待核算') : `¥${projCost.total.toFixed(2)}`}
               </div>
             )}
             <div className="style-bar">
@@ -1414,7 +1835,7 @@ export default function App() {
             </div>
             <div className="divider" />
             {Object.entries(TYPE_META).map(([t, m]) => (
-              <button key={t} onClick={() => addNode(t)}>{m.icon} 添加{m.label}节点</button>
+              <button key={t} onClick={() => addNode(t)}>{m.icon} 添加{localizedContent(m.label, language)}节点</button>
             ))}
             <div className="tips">
               <b>操作提示</b><br />
@@ -1502,8 +1923,8 @@ export default function App() {
                   }}
                   onClick={() => a.kind === 'image' ? useAsset(a.url) : window.open(a.url)}>
                   {a.kind === 'image'
-                    ? <img src={a.url} alt="" loading="lazy" />
-                    : <video src={a.url} muted />}
+                    ? <img src={assetUrl(a.url)} alt="" loading="lazy" />
+                    : <video src={assetUrl(a.url)} muted />}
                   <span className="kind">{a.kind === 'image' ? '图' : '视频'}</span>
                   <button className="star" title={a.starred ? '移出资产库' : '收藏到我的资产'}
                     onClick={e => { e.stopPropagation(); toggleStar(a.id, !a.starred) }}>
@@ -1518,11 +1939,14 @@ export default function App() {
           </div>
         )}
       </div>
-      <div className="resizer" onMouseDown={startResize('left')} />
+      <div className="resizer" role="separator" aria-label="调整左侧导航宽度" aria-orientation="vertical"
+        aria-valuenow={leftW} aria-valuemin={200} aria-valuemax={520} tabIndex={0}
+        title="拖动调整宽度；方向键微调；双击恢复三栏默认宽度"
+        onPointerDown={startResize('left')} onKeyDown={resizeKeys('left')} onDoubleClick={resetWidths} />
       <div className="canvas"
         onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
         onDrop={onAssetDrop}>
-        {(() => {
+        {!taskMode && (() => {
           const groups: Record<number, string[]> = {}
           Object.values(bnodes).forEach(n => {
             const m = (n.title || '').match(/^镜头(\d+)·/)
@@ -1545,6 +1969,11 @@ export default function App() {
             </div>
           )
         })()}
+        {taskMode && teachingNode ? (
+          <TeachingTimeline data={teachingNode.outputs.teachingVideo}
+            review={teachingNode.outputs.importReview} selectedSceneId={selectedSceneId}
+            onOpen={sceneId => { setSelectedId(teachingNode.id); setSelectedSceneId(sceneId) }} />
+        ) : (
         <ReactFlow
           nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes}
           onInit={inst => { flowRef.current = inst }}
@@ -1567,6 +1996,7 @@ export default function App() {
           <MiniMap pannable zoomable nodeColor="#c7ccd6"
             maskColor="rgba(243,244,246,0.75)" style={{ background: '#f8f9fb' }} />
         </ReactFlow>
+        )}
         {toast && <div className="toast">{toast}</div>}
         {overrideDlg && (
           <div className="lightbox" onClick={() => setOverrideDlg(null)}>
@@ -1646,6 +2076,32 @@ export default function App() {
             <button className="danger" onClick={() => setConnectMenu(null)}>取消</button>
           </div>
         )}
+        {revisionScene && (
+          <div className="lightbox" onClick={() => setRevisionScene(null)}>
+            <div className="lightbox-inner" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+              <div className="lightbox-head">
+                <b>{t('退回场景：')}{String(revisionScene.title)}</b>
+                <button onClick={() => setRevisionScene(null)}>✕ {t('关闭')}</button>
+              </div>
+              <div className="field"><label>{t('修改意见（必填）')}</label>
+                <textarea rows={3} value={revisionComment} onChange={e => setRevisionComment(e.target.value)}
+                  placeholder={t('例如：缩短波形展示并调整口播')} /></div>
+              <div className="field"><label>{t('新时长（秒）')}</label>
+                <input type="number" min={1} max={300} value={revisionSeconds}
+                  onChange={e => setRevisionSeconds(Number(e.target.value))} /></div>
+              <div className="field"><label>{t('制作路线')}</label>
+                <select value={revisionRoute} onChange={e => setRevisionRoute(e.target.value)}>
+                  <option value="diagram_2d">{t('确定性 2D')}</option>
+                  <option value="live_action">{t('真实素材')}</option>
+                  <option value="slide_composite">{t('课件合成')}</option>
+                </select></div>
+              <div className="field"><label>{t('新口播')}</label>
+                <textarea rows={4} value={revisionNarration} onChange={e => setRevisionNarration(e.target.value)} /></div>
+              <button className="accent" disabled={productionBusy || !revisionComment.trim()}
+                onClick={() => produceTeachingVideo(true)}>{t('生成送修候选')}</button>
+            </div>
+          </div>
+        )}
         {lightbox && (
           <div className="lightbox" onClick={() => setLightbox(null)}>
             <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
@@ -1654,8 +2110,8 @@ export default function App() {
                 <button onClick={() => setLightbox(null)}>✕ 关闭（Esc）</button>
               </div>
               {lightbox.url.endsWith('.mp4')
-                ? <video src={lightbox.url} controls autoPlay />
-                : <img src={lightbox.url} alt="" />}
+                ? <video src={assetUrl(lightbox.url)} controls autoPlay />
+                : <img src={assetUrl(lightbox.url)} alt="" />}
             </div>
           </div>
         )}
@@ -1678,8 +2134,8 @@ export default function App() {
                       } catch (e) { say(`切换失败: ${e}`) }
                     }}>
                     {v.kind === 'image'
-                      ? <img src={v.url} alt="" loading="lazy" />
-                      : <video src={v.url} muted />}
+                      ? <img src={assetUrl(v.url)} alt="" loading="lazy" />
+                      : <video src={assetUrl(v.url)} muted />}
                     <span className="kind">{i === 0 ? '最新' : `v-${i}`}</span>
                   </div>
                 ))}
@@ -1688,16 +2144,32 @@ export default function App() {
           </div>
         )}
       </div>
-      <div className="resizer" onMouseDown={startResize('right')} />
+      <div className="resizer" role="separator" aria-label="调整右侧详情宽度" aria-orientation="vertical"
+        aria-valuenow={rightW} aria-valuemin={300} aria-valuemax={720} tabIndex={0}
+        title="拖动调整宽度；方向键微调；双击恢复三栏默认宽度"
+        onPointerDown={startResize('right')} onKeyDown={resizeKeys('right')} onDoubleClick={resetWidths} />
       <div className="inspector" style={{ width: rightW }}>
         <div className="inspector-top">
+        <div className="panel-width-controls">
+          <span>{t('右栏宽度')}</span>
+          <button onClick={() => adjustRightWidth(-60)} disabled={rightW <= 300}>{t('变窄')}</button>
+          <button onClick={() => adjustRightWidth(60)} disabled={rightW >= 720}>{t('加宽')}</button>
+          <button onClick={resetWidths}>{t('默认')}</button>
+        </div>
         {!selected && (
           <div className="muted">
-            点击画布节点可在此编辑参数；<br />
-            或直接在下方对话，让 Agent 继续创作。
+            {t('点击画布节点可在此编辑参数；')}<br />
+            {t('或直接在下方对话，让 Agent 继续创作。')}
           </div>
         )}
-        {selected && meta && (
+        {selected && taskMode && teachingNode && (
+          <h2>{selectedSceneTitle ? `📍 ${localizedContent(selectedSceneTitle, language)}` : `📦 ${t('教学视频任务包')}`}
+            <span className="status-chip running">
+              {(teachingNode.outputs.importReview as { confirmation?: unknown }).confirmation ? t('方案已确认 · 无需付费生成') : t('已接收 · 待方案确认')}
+            </span>
+          </h2>
+        )}
+        {selected && meta && !taskMode && (
           <>
             <h2>{meta.icon} {selected.title || meta.label}
               <span className={`status-chip ${selected.status}`}>{
@@ -1796,8 +2268,8 @@ export default function App() {
             {typeof selected.outputs?.asset_url === 'string' && (
               <div className="preview-wrap">
                 {(selected.outputs.asset_url as string).endsWith('.mp4')
-                  ? <video src={selected.outputs.asset_url as string} controls />
-                  : <img src={selected.outputs.asset_url as string} alt=""
+                  ? <video src={assetUrl(selected.outputs.asset_url as string)} controls />
+                  : <img src={assetUrl(selected.outputs.asset_url as string)} alt=""
                       title="点击放大预览"
                       onClick={() => setLightbox({ url: selected.outputs.asset_url as string, title: selected.title || '' })} />}
                 <button className="zoom-btn" onClick={() =>
@@ -1806,6 +2278,15 @@ export default function App() {
               </div>
             )}
             {selected.outputs?.script != null && <ScriptView script={selected.outputs.script} />}
+            {selected.outputs?.teachingVideo != null && (
+              <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
+                onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy}
+                production={selected.outputs.production as TeachingProduction} onProduce={() => produceTeachingVideo(false)} producing={productionBusy}
+                onRevise={scene => {
+                  setRevisionScene(scene); setRevisionComment(''); setRevisionSeconds(Number(scene.targetSeconds))
+                  setRevisionRoute(String(scene.route)); setRevisionNarration(String(scene.narration || ''))
+                }} />
+            )}
             {selected.outputs?.storyboard != null && (
               <StoryboardView sb={selected.outputs.storyboard} onExpand={async () => {
                 try {
@@ -1896,22 +2377,31 @@ export default function App() {
             )}
           </>
         )}
+        {selected && taskMode && selected.outputs?.teachingVideo != null && (
+          <TeachingVideoView data={selected.outputs.teachingVideo} review={selected.outputs.importReview}
+            sceneId={selectedSceneId} onConfirm={confirmTeachingPlan} confirming={teachingConfirmBusy}
+            production={selected.outputs.production as TeachingProduction} onProduce={() => produceTeachingVideo(false)} producing={productionBusy}
+            onRevise={scene => {
+              setRevisionScene(scene); setRevisionComment(''); setRevisionSeconds(Number(scene.targetSeconds))
+              setRevisionRoute(String(scene.route)); setRevisionNarration(String(scene.narration || ''))
+            }} />
+        )}
         </div>
         <div className="agent-dock">
           <div className="chat-log">
             {chat.length === 0 && (
-              <div className="muted">和 Agent 对话继续创作：加镜头、改脚本、重新规划……<br />例：给这条微课加一段 PWM 波形的代码渲染镜头</div>
+              <div className="muted">{t('和 Agent 对话继续创作：加镜头、改脚本、重新规划……')}<br />{t('例：给这条微课加一段 PWM 波形的代码渲染镜头')}</div>
             )}
             {chat.map((m, i) => (
               <div key={i} className={`msg ${m.role}`}>{m.text}</div>
             ))}
-            {agentBusy && <div className="msg assistant">规划中…</div>}
+            {agentBusy && <div className="msg assistant">{t('规划中…')}</div>}
           </div>
           <div className="dock-input">
-            <textarea rows={2} value={chatInput} placeholder="和 Agent 说下一步（回车发送）"
+            <textarea rows={2} value={chatInput} placeholder={t('和 Agent 说下一步（回车发送）')}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAgent() } }} />
-            <button className="send" disabled={agentBusy} onClick={() => sendAgent()} title="发送">
+            <button className="send" disabled={agentBusy} onClick={() => sendAgent()} title={t('发送')}>
               {agentBusy ? '…' : '↑'}
             </button>
           </div>
@@ -1921,15 +2411,15 @@ export default function App() {
                 setAgentModel(e.target.value)
                 localStorage.setItem('jojo_agent_model', e.target.value)
               }}>
-                {agentModels.map(m => <option key={m.model} value={m.model}>{m.label}</option>)}
+                {agentModels.map(m => <option key={m.model} value={m.model}>{localizedContent(m.label, language)}</option>)}
               </select>
             )}
-            <label className="check-line" title="先联网查真实事实再规划（需开通方舟联网插件）">
+            <label className="check-line" title={t('先联网查真实事实再规划（需开通方舟联网插件）')}>
               <input type="checkbox" checked={agentResearch} onChange={e => {
                 setAgentResearch(e.target.checked)
                 localStorage.setItem('jojo_agent_research', e.target.checked ? '1' : '')
               }} />
-              🌐 联网调研
+              🌐 {t('联网调研')}
             </label>
           </div>
         </div>
@@ -1972,7 +2462,7 @@ function QcReportView({ out, onOverride, onGoTarget, onAdopt }: {
       {typeof out.summary === 'string' && out.summary && <div className="seg">{out.summary}</div>}
       {typeof out.note === 'string' && out.note && <div className="seg">{out.note}</div>}
       <div className="qc-frames">
-        {frames.map(f => <img key={f} src={f} alt="" />)}
+        {frames.map(f => <img key={f} src={assetUrl(f)} alt="" />)}
       </div>
       {out.mode === 'manual' && checklist.length > 0 && (
         <div className="seg">
@@ -2066,19 +2556,133 @@ function MotionCardView({ card }: { card: Record<string, unknown> }) {
   )
 }
 
+function TeachingTimeline({ data, review, selectedSceneId, onOpen }: {
+  data: unknown; review: unknown; selectedSceneId: string; onOpen: (sceneId: string) => void }) {
+  const { t, language } = useI18n()
+  const value = data as { manifest?: { teachingGoal?: string; packageVersion?: string }
+    scenes?: { sceneId: string; title: string; targetSeconds: number; route: string
+      narration?: string; visual?: string }[] }
+  const audit = review as { status?: string; confirmation?: { confirmationId: string; paidGeneration: string } }
+  return (
+    <div className="teaching-timeline">
+      <div className="timeline-head">
+        <div>
+          <span className="eyebrow">{t('教学视频任务包')} · {value.manifest?.packageVersion}</span>
+          <h2>{localizedContent(value.manifest?.teachingGoal, language)}</h2>
+        </div>
+        <span className="status-chip running">
+          {audit.confirmation ? t('方案已确认 · 无需付费生成') : t('已接收 · 待方案确认')}
+        </span>
+      </div>
+      <div className="timeline-track">
+        {value.scenes?.map((scene, index) => (
+          <button key={scene.sceneId} className={`timeline-scene ${selectedSceneId === scene.sceneId ? 'selected' : ''}`}
+            onClick={() => onOpen(scene.sceneId)}>
+            <span className="scene-order">{index + 1}</span>
+            <span className="scene-time">{scene.targetSeconds}s</span>
+            <b>{localizedContent(scene.title, language)}</b>
+            <span className="scene-route">{localizedRoute(scene.route, language)}</span>
+            <span className="scene-narration">{localizedContent(scene.narration || scene.visual, language)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TeachingVideoView({ data, review, sceneId, onConfirm, confirming, production, onProduce, producing, onRevise }: {
+  data: unknown; review: unknown; sceneId?: string; onConfirm: () => void; confirming: boolean
+  production?: TeachingProduction
+  onProduce: () => void; producing: boolean; onRevise: (scene: Record<string, unknown>) => void }) {
+  const { t, language } = useI18n()
+  const value = data as { manifest?: { packageId?: string; packageVersion?: string; teachingGoal?: string; contentLanguage?: string }
+    scenes?: { sceneId: string; title: string; targetSeconds: number; route: string; routeReason: string
+      assertions?: string[]; routeStatus?: string; evidenceRefs?: string[]; narrationRefs?: string[]
+      slideRefs?: string[]; visualSpec?: Record<string, unknown> }[] }
+  const scenes = value.scenes?.filter(scene => !sceneId || scene.sceneId === sceneId)
+  const audit = review as { importTaskId?: string; packageHash?: string; status?: string
+    missingEvidence?: { description: string; required: boolean }[]; fixtureOnly?: boolean
+    confirmation?: { confirmationId: string; planHash: string; paidGeneration: string; confirmedAt: string } }
+  return (
+    <div className="result">
+      <label>{t('教学视频任务包')} · {value.manifest?.packageId} / {value.manifest?.packageVersion}</label>
+      <div>{localizedContent(value.manifest?.teachingGoal, language)}</div>
+      <div className="muted">{t('导入任务：')}{audit.importTaskId} · {t('状态：')}{localizedContent(audit.status, language)}</div>
+      <div className="muted">{t('包哈希：')}{audit.packageHash}</div>
+      {!audit.confirmation && (
+        <button className="accent" disabled={confirming} onClick={onConfirm}>
+          {confirming ? t('正在确认…') : t('确认方案（无需付费生成）')}
+        </button>
+      )}
+      {audit.confirmation && (
+        <div className="seg">
+          <b>{t('方案已确认 · 无需付费生成')}</b>
+          <div>{t('确认记录：')}{audit.confirmation.confirmationId}</div>
+          <div className="muted">{t('方案哈希：')}{audit.confirmation.planHash}</div>
+          <div className="muted">{t('确认时间：')}{audit.confirmation.confirmedAt}</div>
+        </div>
+      )}
+      {audit.confirmation && !production && (
+        <button className="accent" disabled={producing} onClick={onProduce}>
+          {producing ? t('正在生成…') : t('生成候选视频（无付费）')}
+        </button>
+      )}
+      {production?.status === 'running' && <div className="seg">{t('候选视频正在后台生成，页面会自动刷新。')}</div>}
+      {production?.status === 'failed' && <div className="err">{t('候选生成失败，请查看任务记录。')}</div>}
+      {production?.status === 'pending_acceptance' && (
+        <div className="seg">
+          <b>{language === 'zh' ? '候选视频' : 'Candidate video'} v{production.version} · {t('待教学验收')}</b>
+          {production.videoUrl && <video src={assetUrl(production.videoUrl)} controls style={{ width: '100%' }} />}
+          {language === 'en' && (value.manifest?.contentLanguage ?? 'zh-CN').startsWith('zh') && <div className="muted">{t('原始候选视频语言：中文；切换中文可查看原始口播与证据文本。')}</div>}
+          <div className="muted">{t('成片已生成，尚未表示教学验收通过。')}</div>
+          {production.subtitleAssetId && <a href={assetUrl(`/assets/${production.subtitleAssetId}.srt`)} download>{language === 'en' && (value.manifest?.contentLanguage ?? 'zh-CN').startsWith('zh') ? 'Download Chinese SRT subtitles' : t('下载字幕 SRT')}</a>}
+          {(production.unchangedSceneIds?.length ?? 0) > 0 &&
+            <div className="muted">{t('未修改场景哈希保持一致：')}{production.unchangedSceneIds!.join('、')}</div>}
+          {(production.missingEvidence?.length ?? 0) > 0 &&
+            <div className="muted">{t('未生成场景：')}{production.missingEvidence!.map(x => `${x.sceneId} (${localizedContent(x.reason, language)})`).join(language === 'zh' ? '；' : '; ')}</div>}
+        </div>
+      )}
+      {audit.fixtureOnly && <div className="muted">{t('本包含合成契约素材，不能作为真实课堂验收证据。')}</div>}
+      {(audit.missingEvidence?.length ?? 0) > 0 && (
+        <div className="seg"><b>{t('待补项')}</b>{audit.missingEvidence!.map((item, i) =>
+          <div key={i}>{item.required ? t('必需') : t('可选')}：{localizedContent(item.description, language)}</div>)}</div>
+      )}
+      {scenes?.map(scene => (
+        <div key={scene.sceneId} className="seg">
+          <b>{localizedContent(scene.title, language)} · {scene.targetSeconds}s</b>
+          <div>{language === 'zh' ? '路线：' : 'Route: '}{localizedRoute(scene.route, language)} —— {localizedContent(scene.routeReason, language)}</div>
+          {scene.routeStatus === 'needs_review' && <div className="muted">{t('方案与教学断言待老师复核')}</div>}
+          {(scene.evidenceRefs?.length ?? 0) > 0 && <div className="muted">{t('依据：')}{scene.evidenceRefs!.join('、')}</div>}
+          {(scene.narrationRefs?.length ?? 0) > 0 && <div className="muted">{t('口播定位：')}{scene.narrationRefs!.join('、')}</div>}
+          {(scene.slideRefs?.length ?? 0) > 0 && <div className="muted">{t('课件定位：')}{scene.slideRefs!.join('、')}</div>}
+          {(scene.assertions ?? []).map((assertion, i) => <div key={i} className="muted">{t('核查：')}{localizedContent(assertion, language)}</div>)}
+          {scene.visualSpec && <details><summary>{t('科学场景规格')}</summary>
+            <pre>{JSON.stringify(scene.visualSpec, null, 2)}</pre></details>}
+          {production?.status === 'pending_acceptance' && (
+            <button onClick={() => onRevise(scene)}>{t('退回此场景')}</button>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function StoryboardView({ sb, onExpand }: { sb: unknown; onExpand?: () => void }) {
-  const s = sb as { shots?: { index: number; type: string; motion: string; seconds: number; first_frame_prompt?: string }[] }
+  const s = sb as { shots?: { index: number; type: string; motion: string; seconds: number;
+    first_frame_prompt?: string; narration?: string; visual?: string; review_notes?: string
+    route_status?: string; assertion_status?: string }[] }
+  const pending = s.shots?.some(shot => shot.route_status === 'needs_review' || shot.assertion_status === 'needs_review')
   return (
     <div className="result">
       <label>分镜（{s.shots?.length} 个镜头）</label>
       {onExpand && (
         <>
-          <button className="expand-btn" onClick={onExpand}>
-            ⚡ 展开为逐镜生产线
+          <button className="expand-btn" onClick={onExpand} disabled={pending}>
+            {pending ? '路线与断言待复核' : '⚡ 展开为逐镜生产线'}
           </button>
           <div className="muted" style={{ fontSize: 11, lineHeight: 1.6 }}>
-            每镜自动生成：首帧(+尾帧) → 帧质检 → 视频 → 视频质检 → 汇入拼接。
-            帧未生成或质检不合格时，视频节点会被关卡拦下；建议用 ⏭ 单步逐步验收。
+            {pending ? '导入稿只作为候选。请先复核制作路线并补齐教学断言，本版不会自动发起付费生成。'
+              : '每镜自动生成：首帧(+尾帧) → 帧质检 → 视频 → 视频质检 → 汇入拼接。建议用单步逐步验收。'}
           </div>
         </>
       )}
@@ -2086,9 +2690,13 @@ function StoryboardView({ sb, onExpand }: { sb: unknown; onExpand?: () => void }
         <div key={shot.index} className="seg">
           <b>镜头{shot.index}（{shot.seconds}s）</b>
           <span className={`route-badge ${shot.type}`}>
-            {shot.type === 'code_render' ? '⚙ 代码渲染' : '✨ AI 生成'}
+            {shot.type === 'code_render' ? '⚙ 代码渲染' : shot.type === 'live_action' ? '教师实拍' : '✨ AI 生成'}
           </span>
-          <div>{shot.motion}</div>
+          {shot.route_status === 'needs_review' && <div className="muted">路线待复核 · 教学断言待补齐</div>}
+          {shot.visual && <div>{shot.visual}</div>}
+          {shot.narration && <div className="muted">口播：{shot.narration}</div>}
+          {shot.motion && <div>{shot.motion}</div>}
+          {shot.review_notes && <div className="muted">核对：{shot.review_notes}</div>}
         </div>
       ))}
     </div>

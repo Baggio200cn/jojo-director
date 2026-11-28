@@ -1,0 +1,14 @@
+focalLength:
+  unit: mm
+  required: true
+  minExclusive: 0
+objectDistance:
+  unit: mm
+  required: true
+  minExclusive: 0
+rayCount:
+  required: false
+  minimum: 1
+sourceEvidence:
+  required: true
+  locatorRequired: true

@@ -22,9 +22,17 @@ ark = ArkAdapter()
 bjmoma = BjmomaAdapter()
 
 
+def _gw(r: dict):
+    provider = r.get("provider")
+    if provider == "ark":
+        return ark
+    if provider in ("moma", "bjmoma"):
+        return bjmoma
+    raise RuntimeError(f"不支持的模型供应商: {provider}")
+
+
 def _video_gw(r: dict):
-    """按 providers.yaml 的 provider 字段分发视频网关（默认方舟）。"""
-    return bjmoma if r.get("provider") == "bjmoma" else ark
+    return _gw(r)
 
 # ── 提示词外置：backend/prompts/*.md，改文件即生效（mtime 热加载） ──
 from .config import BACKEND_DIR
@@ -225,7 +233,7 @@ async def _coach(tgt_in: dict, fails: list, is_pair: bool) -> str:
            "edit_delta": tgt_in.get("edit_delta") or "",
            "prompt": tgt_in.get("prompt") or "",
            "fails": [{"id": x.get("id"), "evidence": x.get("evidence")} for x in fails[:6]]}
-    data, _ = await _chat_json(r["model"], [
+    data, _ = await _chat_json(r, [
         {"role": "system", "content": load_prompt("coach_system")},
         {"role": "user", "content": json.dumps(ctx, ensure_ascii=False)},
     ])
@@ -271,7 +279,7 @@ async def execute_node(node_id: str) -> None:
         raise
 
 
-async def _chat_json(model: str, messages: list[dict],
+async def _chat_json(route_config: dict, messages: list[dict],
                      max_tokens: int = 8192) -> tuple[dict, dict]:
     """带韧性的 JSON 模式调用：空返回/非法 JSON 自动重试一次，剥 markdown 围栏。
     返回 (解析后的对象, 原始响应)。"""
@@ -283,7 +291,7 @@ async def _chat_json(model: str, messages: list[dict],
             c = msgs[-1]["content"]
             msgs[-1]["content"] = (c + [{"type": "text", "text": note}]
                                    if isinstance(c, list) else f"{c}\n\n{note}")
-        resp = await ark.chat(model, msgs, json_mode=True, max_tokens=max_tokens)
+        resp = await _gw(route_config).chat(route_config["model"], msgs, json_mode=True, max_tokens=max_tokens)
         text = (resp.get("text") or "").strip()
         if text.startswith("```"):
             text = text.split("```")[1]
@@ -314,13 +322,14 @@ async def _run_script(node: dict) -> dict:
     r = route("script")
     payload = {"goal": inputs.get("goal", ""), "duration": inputs.get("duration", 90)}
     task_id = _record_task(node, "text_generation", r, payload)
-    data, resp = await _chat_json(r["model"], [
+    data, resp = await _chat_json(r, [
         {"role": "system", "content": load_prompt("script_system")},
         {"role": "user", "content": f"知识点：{payload['goal']}\n目标总时长：约 {payload['duration']} 秒"},
     ])
     db.update("model_tasks", task_id, {
         "status": "succeeded", "finished_at": db.now(),
         "input_tokens": resp["input_tokens"], "output_tokens": resp["output_tokens"],
+        "reported_model": resp.get("reported_model"),
         "response_payload": json.dumps({"text": resp["text"]}, ensure_ascii=False),
     })
     return {"script": data}
@@ -350,14 +359,14 @@ async def _run_storyboard(node: dict) -> dict:
     user_msg = (json.dumps(script, ensure_ascii=False)
                 + (chr(10) + "【项目美术风格锚】" + style + "——所有 first_frame_prompt 必须显式包含此风格描述" if style else "")
                 + constraint)
-    data, resp = await _chat_json(r["model"], [
+    data, resp = await _chat_json(r, [
         {"role": "system", "content": load_prompt("storyboard_system")},
         {"role": "user", "content": user_msg},
     ])
     # 镜头数校验：不符则带着纠错说明重试一次（架构级保障，不指望模型一次听话）
     if want_n and len((data or {}).get("shots", [])) != want_n:
         got = len((data or {}).get("shots", []))
-        data, resp = await _chat_json(r["model"], [
+        data, resp = await _chat_json(r, [
             {"role": "system", "content": load_prompt("storyboard_system")},
             {"role": "user", "content": user_msg
              + chr(10) + f"【纠错】上次你生成了 {got} 个镜头，不符合要求，必须恰好 {want_n} 个。"},
@@ -365,6 +374,7 @@ async def _run_storyboard(node: dict) -> dict:
     db.update("model_tasks", task_id, {
         "status": "succeeded", "finished_at": db.now(),
         "input_tokens": resp["input_tokens"], "output_tokens": resp["output_tokens"],
+        "reported_model": resp.get("reported_model"),
         "response_payload": json.dumps({"text": resp["text"]}, ensure_ascii=False),
     })
     notes = _normalize_shots(data) + _lint_prompts(data) + _route_shots(data)
@@ -459,14 +469,14 @@ async def _run_image(node: dict) -> dict:
     filename = ""
     precheck_note = ""
     for attempt in range(max_attempts):
-        resp = await ark.image(r["model"], prompt, size, ref_images=refs)
+        resp = await _gw(r).image(r["model"], prompt, size, ref_images=refs)
         total_tokens += resp["output_tokens"]
         asset_id = db.new_id("asset")
         filename = f"{asset_id}.jpg"
-        await ark.download(resp["url"], str(ASSETS_DIR / filename))
+        await _gw(r).download(resp["url"], str(ASSETS_DIR / filename))
         if not precheck_on:
             break
-        pr, _ = await _chat_json(rqc["model"], [
+        pr, _ = await _chat_json(rqc, [
             {"role": "system", "content":
                 load_prompt("edit_precheck_system")},
             {"role": "user", "content": [
@@ -483,13 +493,14 @@ async def _run_image(node: dict) -> dict:
         (ASSETS_DIR / filename).unlink(missing_ok=True)
         if attempt + 1 >= max_attempts:
             filename = f"{asset_id}.jpg"  # 重试耗尽：重新落盘末次结果
-            await ark.download(resp["url"], str(ASSETS_DIR / filename))
+            await _gw(r).download(resp["url"], str(ASSETS_DIR / filename))
     db.insert("assets", {
         "id": filename[:-4], "project_id": node["project_id"], "node_id": node["id"],
         "kind": "image", "filename": filename, "created_at": db.now(),
     })
     db.update("model_tasks", task_id, {
         "status": "succeeded", "finished_at": db.now(),
+        "reported_model": resp.get("reported_model"),
         "output_tokens": total_tokens,
     })
     out = {"asset_id": filename[:-4], "asset_url": f"/assets/{filename}"}
@@ -524,7 +535,7 @@ async def _run_video(node: dict) -> dict:
                 _delta_note = (f"图1=首帧，图2=尾帧。尾帧的既定编辑指令如下——凡属该指令要求的变化"
                                f"（含亮度/颜色/状态/新增元素）都是刻意的，一律不算不一致：{_delta}"
                                ) if _delta else "图1=首帧，图2=尾帧。"
-                pr, _ = await _chat_json(rqc["model"], [
+                pr, _ = await _chat_json(rqc, [
                     {"role": "system", "content": load_prompt("pair_check_system")},
                     {"role": "user", "content": [
                         {"type": "text", "text": _delta_note},
@@ -1019,12 +1030,13 @@ async def _run_ref_video(node: dict) -> dict:
     for f in frames:
         content.append({"type": "image_url",
                         "image_url": {"url": _asset_to_data_uri(f'/assets/{f}')}})
-    card, resp = await _chat_json(r["model"], [
+    card, resp = await _chat_json(r, [
         {"role": "system", "content": load_prompt("ref_video_system")},
         {"role": "user", "content": content},
     ])
     db.update("model_tasks", task_id, {
         "status": "succeeded", "finished_at": db.now(),
+        "reported_model": resp.get("reported_model"),
         "input_tokens": resp["input_tokens"], "output_tokens": resp["output_tokens"]})
     out = {"motion_card": card, "frames": [f"/assets/{f}" for f in frames]}
     if own:
@@ -1074,7 +1086,7 @@ async def _run_ref_video(node: dict) -> dict:
         for u in kf_urls:
             card_content.append({"type": "image_url",
                                  "image_url": {"url": _asset_to_data_uri(u)}})
-        seg_card, seg_resp = await _chat_json(r["model"], [
+        seg_card, seg_resp = await _chat_json(r, [
             {"role": "system", "content": load_prompt("ref_replica_system")},
             {"role": "user", "content": card_content},
         ])
@@ -1632,7 +1644,7 @@ async def _run_qc(node: dict) -> dict:
         for ru in ref_frames:
             content.append({"type": "image_url", "image_url":
                             {"url": _asset_to_data_uri(ru)}})
-        report, resp = await _chat_json(r["model"], [
+        report, resp = await _chat_json(r, [
             {"role": "system", "content": load_prompt("qc_judge_system")},
             {"role": "user", "content": content},
         ])
@@ -1673,6 +1685,7 @@ async def _run_qc(node: dict) -> dict:
                 suggested = ""
         db.update("model_tasks", task_id, {
             "status": "succeeded", "finished_at": db.now(),
+            "reported_model": resp.get("reported_model"),
             "input_tokens": resp["input_tokens"], "output_tokens": resp["output_tokens"]})
         outputs = {"mode": "auto", "verdict": verdict, "frames": frame_urls,
                    "results": results, "blockers": blockers, "warnings": warnings,
@@ -1726,12 +1739,11 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
                     history: list[dict] | None = None) -> dict:
     """Agent 对话：增量式协作搭画布。带对话历史与画布现状上下文；research=True 先联网核实事实。"""
     from .config import AGENT_MODELS
-    allowed_models = {m["model"] for m in AGENT_MODELS}
-    if model and model in allowed_models:
-        r = {"provider": "ark", "model": model}
-    else:
-        r = ({"provider": "ark", "model": AGENT_MODELS[0]["model"]}
-             if AGENT_MODELS else route("script"))
+    selected = next((m for m in AGENT_MODELS if m["model"] == model), None)
+    if selected is None and AGENT_MODELS:
+        selected = AGENT_MODELS[0]
+    r = ({"provider": selected.get("provider", "ark"), "model": selected["model"]}
+         if selected else route("script"))
 
     # ── 画布现状（增量协作的关键上下文）──
     existing = db.query("canvas_nodes", "project_id=? ORDER BY position_x", (project_id,))
@@ -1753,7 +1765,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     if research:
         try:
             rr = route("research")
-            facts = await ark.research(
+            facts = await _gw(rr).research(
                 rr["model"],
                 "下面是一条微课创作对话中的用户消息。若其中涉及需要联网核实的真实事件/人物/数据，"
                 "请联网调研并输出简洁事实要点（时间、对象、关键动作、数据）；"
@@ -1777,7 +1789,7 @@ async def run_agent(project_id: str, message: str, model: str | None = None,
     plan = None
     last_err = ""
     for attempt in range(2):  # 模型偶发输出非 JSON 时自动重试一次
-        resp = await ark.chat(r["model"], [
+        resp = await _gw(r).chat(r["model"], [
             {"role": "system", "content": load_prompt("agent_system")},
             {"role": "user", "content": user_content if attempt == 0 else
              user_content + "\n\n（上次输出不是合法 JSON，请严格只输出 JSON 对象，不要任何其他文字）"},

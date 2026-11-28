@@ -102,6 +102,7 @@ class ArkAdapter:
             "reasoning": msg.get("reasoning_content", ""),
             "input_tokens": usage.get("prompt_tokens", 0),
             "output_tokens": usage.get("completion_tokens", 0),
+            "reported_model": data.get("model") or model,
         }
 
     async def image(self, model: str, prompt: str, size: str = "2560x1440",
@@ -124,6 +125,7 @@ class ArkAdapter:
         return {
             "url": data["data"][0]["url"],
             "output_tokens": data.get("usage", {}).get("output_tokens", 0),
+            "reported_model": data.get("model") or model,
         }
 
     async def video_create(self, model: str, prompt: str,

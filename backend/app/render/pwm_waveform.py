@@ -5,7 +5,7 @@
   - 波形采样均值 == duty × I_peak（断言偏差 < 1e-3）
 画面三要素：滚动扫描的 PWM 方波 + "实际(慢放)"闪烁 LED + "人眼所见"恒亮 LED，
 底部给出 平均电流 = 占空比 × 峰值电流 的实时算式。
-风格对齐教材：暗底、青色波形、橙色 LED、雅黑中文。
+风格对齐教材：暗底、青色波形、橙色 LED、本机可用的中文字体。
 """
 import shutil
 import subprocess
@@ -15,9 +15,29 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 import numpy as np
 
-plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei"]
+
+def _configure_chinese_font() -> str:
+    candidates = ("Noto Sans CJK SC", "Microsoft YaHei", "SimHei",
+                  "WenQuanYi Micro Hei", "LXGW WenKai", "Noto Sans CJK JP")
+    available = {font.name for font in font_manager.fontManager.ttflist}
+    for name in candidates:
+        if name in available:
+            plt.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
+            return name
+    for path in ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                 "/usr/share/fonts/yuke/LXGWWenKai-Regular.ttf"):
+        if Path(path).is_file():
+            font_manager.fontManager.addfont(path)
+            name = font_manager.FontProperties(fname=path).get_name()
+            plt.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
+            return name
+    raise RuntimeError("未找到中文字体，请安装 Noto Sans CJK 后再渲染，避免中文变成方框")
+
+
+CHINESE_FONT = _configure_chinese_font()
 plt.rcParams["axes.unicode_minus"] = False
 
 BG = "#0f1115"

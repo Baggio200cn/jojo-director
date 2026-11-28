@@ -1,0 +1,10 @@
+rules:
+  - id: BS-001
+    severity: high
+    check: 输入必须有序，代码、输入、预期输出和真实输出必须同时可回查。
+  - id: BS-002
+    severity: high
+    check: 边界更新必须无死循环，空输入、重复值和左右边界必须有测试。
+  - id: BS-003
+    severity: high
+    check: 不得使用代码截图或模型描述代替真实执行，失败结果必须保留并说明。

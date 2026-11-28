@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JOJO 科学证据卡 v1",
+  "type": "object",
+  "required": ["claimId", "claim", "applicableScope", "sources", "verification", "review"],
+  "properties": {
+    "claimId": {"type": "string", "minLength": 1},
+    "claim": {"type": "string", "minLength": 1},
+    "applicableScope": {"type": "string", "minLength": 1},
+    "sources": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["sourceId", "type", "locator", "rights"],
+        "properties": {
+          "sourceId": {"type": "string", "minLength": 1},
+          "type": {"enum": ["standard", "textbook", "manual", "paper", "dataset", "measured", "teacher", "reference"]},
+          "locator": {"type": "string", "minLength": 1},
+          "version": {"type": "string"},
+          "publishedAt": {"type": "string"},
+          "rights": {"type": "string", "minLength": 1},
+          "uri": {"type": "string"}
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["method", "status"],
+      "properties": {
+        "method": {"enum": ["recalculate", "execute", "measure", "visual_review", "expert_review"]},
+        "status": {"enum": ["pending", "passed", "failed"]},
+        "evidenceRef": {"type": "string"},
+        "notes": {"type": "string"}
+      }
+    },
+    "review": {
+      "type": "object",
+      "required": ["status", "reviewer"],
+      "properties": {
+        "status": {"enum": ["candidate", "verified", "approved", "deprecated"]},
+        "reviewer": {"type": "string", "minLength": 1},
+        "reviewedAt": {"type": "string"},
+        "nextReviewAt": {"type": "string"},
+        "comments": {"type": "string"}
+      }
+    }
+  }
+}

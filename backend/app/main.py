@@ -4,17 +4,19 @@
 """
 import asyncio
 import json
+import os
 import re as _re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, db, embeddings, executors
+from . import (asset_ingest, auth, community, db, document_library, document_text, embeddings, executors, ingestion_review,
+               provider_settings, repository, screenshots, teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
 
@@ -25,9 +27,14 @@ def _migrate() -> None:
             c.execute("ALTER TABLE projects ADD COLUMN style TEXT DEFAULT ''")
         except Exception:
             pass
+        try:
+            c.execute("ALTER TABLE projects ADD COLUMN source_manifest TEXT DEFAULT '{}'")
+        except Exception:
+            pass
         # MAAO 证据流：台账补 verdict / capability_id 列
         for sql in ("ALTER TABLE model_tasks ADD COLUMN verdict TEXT",
-                    "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT"):
+                    "ALTER TABLE model_tasks ADD COLUMN capability_id TEXT",
+                    "ALTER TABLE model_tasks ADD COLUMN reported_model TEXT"):
             try:
                 c.execute(sql)
             except Exception:
@@ -43,10 +50,16 @@ def _migrate() -> None:
                 c.execute(sql)
             except Exception:
                 pass
+        for sql in ("ALTER TABLE community_comments ADD COLUMN anchor_path TEXT",
+                    "ALTER TABLE community_comments ADD COLUMN anchor_line INTEGER"):
+            try:
+                c.execute(sql)
+            except Exception:
+                pass
         # 教师投稿预建目录（2026-09-07 拍板）：学科级顶层文件夹
         c.execute("CREATE TABLE IF NOT EXISTS library_folders "
                   "(path TEXT PRIMARY KEY, created_at TEXT)")
-        for _f in ("光学类", "基础医学教学类"):
+        for _f in ("光学类", "基础医学教学类", "人工智能（AI）"):
             c.execute("INSERT OR IGNORE INTO library_folders (path, created_at) "
                       "VALUES (?, ?)", (_f, db.now()))
 
@@ -70,11 +83,17 @@ async def lifespan(_app: FastAPI):
     db.init_db()
     auth.init()
     _migrate()
+    provider_settings.apply_saved()
+    provider_settings.refresh_adapters()
+    ingestion_review.backfill_legacy_batches()
     _reset_stuck_nodes()
     yield
 
 
 app = FastAPI(title="JOJO Studio API", version="0.1.0", lifespan=lifespan)
+app.include_router(community.router)
+app.include_router(repository.router)
+app.include_router(screenshots.router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 ASSETS_DIR.mkdir(exist_ok=True)  # StaticFiles 挂载要求目录在 import 期已存在
@@ -147,8 +166,11 @@ def auth_me(request: Request):
     if not s:
         return JSONResponse({"detail": "未登录"}, status_code=401)
     out = {"role": s["role"], "auth_enabled": auth.enabled()}
+    if s["role"] == "admin":
+        out["account"] = os.getenv("ADMIN_USER", "").strip() if auth.enabled() else "开发模式"
     if s["role"] == "invite":
         rows = db.query("invite_codes", "code=?", (s["invite_code"],))
+        out["account"] = (rows[0]["label"] or "邀请码用户") if rows else "邀请码用户"
         if rows:
             out["limits"] = {"daily_video_limit": rows[0]["daily_video_limit"],
                              "daily_cost_limit_cny": rows[0]["daily_cost_limit_cny"]}
@@ -187,6 +209,30 @@ def admin_toggle_invite(code: str, request: Request):
     with db._conn() as c:
         c.execute("UPDATE invite_codes SET disabled=1-disabled WHERE code=?", (code,))
     return db.query("invite_codes", "code=?", (code,))[0]
+
+@app.get("/api/admin/provider-settings")
+def get_provider_settings(request: Request):
+    auth.require_admin(request)
+    return provider_settings.settings_view()
+
+
+@app.put("/api/admin/provider-settings")
+def save_provider_settings(payload: dict, request: Request):
+    auth.require_admin(request)
+    try:
+        return provider_settings.save_settings(payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/admin/provider-settings/catalog/{provider}")
+async def provider_catalog(provider: str, request: Request):
+    auth.require_admin(request)
+    try:
+        return await provider_settings.catalog(provider)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
 
 class ProjectIn(BaseModel):
     title: str
@@ -241,6 +287,91 @@ def list_projects():
     return db.query("projects")
 
 
+@app.post("/api/projects/import/yuke")
+async def import_yuke_package(file: UploadFile = File(...)):
+    content = await file.read(yuke_import.MAX_ZIP_BYTES + 1)
+    try:
+        package = yuke_import.read_package(content)
+        return yuke_import.create_project(package)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/import/teaching-video")
+async def import_teaching_video_package(file: UploadFile = File(...)):
+    content = await file.read(teaching_video_import.MAX_ZIP_BYTES + 1)
+    try:
+        package = teaching_video_import.read_package(content)
+        return teaching_video_import.create_or_get(package)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/{pid}/teaching-video/confirm")
+def confirm_teaching_video_plan(pid: str, payload: dict):
+    try:
+        return teaching_video_confirm.confirm(pid, payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/projects/{pid}/teaching-video/produce")
+def produce_teaching_video_candidate(pid: str, payload: dict, background: BackgroundTasks):
+    try:
+        result = teaching_video_produce.start(pid, payload)
+        background.add_task(teaching_video_produce.run, pid, result["candidateId"])
+        return result
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/projects/{pid}/teaching-video/candidates")
+def list_teaching_video_candidates(pid: str):
+    rows = db.query("video_candidates", "project_id=? ORDER BY created_at DESC", (pid,))
+    return [{**row, "manifest": db.jloads(row["manifest"])} for row in rows]
+
+
+@app.get("/api/training/library")
+def get_training_library():
+    return training_library.library()
+
+
+@app.post("/api/training/reviews")
+def create_training_review(payload: training_library.ReviewIn, request: Request):
+    session = auth.require(request)
+    try:
+        return training_library.add_review(payload, session)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/docs/{name}")
+def read_project_document(name: str):
+    try:
+        return document_library.document(name)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@app.get("/api/docs/{name}/download")
+def download_project_document(name: str):
+    try:
+        item = document_library.document(name)
+        return FileResponse(document_library.document_path(name),
+                            media_type="text/markdown; charset=utf-8",
+                            filename=item["filename"])
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@app.get("/api/docs/assets/{name}")
+def read_document_asset(name: str):
+    try:
+        return FileResponse(document_library.asset_path(name))
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
 class ProjectPatch(BaseModel):
     style: str | None = None
     title: str | None = None
@@ -278,7 +409,7 @@ def project_stats(pid: str):
     with db._conn() as c:
         c.row_factory = __import__("sqlite3").Row
         rows = [dict(r) for r in c.execute(
-            "SELECT id, node_id, model, task_type, status, verdict, capability_id,"
+            "SELECT id, node_id, model, provider, task_type, status, verdict, capability_id,"
             "       COALESCE(input_tokens,0) ti, COALESCE(output_tokens,0) tou,"
             "       estimated_cost_cny, created_at"
             " FROM model_tasks WHERE project_id=?", (pid,))]
@@ -318,11 +449,19 @@ def project_stats(pid: str):
                                          else "image")
             regret["by_capability"][cap] = regret["by_capability"].get(cap, 0) + 1
     total = round(sum(d["cost_cny"] for d in by_type.values()), 2)
+    unpriced = [{"task_type": r["task_type"], "provider": r["provider"], "model": r["model"]}
+                for r in rows if r["status"] == "succeeded" and r["provider"] != "local"
+                and not r["estimated_cost_cny"]
+                and estimate_cost_cny(r["model"] or "", r["task_type"], r["ti"], r["tou"]) is None]
+    cost_status = "partial" if unpriced and total > 0 else "uncalculated" if unpriced else "estimated"
     uncal = [m for m, p in PRICING.items() if not p.get("calibrated")]
+    note = ("单价含未校准估计值(" + ",".join(uncal) + ")，拿到账单后在 providers.yaml 更新"
+            if uncal else "全部单价已账单校准")
+    if unpriced:
+        note = "部分模型缺少价格配置，显示金额仅为已估算部分，完整费用待核算；" + note
     return {"project_id": pid, "by_type": by_type, "total_cost_cny": total,
-            "route_regret": regret,
-            "note": ("单价含未校准估计值(" + ",".join(uncal) + ")，拿到账单后在 providers.yaml 更新")
-                    if uncal else "全部单价已账单校准"}
+            "cost_status": cost_status, "has_unpriced_generation": bool(unpriced),
+            "unpriced_tasks": unpriced, "route_regret": regret, "note": note}
 
 
 @app.get("/api/stats/capability")
@@ -522,6 +661,9 @@ def expand_storyboard(nid: str, req: ExpandIn):
         req.domain = _sb_domain
     if not shots:
         raise HTTPException(400, "请先执行分镜节点，生成镜头列表")
+    pending = [s for s in shots if s.get("route_status") == "needs_review" or s.get("assertion_status") == "needs_review"]
+    if pending:
+        raise HTTPException(400, f"仍有 {len(pending)} 个导入镜头的制作路线或教学断言待复核，暂不能展开为付费产线")
     pid = node["project_id"]
     x0, y0 = node["position_x"], node["position_y"]
 
@@ -1044,17 +1186,32 @@ def create_asset_folder(body: dict):
 
 
 @app.post("/api/assets/upload")
-async def upload_to_library(file: UploadFile = File(...), folder: str = Form(""),
+async def upload_to_library(request: Request, file: UploadFile = File(...), folder: str = Form(""),
                             rights: str = Form("own"), note: str = Form(""),
-                            subject_id: str = Form("")):
+                            subject_id: str = Form(""), community_id: str = Form(""),
+                            contribution_id: str = Form("")):
     """教师投稿：文件直接入素材库（library=1），权利声明入库即声明。
-    可提交类型：mp4/mov/webm 实验录屏、png/jpg 图片、pdf 教案/讲义。"""
+    可提交类型：mp4/mov/webm 实验录屏、png/jpg 图片、pdf 教案/讲义、docx Word 文档。"""
+    session = auth.require(request)
+    if contribution_id and not community_id:
+        raise HTTPException(400, "提交贡献新版本时必须指定课题社区")
+    if community_id:
+        try:
+            community._community(community_id)
+            community._member(community_id, session)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(403, str(exc)) from exc
     ext = Path(file.filename or "").suffix.lower()
     kind = {".mp4": "video", ".mov": "video", ".webm": "video",
             ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
-            ".pdf": "doc"}.get(ext)
+            ".pdf": "doc", ".docx": "doc"}.get(ext)
     if not kind:
-        raise HTTPException(400, "仅支持 mp4/mov/webm 视频、png/jpg 图片、pdf 教案")
+        raise HTTPException(400, "仅支持 mp4/mov/webm 视频、png/jpg 图片、pdf 教案和 docx Word 文档")
+    content = await file.read()
+    if ext == ".docx" and not document_text.valid_docx(content):
+        raise HTTPException(400, "DOCX 文件损坏或不是有效的 Word 文档")
     if rights not in ("own", "licensed", "reference_only"):
         raise HTTPException(400, "rights 只能是 own / licensed / reference_only")
     if ext in (".mov", ".webm"):
@@ -1066,7 +1223,7 @@ async def upload_to_library(file: UploadFile = File(...), folder: str = Form("")
                       "VALUES (?, ?)", (folder, db.now()))
     asset_id = db.new_id("asset")
     filename = f"{asset_id}{ext}"
-    (ASSETS_DIR / filename).write_bytes(await file.read())
+    (ASSETS_DIR / filename).write_bytes(content)
     meta = {"source": "teacher_upload", "note": note.strip(),
             "orig_name": Path(file.filename or "").name}
     db.insert("assets", {
@@ -1081,7 +1238,114 @@ async def upload_to_library(file: UploadFile = File(...), folder: str = Form("")
             await embeddings.upsert("asset", asset_id, embeddings.asset_text(row))
     except Exception:
         pass
-    return _asset_view(db.get("assets", asset_id))
+    out = _asset_view(db.get("assets", asset_id))
+    try:
+        if contribution_id:
+            detail = community.add_asset_revision(community_id, contribution_id, asset_id, note, session)
+            out["contributionId"] = contribution_id
+            out["contributionVersion"] = detail["contribution"]["version"]
+        elif community_id:
+            contribution = community.create_asset_contribution(community_id, asset_id, session)
+            out["contributionId"] = contribution["id"]
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    if community_id:
+        out["communityId"] = community_id
+    return out
+
+
+@app.post("/api/assets/upload_folder")
+async def upload_folder_to_library(request: Request, files: list[UploadFile] = File(...),
+                                   paths: list[str] = Form(...),
+                                   folder: str = Form("__auto__"), rights: str = Form("own"),
+                                   note: str = Form(""), community_id: str = Form("")):
+    """文件夹投稿：本地检查、去重、保留相对路径并给出待审核归类。"""
+    session = auth.require(request)
+    if community_id:
+        try:
+            community._community(community_id)
+            community._member(community_id, session)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        except PermissionError as exc:
+            raise HTTPException(403, str(exc)) from exc
+    if not files or len(files) != len(paths):
+        raise HTTPException(400, "文件与相对路径数量不一致")
+    if len(files) > asset_ingest.MAX_FILES:
+        raise HTTPException(400, f"单个文件夹最多 {asset_ingest.MAX_FILES} 个文件")
+    if rights not in ("own", "licensed", "reference_only"):
+        raise HTTPException(400, "rights 只能是 own / licensed / reference_only")
+    batch_id = db.new_id("folder")
+    results = []
+    total_bytes = 0
+    seen_hashes = set()
+    for file, relative_path in zip(files, paths):
+        content = await file.read(asset_ingest.MAX_TOTAL_BYTES + 1)
+        total_bytes += len(content)
+        if total_bytes > asset_ingest.MAX_TOTAL_BYTES:
+            results.append({"status": "rejected", "path": relative_path,
+                            "reason": "文件夹总大小超过 500MB，本文件及后续文件未入库"})
+            break
+        result = asset_ingest.ingest_file(content, relative_path, folder, rights,
+                                          note, batch_id, seen_hashes)
+        if community_id and result["status"] == "accepted":
+            try:
+                contribution = community.create_asset_contribution(
+                    community_id, result["assetId"], session, batch_id)
+                result["contributionId"] = contribution["id"]
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
+        results.append(result)
+    summary = {state: sum(1 for x in results if x["status"] == state)
+               for state in ("accepted", "rejected", "duplicate")}
+    ingestion_review.create_batch(batch_id, results, folder, rights, note,
+                                  session.get("role", "unknown"))
+    return {"batchId": batch_id, "communityId": community_id or None,
+            "results": results, "summary": summary,
+            "status": "analyzed_pending_teacher", "reviewRequired": True, "paidModelCalled": False,
+            "analysisScope": "格式签名、文件名、相对路径与备注；不代替专业内容审核"}
+
+
+@app.get("/api/assets/{asset_id}/text")
+def read_asset_text(asset_id: str):
+    row = db.get("assets", asset_id)
+    if not row:
+        raise HTTPException(404, "素材不存在")
+    extension = Path(row["filename"]).suffix.lower()
+    try:
+        result = document_text.extract_document(
+            (ASSETS_DIR / row["filename"]).read_bytes(), extension)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {**result, "assetId": asset_id, "filename": db.jloads(row["meta"]).get("orig_name") or row["filename"]}
+
+
+@app.get("/api/assets/ingestion-batches")
+def list_ingestion_batches():
+    return ingestion_review.list_batches()
+
+
+@app.post("/api/assets/ingestion-batches/{batch_id}/review")
+def review_ingestion_batch(batch_id: str, body: dict, request: Request):
+    session = auth.require(request)
+    try:
+        return ingestion_review.review_batch(
+            batch_id, str(body.get("action") or ""), str(body.get("comment") or ""),
+            session.get("role", "unknown"))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+
+
+@app.post("/api/assets/ingestion-batches/{batch_id}/move")
+def move_ingestion_batch(batch_id: str, body: dict):
+    try:
+        return ingestion_review.move_batch(batch_id, str(body.get("folder") or ""))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 class SuggestIn(BaseModel):

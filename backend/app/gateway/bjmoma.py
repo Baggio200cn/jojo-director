@@ -91,6 +91,36 @@ async def _request(method: str, url: str, body: dict | None = None,
 
 
 class BjmomaAdapter:
+    async def chat(self, model: str, messages: list[dict],
+                   json_mode: bool = False, max_tokens: int = 8192) -> dict:
+        payload: dict = {"model": model, "messages": messages, "max_tokens": max_tokens}
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
+        data = await _request("POST", f"{_base()}/v1/chat/completions", payload)
+        msg = data["choices"][0]["message"]
+        usage = data.get("usage", {})
+        return {
+            "text": msg.get("content") or "",
+            "reasoning": msg.get("reasoning_content", ""),
+            "input_tokens": usage.get("prompt_tokens", 0),
+            "output_tokens": usage.get("completion_tokens", 0),
+            "reported_model": data.get("model") or model,
+        }
+
+    async def image(self, model: str, prompt: str, size: str = "2560x1440",
+                    ref_images: list[str] | None = None) -> dict:
+        payload: dict = {"model": model, "prompt": prompt, "size": size,
+                         "response_format": "url"}
+        if ref_images:
+            payload["image"] = ref_images if len(ref_images) > 1 else ref_images[0]
+        data = await _request("POST", f"{_base()}/v1/images/generations", payload)
+        return {"url": data["data"][0]["url"],
+                "output_tokens": data.get("usage", {}).get("output_tokens", 0),
+                "reported_model": data.get("model") or model}
+
+    async def research(self, model: str, query: str, max_keyword: int = 3) -> dict:
+        raise RuntimeError("MoMA 联网调研尚未接入；请显式选择火山引擎 research 能力位")
+
     async def video_create(self, model: str, prompt: str,
                            first_frame_url: str | None = None,
                            last_frame_url: str | None = None,

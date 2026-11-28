@@ -1,0 +1,4530 @@
+[
+  {
+    "vid": "fNk_zzaMoSs",
+    "url": "https://www.youtube.com/watch?v=fNk_zzaMoSs",
+    "title": "Vectors | Chapter 1, Essence of linear algebra",
+    "channel": "3Blue1Brown",
+    "summary": "The first chapter of 3Blue1Brown's Essence of Linear Algebra series, introducing vectors with animated geometric visuals. It begins a series that builds intuition for linear algebra from the basics.",
+    "content_type": "course",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 25.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 17,
+      "rec_months": 18,
+      "strong_recs": 14,
+      "stances": {
+        "rec": 5,
+        "strong_rec": 14,
+        "reference": 1
+      },
+      "first_year": 2018,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "pure-mathematics",
+        "name": "Pure mathematics",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "FITJMJjASUs",
+    "url": "https://www.youtube.com/watch?v=FITJMJjASUs",
+    "title": "Ruby Conf 12 - Y Not- Adventures in Functional Programming by Jim Weirich",
+    "channel": "Confreaks",
+    "summary": "Jim Weirich's RubyConf 2012 talk derives the Y combinator step by step, live-coding in Ruby lambdas. It builds up an understanding of functional programming and lambda calculus from first principles.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 22.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 17,
+      "rec_months": 18,
+      "strong_recs": 9,
+      "stances": {
+        "rec": 9,
+        "strong_rec": 9,
+        "reference": 2
+      },
+      "first_year": 2013,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "functional-programming",
+        "name": "Functional programming",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "computational-theory",
+        "name": "Computability & complexity theory",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "NGFhc8R_uO4",
+    "url": "https://www.youtube.com/watch?v=NGFhc8R_uO4",
+    "title": "Indistinguishable From Magic: Manufacturing Modern Computer Chips",
+    "channel": "Andor Gafotas",
+    "summary": "A HOPE09 talk on how modern computer chips are manufactured, from 22nm transistors to ultra-clean fabs and the tricks used to pattern tiny features with light. It frames chipmaking as hacking electrical engineering and physics.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 22.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 19,
+      "rec_months": 18,
+      "strong_recs": 8,
+      "stances": {
+        "rec": 11,
+        "strong_rec": 8,
+        "reference": 1
+      },
+      "first_year": 2016,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "semiconductors-manufacturing",
+        "name": "Semiconductors & chip manufacturing",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "hacker-culture-free-software",
+        "name": "Hacker culture & free software",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "VMj-3S1tku0",
+    "url": "https://www.youtube.com/watch?v=VMj-3S1tku0",
+    "title": "The spelled-out intro to neural networks and backpropagation: building micrograd",
+    "channel": "Andrej Karpathy",
+    "summary": "Andrej Karpathy's first Neural Networks: Zero to Hero lecture, which builds micrograd, a tiny autograd engine, from scratch in Python. It explains backpropagation and neural network training step by step, assuming only basic Python and some high-school calculus.",
+    "content_type": "lecture",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 21.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 17,
+      "rec_months": 16,
+      "strong_recs": 10,
+      "stances": {
+        "rec": 7,
+        "strong_rec": 10,
+        "reference": 3
+      },
+      "first_year": 2022,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "machine-learning",
+        "name": "Machine learning & deep learning",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "qCGofLIzX6g",
+    "url": "https://www.youtube.com/watch?v=qCGofLIzX6g",
+    "title": "How Python was Shaped by leaky Internals, Armin Ronacher, Flask framework",
+    "channel": "Видео с мероприятий {speach!",
+    "summary": "Armin Ronacher, creator of Flask, explains how CPython's internals and C API leak into the language's semantics. Using examples like the complexity of the add operation, he shows why Python is hard to optimize or reimplement.",
+    "content_type": "talk",
+    "level": "advanced",
+    "shelf_life": "evergreen",
+    "score": 19.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 16,
+      "strong_recs": 7,
+      "stances": {
+        "strong_rec": 7,
+        "rec": 11,
+        "reference": 2
+      },
+      "first_year": 2017,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "software-performance",
+        "name": "Software performance & optimization",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "programming-language-design",
+        "name": "Programming language design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "NNnIGh9g6fA",
+    "url": "https://www.youtube.com/watch?v=NNnIGh9g6fA",
+    "title": "1. Introduction to Human Behavioral Biology",
+    "channel": "Stanford",
+    "summary": "The opening lecture of Robert Sapolsky's Stanford course on Human Behavioral Biology, explaining the course premise and how to avoid categorical thinking. It starts a roughly 25-lecture series on how biology, genes, hormones and environment shape behavior.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 19.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 15,
+      "strong_recs": 8,
+      "stances": {
+        "strong_rec": 8,
+        "rec": 7,
+        "reference": 5
+      },
+      "first_year": 2012,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-MED",
+    "categories": [
+      {
+        "id": "university-lectures",
+        "name": "University lectures & courses",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "neuroscience-brain",
+        "name": "Neuroscience & the brain",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "psychology-behavior",
+        "name": "Psychology & human behavior",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "DovunOxlY1k",
+    "url": "https://www.youtube.com/watch?v=DovunOxlY1k",
+    "title": "AT&T Archives: Similiarities of Wave Behavior (Bonus Edition)",
+    "channel": "AT&T Tech Channel",
+    "summary": "A Bell Labs film in which Dr. J.N. Shive uses a mechanical wave machine to demonstrate reflection, standing waves, resonance and impedance matching. He includes some equations but relies mostly on real-world examples a layperson can follow.",
+    "content_type": "lecture",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 19.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 15,
+      "strong_recs": 8,
+      "stances": {
+        "strong_rec": 8,
+        "rec": 10,
+        "reference": 2
+      },
+      "first_year": 2014,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "electronics-circuits",
+        "name": "Electronics & circuit design",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "history-of-computing",
+        "name": "History of computing",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "yYAw79386WI",
+    "url": "https://www.youtube.com/watch?v=yYAw79386WI",
+    "title": "Around The Corner - How Differential Steering Works (1937)",
+    "channel": "US Auto Industry",
+    "summary": "A 1937 GM-produced film explaining how the automobile differential lets wheels turn at different speeds around a corner. It uses clear animations and cutaway demonstrations to build the idea from first principles.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 18.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 17,
+      "rec_months": 15,
+      "strong_recs": 7,
+      "stances": {
+        "strong_rec": 7,
+        "rec": 10,
+        "reference": 3
+      },
+      "first_year": 2013,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "mechanical-engineering",
+        "name": "Mechanical & precision engineering",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "automotive-ev",
+        "name": "Cars, EVs & motorcycles",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "spUNpyF58BY",
+    "url": "https://www.youtube.com/watch?v=spUNpyF58BY",
+    "title": "But what is the Fourier Transform?  A visual introduction.",
+    "channel": "3Blue1Brown",
+    "summary": "3Blue1Brown's animated visual introduction to the Fourier Transform, showing how a signal breaks into frequency components.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 18.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 15,
+      "strong_recs": 7,
+      "stances": {
+        "reference": 4,
+        "rec": 9,
+        "strong_rec": 7
+      },
+      "first_year": 2018,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "information-theory",
+        "name": "Information theory & signal processing",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "pure-mathematics",
+        "name": "Pure mathematics",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "8bZh5LMaSmE",
+    "url": "https://www.youtube.com/watch?v=8bZh5LMaSmE",
+    "title": "RailsConf 2014 - All the Little Things by Sandi Metz",
+    "channel": "Confreaks",
+    "summary": "Sandi Metz takes an ugly section of conditional code and refactors it into a few simple objects, bridging object-oriented theory and practice. The talk includes her take on the Gilded Rose refactoring kata and the idea that duplication is cheaper than the wrong abstraction.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 18.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 15,
+      "strong_recs": 7,
+      "stances": {
+        "strong_rec": 7,
+        "reference": 5,
+        "rec": 8
+      },
+      "first_year": 2015,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "software-architecture-design",
+        "name": "Software architecture & design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "testing-debugging-tools",
+        "name": "Testing, debugging & developer tools",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "JvBT4XBdoUE",
+    "url": "https://www.youtube.com/watch?v=JvBT4XBdoUE",
+    "title": "The Soul of Erlang and Elixir • Sasa Juric • GOTO 2019",
+    "channel": "GOTO Conferences",
+    "summary": "Sasa Juric explains what makes Erlang and Elixir suited to server-side systems, focusing on the BEAM concurrency model rather than syntax or ecosystem. He demonstrates processes, supervision, and fault tolerance.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 17.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 14,
+      "strong_recs": 7,
+      "stances": {
+        "rec": 9,
+        "strong_rec": 7,
+        "reference": 4
+      },
+      "first_year": 2019,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "functional-programming",
+        "name": "Functional programming",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "distributed-systems",
+        "name": "Distributed systems",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "SxdOUGdseq4",
+    "url": "https://www.youtube.com/watch?v=SxdOUGdseq4",
+    "title": "\"Simple Made Easy\" - Rich Hickey (2011)",
+    "channel": "Strange Loop Conference",
+    "summary": "Rich Hickey's Strange Loop 2011 keynote distinguishing 'simple' (not intertwined) from 'easy' (familiar or near at hand). It argues that software complexity comes from complecting things and that we should pick simple constructs.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 17.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 14,
+      "rec_months": 14,
+      "strong_recs": 6,
+      "stances": {
+        "strong_rec": 6,
+        "rec": 8,
+        "reference": 6
+      },
+      "first_year": 2022,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "software-architecture-design",
+        "name": "Software architecture & design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "functional-programming",
+        "name": "Functional programming",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "SCAGc-rkIfo",
+    "url": "https://www.youtube.com/watch?v=SCAGc-rkIfo",
+    "title": "Essential Ideas for Parents",
+    "channel": "Jason Salotti",
+    "summary": "Dr. Russell Barkley's roughly three-hour lecture on ADHD for parents of affected children. It explains what ADHD is and how the ADHD brain differs.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 17.0,
+    "hn": {
+      "mentions": 18,
+      "recommenders": 9,
+      "rec_months": 13,
+      "strong_recs": 9,
+      "stances": {
+        "rec": 6,
+        "strong_rec": 9,
+        "reference": 3
+      },
+      "first_year": 2015,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MED",
+    "categories": [
+      {
+        "id": "mental-health-neurodiversity",
+        "name": "Mental health & neurodiversity",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "psychology-behavior",
+        "name": "Psychology & human behavior",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "dEaecUuEqfc",
+    "url": "https://www.youtube.com/watch?v=dEaecUuEqfc",
+    "title": "The Quantum Conspiracy: What Popularizers of QM Don't Want You to Know",
+    "channel": "Google TechTalks",
+    "summary": "Ron Garret's Google Tech Talk argues that quantum mechanics is no harder to understand than relativity and that popular accounts wrongly rely on the Copenhagen interpretation. He presents measurement as entanglement and explains phenomena like the quantum eraser.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 17.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 11,
+      "rec_months": 15,
+      "strong_recs": 4,
+      "stances": {
+        "rec": 12,
+        "strong_rec": 4,
+        "reference": 4
+      },
+      "first_year": 2012,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "quantum-physics",
+        "name": "Quantum physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "xAoljeRJ3lU",
+    "url": "https://www.youtube.com/watch?v=xAoljeRJ3lU",
+    "title": "A Better Default Colormap for Matplotlib | SciPy 2015 | Nathaniel Smith and Stéfan van der Walt",
+    "channel": "Enthought",
+    "summary": "SciPy 2015 talk by Nathaniel Smith and Stefan van der Walt on choosing a new default colormap for Matplotlib. It covers why Jet misleads, how perceptual color spaces work, and how viridis was designed.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 16.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 14,
+      "strong_recs": 6,
+      "stances": {
+        "reference": 5,
+        "rec": 9,
+        "strong_rec": 6
+      },
+      "first_year": 2015,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "data-visualization",
+        "name": "Data visualization & information design",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "data-science-statistics",
+        "name": "Data science & statistics",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "aircAruvnKk",
+    "url": "https://www.youtube.com/watch?v=aircAruvnKk",
+    "title": "But what is a neural network? | Deep learning chapter 1",
+    "channel": "3Blue1Brown",
+    "summary": "3Blue1Brown's first chapter on deep learning explains what neurons and layers are and the math underlying a basic neural network, using handwritten digit recognition with visual animations.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 16.5,
+    "hn": {
+      "mentions": 19,
+      "recommenders": 16,
+      "rec_months": 14,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 11,
+        "strong_rec": 5,
+        "reference": 3
+      },
+      "first_year": 2017,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "machine-learning",
+        "name": "Machine learning & deep learning",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "8aGhZQkoFbQ",
+    "url": "https://www.youtube.com/watch?v=8aGhZQkoFbQ",
+    "title": "What the heck is the event loop anyway? | Philip Roberts | JSConf EU",
+    "channel": "JSConf",
+    "summary": "Philip Roberts explains the JavaScript event loop, call stack, callbacks and asynchronous behavior with live visualizations using a tool he built. It demystifies terms like non-blocking and single-threaded.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 16.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 14,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 11,
+        "strong_rec": 5,
+        "reference": 4
+      },
+      "first_year": 2015,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "web-development",
+        "name": "Web development",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "5f9R9MtkpqM",
+    "url": "https://www.youtube.com/watch?v=5f9R9MtkpqM",
+    "title": "George Lakoff: Moral Politics",
+    "channel": "University of California Television (UCTV)",
+    "summary": "Cognitive scientist George Lakoff lectures on how political debates are framed through language and metaphors tied to values, and on the moral worldviews behind progressive and conservative politics. It was given in 2005 at UC San Diego.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 16.0,
+    "hn": {
+      "mentions": 15,
+      "recommenders": 3,
+      "rec_months": 12,
+      "strong_recs": 8,
+      "stances": {
+        "strong_rec": 8,
+        "rec": 5,
+        "reference": 2
+      },
+      "first_year": 2016,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-MED",
+    "categories": [
+      {
+        "id": "us-politics",
+        "name": "US politics & elections",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      },
+      {
+        "id": "language-linguistics",
+        "name": "Language & linguistics",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "consciousness-mind",
+        "name": "Consciousness & cognition",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "7J52mDjZzto",
+    "url": "https://www.youtube.com/watch?v=7J52mDjZzto",
+    "title": "Heat Pumps: the Future of Home Heating",
+    "channel": "Technology Connections",
+    "summary": "Technology Connections explains how heat pumps work as reversed air conditioners and why they can deliver several times the heat of resistive heating per unit of energy. It also tackles common myths such as poor cold-weather performance.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 16.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 17,
+      "rec_months": 15,
+      "strong_recs": 2,
+      "stances": {
+        "rec": 15,
+        "reference": 3,
+        "strong_rec": 2
+      },
+      "first_year": 2021,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "power-grid-heating",
+        "name": "Power grid, heating & buildings",
+        "area": "earth-energy-environment",
+        "area_name": "Earth, Energy & Environment"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "aVwxzDHniEw",
+    "url": "https://www.youtube.com/watch?v=aVwxzDHniEw",
+    "title": "The Beauty of Bézier Curves",
+    "channel": "Freya Holmér",
+    "summary": "Freya Holmer explains how Bezier curves work, from the helper-line construction to their uses in animation, text rendering and shapes. It uses visuals from her Unity Shapes plugin and was a SoME1 contest winner.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 16.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 13,
+      "strong_recs": 7,
+      "stances": {
+        "rec": 10,
+        "reference": 3,
+        "strong_rec": 7
+      },
+      "first_year": 2021,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "computer-graphics-rendering",
+        "name": "Computer graphics & rendering",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "animation-vfx",
+        "name": "Animation & visual effects",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "eJ3RzGoQC4s",
+    "url": "https://www.youtube.com/watch?v=eJ3RzGoQC4s",
+    "title": "The Century of the Self (Full Adam Curtis Documentary)",
+    "channel": "David Lessig",
+    "summary": "Adam Curtis' multi-part documentary on how Freud's ideas and Edward Bernays' public relations shaped consumer culture and political control. It argues that business and government learned to manufacture desires.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 16.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 13,
+      "rec_months": 13,
+      "strong_recs": 6,
+      "stances": {
+        "reference": 7,
+        "strong_rec": 6,
+        "rec": 7
+      },
+      "first_year": 2016,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-MED",
+    "categories": [
+      {
+        "id": "media-journalism",
+        "name": "Media, journalism & propaganda",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      },
+      {
+        "id": "psychology-behavior",
+        "name": "Psychology & human behavior",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "documentaries-storytelling",
+        "name": "Documentaries & storytelling",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "o_AIw9bGogo",
+    "url": "https://www.youtube.com/watch?v=o_AIw9bGogo",
+    "title": "The Tragedy of systemd",
+    "channel": "linux.conf.au",
+    "summary": "FreeBSD developer Benno Rice traces the history of init and bootstrap systems at linux.conf.au 2019 to explain why systemd was seen as necessary and why it provokes such strong reactions. He also discusses why change is scary.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 16.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 14,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 11,
+        "reference": 4,
+        "strong_rec": 5
+      },
+      "first_year": 2019,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "linux-open-source-os",
+        "name": "Linux & open-source ecosystems",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      },
+      {
+        "id": "operating-systems",
+        "name": "Operating systems & kernels",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "IcgmSRJHu_8",
+    "url": "https://www.youtube.com/watch?v=IcgmSRJHu_8",
+    "title": "\"Making Impossible States Impossible\" by Richard Feldman",
+    "channel": "elm-conf",
+    "summary": "Richard Feldman's elm-conf talk on designing models so that bugs from impossible application states cannot occur, using Elm's compiler and types. It demonstrates techniques for making invalid states unrepresentable.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 15.5,
+    "hn": {
+      "mentions": 19,
+      "recommenders": 9,
+      "rec_months": 13,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 9,
+        "reference": 5,
+        "strong_rec": 5
+      },
+      "first_year": 2017,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "functional-programming",
+        "name": "Functional programming",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "software-architecture-design",
+        "name": "Software architecture & design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "cIQ9IXSUzuM",
+    "url": "https://www.youtube.com/watch?v=cIQ9IXSUzuM",
+    "title": "D/A and A/D | Digital Show and Tell (Monty Montgomery @ xiph.org)",
+    "channel": "FL Studio",
+    "summary": "Monty Montgomery of Xiph.org gives real-time demonstrations of sampling, quantization, bit depth and dither using real audio equipment, including both digital analysis tools and vintage analog bench gear. It shows that sampled audio is not stair-stepped and corrects common misconceptions about digital audio.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 15.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 13,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 10,
+        "strong_rec": 5,
+        "reference": 5
+      },
+      "first_year": 2017,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "audio-video-engineering",
+        "name": "Audio & video engineering",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "information-theory",
+        "name": "Information theory & signal processing",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "LQRAfJyEsko",
+    "url": "https://www.youtube.com/watch?v=LQRAfJyEsko",
+    "title": "Dominion (2018) - full documentary [Official]",
+    "channel": "Farm Transparency Project",
+    "summary": "Dominion is a two-hour documentary using drones and hidden cameras to expose conditions in animal agriculture, including food, clothing, entertainment and research. It questions humanity's dominion over animals.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 15.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 10,
+      "rec_months": 12,
+      "strong_recs": 7,
+      "stances": {
+        "rec": 6,
+        "reference": 7,
+        "strong_rec": 7
+      },
+      "first_year": 2019,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-EAR",
+    "categories": [
+      {
+        "id": "environment-agriculture",
+        "name": "Environment, agriculture & food systems",
+        "area": "earth-energy-environment",
+        "area_name": "Earth, Energy & Environment"
+      },
+      {
+        "id": "philosophy-ethics",
+        "name": "Philosophy & ethics",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "animals-nature",
+        "name": "Animals & nature",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "AdNJ3fydeao",
+    "url": "https://www.youtube.com/watch?v=AdNJ3fydeao",
+    "title": "Rich Harris - Rethinking reactivity",
+    "channel": "You Gotta Love Frontend",
+    "summary": "Svelte creator Rich Harris explains moving reactivity into the compiler and language rather than tracking state at runtime, with a history of spreadsheets as reactive systems and comparisons to React.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 15.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 13,
+      "strong_recs": 5,
+      "stances": {
+        "reference": 5,
+        "rec": 10,
+        "strong_rec": 5
+      },
+      "first_year": 2019,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "web-development",
+        "name": "Web development",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "compilers-interpreters",
+        "name": "Compilers, interpreters & program analysis",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "HyznrdDSSGM",
+    "url": "https://www.youtube.com/watch?v=HyznrdDSSGM",
+    "title": "8-bit computer update",
+    "channel": "Ben Eater",
+    "summary": "Ben Eater's short update announcing his plan to build another 8-bit computer from scratch on camera. It kicks off the breadboard computer series that became widely known.",
+    "content_type": "other",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 15.0,
+    "hn": {
+      "mentions": 15,
+      "recommenders": 14,
+      "rec_months": 12,
+      "strong_recs": 6,
+      "stances": {
+        "reference": 1,
+        "rec": 8,
+        "strong_rec": 6
+      },
+      "first_year": 2017,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "electronics-circuits",
+        "name": "Electronics & circuit design",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "computer-architecture",
+        "name": "Computer architecture & CPUs",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "embedded-diy-electronics",
+        "name": "Embedded systems & DIY electronics",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "L0KuAx1COEk",
+    "url": "https://www.youtube.com/watch?v=L0KuAx1COEk",
+    "title": "MIT's Pathway to Fusion Energy (IAP 2017) - Zach Hartwig",
+    "channel": "MIT Plasma Science and Fusion Center",
+    "summary": "Zach Hartwig of MIT introduces the key concepts of magnetic fusion energy and the state of fusion research. He then presents MIT's proposed pathway of using high-field superconducting magnets to build smaller, cheaper tokamaks on a climate-relevant timescale.",
+    "content_type": "lecture",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 15.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 13,
+      "strong_recs": 4,
+      "stances": {
+        "rec": 12,
+        "reference": 4,
+        "strong_rec": 4
+      },
+      "first_year": 2017,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-EAR",
+    "categories": [
+      {
+        "id": "nuclear-energy",
+        "name": "Nuclear power & fusion",
+        "area": "earth-energy-environment",
+        "area_name": "Earth, Energy & Environment"
+      },
+      {
+        "id": "university-lectures",
+        "name": "University lectures & courses",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "NOAgplgTxfc",
+    "url": "https://www.youtube.com/watch?v=NOAgplgTxfc",
+    "title": "Stanford's Sapolsky On Depression in U.S. (Full Lecture)",
+    "channel": "Stanford",
+    "summary": "Stanford professor Robert Sapolsky lectures on depression as a real biological disease. He covers its biological and psychological causes, how it differs from ordinary sadness, and ideas such as learned helplessness. He ties these together into one account.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 15.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 14,
+      "rec_months": 12,
+      "strong_recs": 7,
+      "stances": {
+        "reference": 6,
+        "rec": 7,
+        "strong_rec": 7
+      },
+      "first_year": 2009,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-MED",
+    "categories": [
+      {
+        "id": "mental-health-neurodiversity",
+        "name": "Mental health & neurodiversity",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "neuroscience-brain",
+        "name": "Neuroscience & the brain",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "university-lectures",
+        "name": "University lectures & courses",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "jvPPXbo87ds",
+    "url": "https://www.youtube.com/watch?v=jvPPXbo87ds",
+    "title": "The Continuity of Splines",
+    "channel": "Freya Holmér",
+    "summary": "Freya Holmer's 74-minute video essay on splines, covering Bezier curves, B-splines, derivatives and the different levels of continuity (C0, C1, C2), built with custom animation tools. She notes she did not cover non-uniform splines.",
+    "content_type": "explainer",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 15.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 10,
+      "rec_months": 11,
+      "strong_recs": 8,
+      "stances": {
+        "reference": 6,
+        "strong_rec": 8,
+        "rec": 6
+      },
+      "first_year": 2022,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "computer-graphics-rendering",
+        "name": "Computer graphics & rendering",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "LIb3L4vKZ7U",
+    "url": "https://www.youtube.com/watch?v=LIb3L4vKZ7U",
+    "title": "CppCon 2015: Andrei Alexandrescu “std::allocator...”",
+    "channel": "CppCon",
+    "summary": "Andrei Alexandrescu's CppCon 2015 talk argues that std::allocator is badly designed. He proposes building high-performance allocators from small composable, templated pieces.",
+    "content_type": "talk",
+    "level": "advanced",
+    "shelf_life": "evergreen",
+    "score": 14.5,
+    "hn": {
+      "mentions": 16,
+      "recommenders": 7,
+      "rec_months": 11,
+      "strong_recs": 7,
+      "stances": {
+        "reference": 4,
+        "strong_rec": 7,
+        "rec": 4,
+        "joke": 1
+      },
+      "first_year": 2017,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "systems-programming-languages",
+        "name": "C, C++, Rust, Go & systems languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "software-performance",
+        "name": "Software performance & optimization",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "QNznD9hMEh0",
+    "url": "https://www.youtube.com/watch?v=QNznD9hMEh0",
+    "title": "Jim Simons (full length interview) - Numberphile",
+    "channel": "Numberphile2",
+    "summary": "The full-length Numberphile interview with mathematician and hedge fund founder Jim Simons. He discusses his path from mathematics and codebreaking to founding Renaissance Technologies, his use of algorithms in markets, and his philanthropy.",
+    "content_type": "interview",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 14.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 11,
+      "rec_months": 13,
+      "strong_recs": 3,
+      "stances": {
+        "reference": 6,
+        "rec": 11,
+        "strong_rec": 3
+      },
+      "first_year": 2015,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "investing-personal-finance",
+        "name": "Investing & personal finance",
+        "area": "business-economics",
+        "area_name": "Business, Startups & Economics"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "tech-figures-interviews",
+        "name": "Tech pioneers & interviews",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "ar9WRwCiSr0",
+    "url": "https://www.youtube.com/watch?v=ar9WRwCiSr0",
+    "title": "Reverse emulating the NES to give it SUPER POWERS!",
+    "channel": "suckerpinch",
+    "summary": "Tom Murphy (suckerpinch) shows 'reverse emulation', using a Raspberry Pi in an NES cartridge to give an unmodified NES new abilities such as playing SNES games. The video starts in a strange way and gets stranger.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 14.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 12,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 7,
+        "reference": 8,
+        "strong_rec": 5
+      },
+      "first_year": 2018,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "speedrunning-glitches",
+        "name": "Speedrunning, glitches & game hacking",
+        "area": "games",
+        "area_name": "Games & Game Development"
+      },
+      {
+        "id": "game-history-retro",
+        "name": "Game history & retro gaming",
+        "area": "games",
+        "area_name": "Games & Game Development"
+      },
+      {
+        "id": "embedded-diy-electronics",
+        "name": "Embedded systems & DIY electronics",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "_rBO8neWw04",
+    "url": "https://www.youtube.com/watch?v=_rBO8neWw04",
+    "title": "Detergent packs are kinda wishy-washy (Dishwashers Explained)",
+    "channel": "Technology Connections",
+    "summary": "Technology Connections explains how dishwashers work, why detergent pods underperform powder, and how to use the pre-wash and main-wash compartments. It argues you don't need to pre-rinse dishes.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 15,
+      "rec_months": 12,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 10,
+        "reference": 5,
+        "strong_rec": 5
+      },
+      "first_year": 2021,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "home-diy-repair",
+        "name": "Home, DIY & practical skills",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "mechanical-engineering",
+        "name": "Mechanical & precision engineering",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "consumer-devices",
+        "name": "Consumer devices & gadgets",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "040ejWnFkj0",
+    "url": "https://www.youtube.com/watch?v=040ejWnFkj0",
+    "title": "How Self-Driving Cars will Destroy Cities (and what to do about it)",
+    "channel": "Not Just Bikes",
+    "summary": "Not Just Bikes argues that self-driving cars will worsen sprawl and car dependence and harm cities. The video compares car-centered and people-centered urban design and weighs what cities should do instead.",
+    "content_type": "commentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 17,
+      "rec_months": 12,
+      "strong_recs": 5,
+      "stances": {
+        "reference": 2,
+        "strong_rec": 5,
+        "rec": 12,
+        "critical": 1
+      },
+      "first_year": 2024,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "transit-urbanism",
+        "name": "Transit, cities & urban planning",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "self-driving-cars",
+        "name": "Self-driving & autonomous vehicles",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "ZK3O402wf1c",
+    "url": "https://www.youtube.com/watch?v=ZK3O402wf1c",
+    "title": "Lec 1 | MIT 18.06 Linear Algebra, Spring 2005",
+    "channel": "MIT OpenCourseWare",
+    "summary": "The first lecture of Gilbert Strang's MIT 18.06 Linear Algebra course, covering the geometry of linear equations. It opens a full 35-lecture university course.",
+    "content_type": "lecture",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 15,
+      "recommenders": 11,
+      "rec_months": 12,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 8,
+        "strong_rec": 5,
+        "reference": 2
+      },
+      "first_year": 2011,
+      "last_year": 2020
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "university-lectures",
+        "name": "University lectures & courses",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "pure-mathematics",
+        "name": "Pure mathematics",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "HxaD_trXwRE",
+    "url": "https://www.youtube.com/watch?v=HxaD_trXwRE",
+    "title": "Lexical Scanning in Go - Rob Pike",
+    "channel": "GoogleFOSSSydney",
+    "summary": "Rob Pike shows how the Go text/template lexer is built, using state functions, goroutines and channels. The talk was given at a Google Technology User Group in Sydney in 2011.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 13,
+      "rec_months": 12,
+      "strong_recs": 4,
+      "stances": {
+        "rec": 9,
+        "strong_rec": 4,
+        "reference": 5,
+        "joke": 1,
+        "critical": 1
+      },
+      "first_year": 2012,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "compilers-interpreters",
+        "name": "Compilers, interpreters & program analysis",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "systems-programming-languages",
+        "name": "C, C++, Rust, Go & systems languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "B1J2RMorJXM",
+    "url": "https://www.youtube.com/watch?v=B1J2RMorJXM",
+    "title": "Light Years Ahead | The 1969 Apollo Guidance Computer",
+    "channel": "TNMoC",
+    "summary": "Robert Wills of TNMoC explains the Apollo Guidance Computer hardware and software, then walks through the Apollo 11 landing procedure step by step, including the 1202 alarms.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 13,
+      "recommenders": 11,
+      "rec_months": 11,
+      "strong_recs": 6,
+      "stances": {
+        "rec": 7,
+        "strong_rec": 6
+      },
+      "first_year": 2021,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-EAR",
+    "categories": [
+      {
+        "id": "history-of-computing",
+        "name": "History of computing",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "space-exploration",
+        "name": "Space exploration & spaceflight",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "computer-architecture",
+        "name": "Computer architecture & CPUs",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "F_Riqjdh2oM",
+    "url": "https://www.youtube.com/watch?v=F_Riqjdh2oM",
+    "title": "Quantum Computing for Computer Scientists",
+    "channel": "Microsoft Research",
+    "summary": "An 88-minute Microsoft Research talk that explains how quantum computers beat classical ones using basic linear algebra, qubits, superposition and gates. It works through the Deutsch oracle problem and ends with entanglement, teleportation and a live demo.",
+    "content_type": "talk",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 13,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 4,
+        "strong_rec": 2,
+        "rec": 14
+      },
+      "first_year": 2018,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "quantum-computing",
+        "name": "Quantum computing",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "RjD1aLm4Thg",
+    "url": "https://www.youtube.com/watch?v=RjD1aLm4Thg",
+    "title": "What Bodies Think About: Bioelectric Computation Outside the Nervous System - NeurIPS 2018",
+    "channel": "The Artificial Intelligence Channel",
+    "summary": "Michael Levin's NeurIPS 2018 talk on bioelectric computation outside the nervous system, showing how cell electrical networks shape development and regeneration. It covers morphological information processing in living tissue.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 8,
+      "stances": {
+        "strong_rec": 8,
+        "reference": 7,
+        "rec": 5
+      },
+      "first_year": 2018,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "biology-biotech",
+        "name": "Biology & biotechnology",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "neuroscience-brain",
+        "name": "Neuroscience & the brain",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "consciousness-mind",
+        "name": "Consciousness & cognition",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "LnzuMJLZRdU",
+    "url": "https://www.youtube.com/watch?v=LnzuMJLZRdU",
+    "title": "“Hello, world” from scratch on a 6502 — Part 1",
+    "channel": "Ben Eater",
+    "summary": "Ben Eater starts a series building a working computer on breadboards around the 6502 microprocessor. In this first part he gets a 'hello world' running from scratch.",
+    "content_type": "tutorial",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 14.0,
+    "hn": {
+      "mentions": 13,
+      "recommenders": 11,
+      "rec_months": 11,
+      "strong_recs": 6,
+      "stances": {
+        "rec": 7,
+        "strong_rec": 6
+      },
+      "first_year": 2019,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "electronics-circuits",
+        "name": "Electronics & circuit design",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "computer-architecture",
+        "name": "Computer architecture & CPUs",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "embedded-diy-electronics",
+        "name": "Embedded systems & DIY electronics",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "4fFDFbi3toc",
+    "url": "https://www.youtube.com/watch?v=4fFDFbi3toc",
+    "title": "\"Testing Distributed Systems w/ Deterministic Simulation\" by Will Wilson",
+    "channel": "Strange Loop Conference",
+    "summary": "Will Wilson of FoundationDB explains how the team tested their distributed database using deterministic simulation. By running the whole system in a simulator with injected faults and reproducible seeds, they could find rare concurrency and network bugs.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 7,
+        "strong_rec": 5,
+        "reference": 8
+      },
+      "first_year": 2014,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "distributed-systems",
+        "name": "Distributed systems",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      },
+      {
+        "id": "testing-debugging-tools",
+        "name": "Testing, debugging & developer tools",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "databases-storage",
+        "name": "Databases & storage",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "BLGFriOKz6U",
+    "url": "https://www.youtube.com/watch?v=BLGFriOKz6U",
+    "title": "Behind the Scenes of iOS Security",
+    "channel": "Black Hat",
+    "summary": "Apple security head Ivan Krstic gives a Black Hat 2016 talk on iOS security, covering HomeKit, Auto Unlock and iCloud Keychain. He explains key hierarchies and how data can stay safe even in adversarial clouds.",
+    "content_type": "talk",
+    "level": "advanced",
+    "shelf_life": "dated",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 9,
+      "rec_months": 11,
+      "strong_recs": 7,
+      "stances": {
+        "reference": 7,
+        "rec": 6,
+        "strong_rec": 7
+      },
+      "first_year": 2016,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "security-hacking",
+        "name": "Security & hacking",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      },
+      {
+        "id": "cryptography",
+        "name": "Cryptography",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      },
+      {
+        "id": "consumer-devices",
+        "name": "Consumer devices & gadgets",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "PUv66718DII",
+    "url": "https://www.youtube.com/watch?v=PUv66718DII",
+    "title": "Bret Victor - Inventing on Principle",
+    "channel": "Rui Oliveira",
+    "summary": "Bret Victor's talk at CUSEC 2012 in which he argues that creators need immediate feedback and should organize their work around a guiding principle. He demonstrates live-coding and animation tools that show results as you type, and describes his own principle that creators must see what they are making.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "reference": 8,
+        "strong_rec": 5,
+        "rec": 7
+      },
+      "first_year": 2013,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "gui-hci-history",
+        "name": "GUI, HCI & interface history",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "testing-debugging-tools",
+        "name": "Testing, debugging & developer tools",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "ux-ui-design",
+        "name": "UX & UI design",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "jbkSRLYSojo",
+    "url": "https://www.youtube.com/watch?v=jbkSRLYSojo",
+    "title": "Hans Rosling's 200 Countries, 200 Years, 4 Minutes - The Joy of Stats - BBC",
+    "channel": "BBC",
+    "summary": "Hans Rosling uses augmented-reality animation to show 200 countries over 200 years in four minutes, built from 120,000 data points. It tracks life expectancy and income to show the world's development.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 10,
+      "rec_months": 12,
+      "strong_recs": 3,
+      "stances": {
+        "reference": 6,
+        "rec": 11,
+        "strong_rec": 3
+      },
+      "first_year": 2010,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "data-visualization",
+        "name": "Data visualization & information design",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "macroeconomics",
+        "name": "Macroeconomics & financial crises",
+        "area": "business-economics",
+        "area_name": "Business, Startups & Economics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "aAb7hSCtvGw",
+    "url": "https://www.youtube.com/watch?v=aAb7hSCtvGw",
+    "title": "How To Design A Good API and Why it Matters",
+    "channel": "Google TechTalks",
+    "summary": "Joshua Bloch's Google Tech Talk on how to design good APIs and why it matters, with concrete principles and examples. It treats every programmer as an occasional API designer.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 14,
+      "recommenders": 12,
+      "rec_months": 12,
+      "strong_recs": 3,
+      "stances": {
+        "rec": 10,
+        "strong_rec": 3,
+        "reference": 1
+      },
+      "first_year": 2011,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "software-architecture-design",
+        "name": "Software architecture & design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "XetplHcM7aQ",
+    "url": "https://www.youtube.com/watch?v=XetplHcM7aQ",
+    "title": "James Burke Connections, Ep. 1 \"The Trigger Effect\"",
+    "channel": "DRS_Education",
+    "summary": "The first episode of James Burke's 1978 BBC series Connections traces modern dependence on complex technological networks, starting with the 1965 New York blackout, and moves through ancient agriculture to Kuwait's oil-driven leap.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 18,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "strong_rec": 5,
+        "rec": 8,
+        "reference": 5
+      },
+      "first_year": 2019,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "documentaries-storytelling",
+        "name": "Documentaries & storytelling",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "power-grid-heating",
+        "name": "Power grid, heating & buildings",
+        "area": "earth-energy-environment",
+        "area_name": "Earth, Energy & Environment"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "s1i-dnAH9Y4",
+    "url": "https://www.youtube.com/watch?v=s1i-dnAH9Y4",
+    "title": "Mechanical Computer (All Parts) - Basic Mechanisms In Fire Control Computers",
+    "channel": "Excelsior10000",
+    "summary": "A 1953 US Navy training film explaining the basic mechanisms in mechanical fire control computers aboard ships. It shows how gears, differentials and cams solved mathematical problems in permanent mechanical form.",
+    "content_type": "documentary",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 13,
+      "rec_months": 12,
+      "strong_recs": 4,
+      "stances": {
+        "rec": 9,
+        "reference": 7,
+        "strong_rec": 4
+      },
+      "first_year": 2014,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "mechanical-engineering",
+        "name": "Mechanical & precision engineering",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "history-of-computing",
+        "name": "History of computing",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "military-warfare",
+        "name": "Military history & warfare",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "7Pq-S557XQU",
+    "url": "https://www.youtube.com/watch?v=7Pq-S557XQU",
+    "title": "What Happened to Horses Is Happening to Us",
+    "channel": "CGP Grey",
+    "summary": "CGP Grey's video \"Humans Need Not Apply\" argues that automation will make a large part of the workforce economically obsolete, much as engines did for horses. It surveys robots and software replacing both physical and mental labor.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "dated",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 11,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "rec": 6,
+        "strong_rec": 5,
+        "reference": 6,
+        "critical": 3
+      },
+      "first_year": 2014,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "labor-work-wealth",
+        "name": "Labor, work & inequality",
+        "area": "business-economics",
+        "area_name": "Business, Startups & Economics"
+      },
+      {
+        "id": "ai-safety-impact",
+        "name": "AI safety, AGI & impact",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "robotics",
+        "name": "Robotics",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "EZ05e7EMOLM",
+    "url": "https://www.youtube.com/watch?v=EZ05e7EMOLM",
+    "title": "🚀  TDD, Where Did It All Go Wrong (Ian Cooper)",
+    "channel": "DevTernity Conference",
+    "summary": "Ian Cooper's DevTernity talk revisits Kent Beck's original TDD ideas and shows where misunderstandings crept in. It argues tests should target behaviors through public interfaces rather than implementation details, so suites support refactoring instead of resisting it.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 13.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 11,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "strong_rec": 5,
+        "rec": 11,
+        "reference": 4
+      },
+      "first_year": 2018,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "testing-debugging-tools",
+        "name": "Testing, debugging & developer tools",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "software-practice-careers",
+        "name": "Software practice, open source & careers",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "WXuK6gekU1Y",
+    "url": "https://www.youtube.com/watch?v=WXuK6gekU1Y",
+    "title": "AlphaGo - The Movie | Full award-winning documentary",
+    "channel": "Google DeepMind",
+    "summary": "Feature-length documentary following DeepMind's AlphaGo program as it prepares for and plays the 2016 match against Go champion Lee Sedol. It covers the team, the games, and the emotional reaction of the Go world to an AI beating a top human.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 13,
+      "recommenders": 10,
+      "rec_months": 10,
+      "strong_recs": 6,
+      "stances": {
+        "strong_rec": 6,
+        "reference": 3,
+        "rec": 4
+      },
+      "first_year": 2020,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "machine-learning",
+        "name": "Machine learning & deep learning",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "chess-board-games",
+        "name": "Chess, board games & puzzles",
+        "area": "games",
+        "area_name": "Games & Game Development"
+      },
+      {
+        "id": "documentaries-storytelling",
+        "name": "Documentaries & storytelling",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "8pTEmbeENF4",
+    "url": "https://www.youtube.com/watch?v=8pTEmbeENF4",
+    "title": "Bret Victor   The Future of Programming",
+    "channel": "Joey Reid",
+    "summary": "Bret Victor's DBX 2013 talk, delivered in the guise of a 1973 IBM engineer with an overhead projector. It surveys forgotten ideas from 1960s and early 70s computing and warns against assuming you know what you're doing.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "strong_rec": 5,
+        "reference": 8,
+        "rec": 7
+      },
+      "first_year": 2017,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "history-of-computing",
+        "name": "History of computing",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "gui-hci-history",
+        "name": "GUI, HCI & interface history",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "software-practice-careers",
+        "name": "Software practice, open source & careers",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "bBC-nXj3Ng4",
+    "url": "https://www.youtube.com/watch?v=bBC-nXj3Ng4",
+    "title": "But how does bitcoin actually work?",
+    "channel": "3Blue1Brown",
+    "summary": "3Blue1Brown explains the math and mechanics behind Bitcoin visually: ledgers, digital signatures, proof of work and the blockchain, building up a decentralized payment system from first principles.",
+    "content_type": "explainer",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 19,
+      "recommenders": 15,
+      "rec_months": 11,
+      "strong_recs": 4,
+      "stances": {
+        "strong_rec": 4,
+        "reference": 2,
+        "rec": 13
+      },
+      "first_year": 2017,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "cryptography",
+        "name": "Cryptography",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "FACK2knC08E",
+    "url": "https://www.youtube.com/watch?v=FACK2knC08E",
+    "title": "DON'T PANIC — Hans Rosling showing the facts about population",
+    "channel": "Gapminder Foundation",
+    "summary": "Hans Rosling uses data and animated statistics to show how world population is changing, why birth rates fall as child survival and wealth rise, and why population is expected to peak around 11 billion. It also tackles common misconceptions about Africa and family planning.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 16,
+      "recommenders": 8,
+      "rec_months": 11,
+      "strong_recs": 4,
+      "stances": {
+        "rec": 7,
+        "strong_rec": 4,
+        "reference": 5
+      },
+      "first_year": 2017,
+      "last_year": 2021
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "data-visualization",
+        "name": "Data visualization & information design",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "social-issues-culture",
+        "name": "Social issues & culture",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      },
+      {
+        "id": "data-science-statistics",
+        "name": "Data science & statistics",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "YR5WdGrpoug",
+    "url": "https://www.youtube.com/watch?v=YR5WdGrpoug",
+    "title": "Maybe Not - Rich Hickey",
+    "channel": "ClojureTV",
+    "summary": "Rich Hickey's Clojure/Conj 2018 keynote argues that Maybe/Option types and rigid type signatures are a poor way to model data that changes over time. He builds the case around optionality, schema growth and compatibility, and presents the ideas behind Clojure spec as an alternative.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 14,
+      "rec_months": 11,
+      "strong_recs": 5,
+      "stances": {
+        "strong_rec": 5,
+        "rec": 9,
+        "reference": 5,
+        "critical": 1
+      },
+      "first_year": 2018,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "programming-language-design",
+        "name": "Programming language design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "functional-programming",
+        "name": "Functional programming",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "W3aieHjyNvw",
+    "url": "https://www.youtube.com/watch?v=W3aieHjyNvw",
+    "title": "Overwatch Gameplay Architecture and Netcode",
+    "channel": "GDC Festival of Gaming",
+    "summary": "Blizzard's Timothy Ford explains in this 2017 GDC session how Overwatch uses an Entity Component System architecture for layered gameplay. He also covers its server-authoritative netcode with client-side prediction and how they keep the game responsive and fair.",
+    "content_type": "talk",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 16,
+      "rec_months": 10,
+      "strong_recs": 6,
+      "stances": {
+        "rec": 10,
+        "strong_rec": 6,
+        "reference": 4
+      },
+      "first_year": 2019,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "game-programming-engines",
+        "name": "Game programming & engines",
+        "area": "games",
+        "area_name": "Games & Game Development"
+      },
+      {
+        "id": "software-architecture-design",
+        "name": "Software architecture & design",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "-5wpm-gesOY",
+    "url": "https://www.youtube.com/watch?v=-5wpm-gesOY",
+    "title": "The Problem with Time & Timezones - Computerphile",
+    "channel": "Computerphile",
+    "summary": "Tom Scott explains for Computerphile why handling time and timezones in code is so hard, walking through a simple web app that computes how long ago something happened. It covers the quirks of timezones and calendars and ends in an exasperated rant.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 13.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 12,
+      "strong_recs": 2,
+      "stances": {
+        "rec": 10,
+        "strong_rec": 2,
+        "reference": 7,
+        "joke": 1
+      },
+      "first_year": 2014,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CS",
+    "categories": [
+      {
+        "id": "software-other",
+        "name": "Software (other)",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      },
+      {
+        "id": "scripting-languages",
+        "name": "Python, Ruby & scripting languages",
+        "area": "software",
+        "area_name": "Software Engineering & Languages"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "5ESJH1NLMLs",
+    "url": "https://www.youtube.com/watch?v=5ESJH1NLMLs",
+    "title": "Children Of The Magenta Line",
+    "channel": "Mossie Fly",
+    "summary": "A re-upload of American Airlines captain Warren Vanderburgh's 1997 presentation warning that pilots who over-rely on cockpit automation lose manual flying skills and awareness. The uploader adds context from his own flying.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 12.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 11,
+      "rec_months": 11,
+      "strong_recs": 3,
+      "stances": {
+        "rec": 10,
+        "reference": 7,
+        "strong_rec": 3
+      },
+      "first_year": 2021,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "aviation",
+        "name": "Aviation & aerospace engineering",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "ORzNZUeUHAM",
+    "url": "https://www.youtube.com/watch?v=ORzNZUeUHAM",
+    "title": "Stroads are Ugly, Expensive, and Dangerous (and they're everywhere) [ST05]",
+    "channel": "Not Just Bikes",
+    "summary": "Not Just Bikes introduces the \"stroad\", a street-road hybrid common in the US and Canada that fails at both jobs. He contrasts it with Dutch design, where each road has a single purpose, and covers cost, danger and ugliness.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 12.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 8,
+        "rec": 10,
+        "strong_rec": 2
+      },
+      "first_year": 2021,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "transit-urbanism",
+        "name": "Transit, cities & urban planning",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "civil-engineering-construction",
+        "name": "Civil engineering & construction",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "1OfxlSG6q5Y",
+    "url": "https://www.youtube.com/watch?v=1OfxlSG6q5Y",
+    "title": "The Antique Toaster that's Better than Yours",
+    "channel": "Technology Connections",
+    "summary": "Technology Connections takes apart a 1940s Sunbeam Radiant Control toaster. It senses the toast's own browning and lowers and raises it automatically using purely mechanical parts and no electronics.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 12.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 11,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 7,
+        "strong_rec": 2,
+        "rec": 10,
+        "joke": 1
+      },
+      "first_year": 2019,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "mechanical-engineering",
+        "name": "Mechanical & precision engineering",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "consumer-devices",
+        "name": "Consumer devices & gadgets",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "JcJSW7Rprio",
+    "url": "https://www.youtube.com/watch?v=JcJSW7Rprio",
+    "title": "Harder Drive: Hard drives we didn't want or need",
+    "channel": "suckerpinch",
+    "summary": "Tom7 (suckerpinch) builds and evaluates a series of absurd hard drives, including storage made from ping packets across the internet. The video accompanies his paper and mixes deep technical hacking with comedic storytelling.",
+    "content_type": "demo",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 11.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 12,
+      "rec_months": 9,
+      "strong_recs": 5,
+      "stances": {
+        "reference": 7,
+        "strong_rec": 5,
+        "rec": 7,
+        "joke": 1
+      },
+      "first_year": 2022,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "hardware-other",
+        "name": "Hardware (other)",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "networking-internet",
+        "name": "Networking & internet infrastructure",
+        "area": "systems-security",
+        "area_name": "Systems, Networks & Security"
+      },
+      {
+        "id": "standup-sketch-comedy",
+        "name": "Stand-up & sketch comedy",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "hUhisi2FBuw",
+    "url": "https://www.youtube.com/watch?v=hUhisi2FBuw",
+    "title": "The Ingenious Design of the Aluminum Beverage Can",
+    "channel": "engineerguy",
+    "summary": "Bill Hammack of Engineer Guy explains the engineering behind the aluminum beverage can: why it is cylindrical, how it is manufactured, why it narrows at the top, the double seam, and how the pull tab works.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 11.5,
+    "hn": {
+      "mentions": 13,
+      "recommenders": 9,
+      "rec_months": 9,
+      "strong_recs": 5,
+      "stances": {
+        "strong_rec": 5,
+        "reference": 4,
+        "rec": 4
+      },
+      "first_year": 2016,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "manufacturing-industry",
+        "name": "Manufacturing & industrial processes",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "product-industrial-design",
+        "name": "Product & industrial design",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      },
+      {
+        "id": "mechanical-engineering",
+        "name": "Mechanical & precision engineering",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "uxykI30fS54",
+    "url": "https://www.youtube.com/watch?v=uxykI30fS54",
+    "title": "Why This Channel Exists (and why I hate Houston)",
+    "channel": "Not Just Bikes",
+    "summary": "Not Just Bikes explains why the channel exists, through the creator's walk in suburban Houston. It shows how car-dependent design makes cities hostile to pedestrians.",
+    "content_type": "commentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 11.5,
+    "hn": {
+      "mentions": 19,
+      "recommenders": 11,
+      "rec_months": 10,
+      "strong_recs": 4,
+      "stances": {
+        "strong_rec": 4,
+        "rec": 7,
+        "reference": 8
+      },
+      "first_year": 2021,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "transit-urbanism",
+        "name": "Transit, cities & urban planning",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "mPqWstVnRjQ",
+    "url": "https://www.youtube.com/watch?v=mPqWstVnRjQ",
+    "title": "Joe Rogan Experience #1035 - Paul Stamets",
+    "channel": "PowerfulJRE",
+    "summary": "A two-hour Joe Rogan Experience conversation with mycologist Paul Stamets about fungi, mycelium, bioremediation and medicinal mushrooms. It touches on Lion's Mane, psilocybin and the many uses of fungi.",
+    "content_type": "podcast",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 11.0,
+    "hn": {
+      "mentions": 15,
+      "recommenders": 10,
+      "rec_months": 9,
+      "strong_recs": 4,
+      "stances": {
+        "rec": 6,
+        "strong_rec": 4,
+        "reference": 5
+      },
+      "first_year": 2017,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "biology-biotech",
+        "name": "Biology & biotechnology",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "tech-figures-interviews",
+        "name": "Tech pioneers & interviews",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "iYJKd0rkKss",
+    "url": "https://www.youtube.com/watch?v=iYJKd0rkKss",
+    "title": "Dick Proenneke in Alone in the Wilderness",
+    "channel": "swererbob",
+    "summary": "A condensed film of Dick Proenneke's footage of building a cabin and living alone in the Alaskan wilderness, using hand tools and local materials. It draws on the 8mm films he shot himself.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 10.5,
+    "hn": {
+      "mentions": 13,
+      "recommenders": 10,
+      "rec_months": 8,
+      "strong_recs": 5,
+      "stances": {
+        "strong_rec": 5,
+        "reference": 3,
+        "rec": 5
+      },
+      "first_year": 2012,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "documentaries-storytelling",
+        "name": "Documentaries & storytelling",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "making-woodworking-metalwork",
+        "name": "Woodworking, metalworking & workshop skills",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "animals-nature",
+        "name": "Animals & nature",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "8hAw1z8GdE8",
+    "url": "https://www.youtube.com/watch?v=8hAw1z8GdE8",
+    "title": "Personal Growth Series: Dr. William Dement on Healthy Sleep and Optimal Perfo...",
+    "channel": "Google TechTalks",
+    "summary": "A Google Tech Talk by sleep researcher Dr. William Dement on healthy sleep and performance. He argues sleep debt must be repaid and describes the three characteristics of healthy sleep.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 10.5,
+    "hn": {
+      "mentions": 12,
+      "recommenders": 6,
+      "rec_months": 9,
+      "strong_recs": 3,
+      "stances": {
+        "strong_rec": 3,
+        "rec": 6,
+        "reference": 3
+      },
+      "first_year": 2008,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-SPO",
+    "categories": [
+      {
+        "id": "fitness-sleep-longevity",
+        "name": "Fitness, sleep & longevity",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "neuroscience-brain",
+        "name": "Neuroscience & the brain",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "SGJ5cZnoodY",
+    "url": "https://www.youtube.com/watch?v=SGJ5cZnoodY",
+    "title": "Shenzhen: The Silicon Valley of Hardware (Full Documentary) | Future Cities | WIRED",
+    "channel": "WIRED Investigations",
+    "summary": "A WIRED Future Cities documentary on Shenzhen, covering its hardware-prototyping culture and shanzhai copycat manufacturing. It looks at how the city's ecosystem evolved and what the rest of the world can learn.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "dated",
+    "score": 10.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 8,
+      "rec_months": 8,
+      "strong_recs": 5,
+      "stances": {
+        "reference": 12,
+        "strong_rec": 5,
+        "rec": 3
+      },
+      "first_year": 2016,
+      "last_year": 2022
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "manufacturing-industry",
+        "name": "Manufacturing & industrial processes",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "embedded-diy-electronics",
+        "name": "Embedded systems & DIY electronics",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      },
+      {
+        "id": "startups-entrepreneurship",
+        "name": "Startups & entrepreneurship",
+        "area": "business-economics",
+        "area_name": "Business, Startups & Economics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "pwaWilO_Pig",
+    "url": "https://www.youtube.com/watch?v=pwaWilO_Pig",
+    "title": "Joe Rogan Experience #1109 - Matthew Walker",
+    "channel": "PowerfulJRE",
+    "summary": "Joe Rogan interviews Matthew Walker, Berkeley neuroscience professor and author of Why We Sleep. They discuss what sleep does for the brain and body, the effects of sleep deprivation, and sleep myths.",
+    "content_type": "podcast",
+    "level": "general",
+    "shelf_life": "dated",
+    "score": 10.0,
+    "hn": {
+      "mentions": 18,
+      "recommenders": 12,
+      "rec_months": 9,
+      "strong_recs": 3,
+      "stances": {
+        "strong_rec": 3,
+        "rec": 9,
+        "reference": 6
+      },
+      "first_year": 2018,
+      "last_year": 2020
+    },
+    "candidateL1": "SCI-SPO",
+    "categories": [
+      {
+        "id": "fitness-sleep-longevity",
+        "name": "Fitness, sleep & longevity",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "neuroscience-brain",
+        "name": "Neuroscience & the brain",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "ZuvK-od647c",
+    "url": "https://www.youtube.com/watch?v=ZuvK-od647c",
+    "title": "Quantum Entanglement & Spooky Action at a Distance",
+    "channel": "Veritasium",
+    "summary": "Veritasium explains quantum entanglement and spooky action at a distance, walking through Bell's inequality and the experiments that rule out hidden variables, in under ten minutes.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 10.0,
+    "hn": {
+      "mentions": 10,
+      "recommenders": 9,
+      "rec_months": 9,
+      "strong_recs": 2,
+      "stances": {
+        "rec": 7,
+        "strong_rec": 2,
+        "reference": 1
+      },
+      "first_year": 2015,
+      "last_year": 2022
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "quantum-physics",
+        "name": "Quantum physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "N1pIYI5JQLE",
+    "url": "https://www.youtube.com/watch?v=N1pIYI5JQLE",
+    "title": "Richard Feynman Fire",
+    "channel": "nebulajr",
+    "summary": "A short clip from a Richard Feynman interview in which he explains fire, describing how burning wood releases sunlight stored by the tree, which built itself mostly from air. It showcases his curiosity and plain-spoken explanations.",
+    "content_type": "interview",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 10.0,
+    "hn": {
+      "mentions": 14,
+      "recommenders": 8,
+      "rec_months": 8,
+      "strong_recs": 4,
+      "stances": {
+        "strong_rec": 4,
+        "rec": 4,
+        "reference": 6
+      },
+      "first_year": 2010,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "chemistry",
+        "name": "Chemistry",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "5Ge2RcvDlgw",
+    "url": "https://www.youtube.com/watch?v=5Ge2RcvDlgw",
+    "title": "The Extreme Engineering of ASML’s EUV Light Source",
+    "channel": "Asianometry",
+    "summary": "Asianometry explains the EUV light source inside ASML's lithography machines, where lasers hit falling tin droplets twice to produce 13.5 nm light. It walks through the engineering of the droplet generator, the pre-pulse and main laser, and the plasma that results.",
+    "content_type": "explainer",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 10.0,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 11,
+      "rec_months": 8,
+      "strong_recs": 4,
+      "stances": {
+        "reference": 9,
+        "strong_rec": 4,
+        "rec": 7
+      },
+      "first_year": 2022,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-ELE",
+    "categories": [
+      {
+        "id": "semiconductors-manufacturing",
+        "name": "Semiconductors & chip manufacturing",
+        "area": "hardware",
+        "area_name": "Hardware & Electronics"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "AvEqfg2sIH0",
+    "url": "https://www.youtube.com/watch?v=AvEqfg2sIH0",
+    "title": "1. How Buildings Learn - Stewart Brand - 1 of 6 - “Flow”",
+    "channel": "Stewart Brand",
+    "summary": "The first episode of Stewart Brand's 1997 BBC series based on his book How Buildings Learn, covering how buildings change after they are built. Brand presents and the series has music by Brian Eno.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 9.5,
+    "hn": {
+      "mentions": 10,
+      "recommenders": 8,
+      "rec_months": 8,
+      "strong_recs": 3,
+      "stances": {
+        "rec": 5,
+        "reference": 2,
+        "strong_rec": 3
+      },
+      "first_year": 2013,
+      "last_year": 2020
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "civil-engineering-construction",
+        "name": "Civil engineering & construction",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "visual-arts",
+        "name": "Visual arts, photography & architecture",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "documentaries-storytelling",
+        "name": "Documentaries & storytelling",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "6bqBsHSwPgw",
+    "url": "https://www.youtube.com/watch?v=6bqBsHSwPgw",
+    "title": "Building a realistic artificial sun (for dark winter days)",
+    "channel": "DIY Perks",
+    "summary": "DIY Perks builds a realistic artificial sun for dark winters, using a powerful water-cooled LED, a satellite dish reflector for near-parallel rays, and a scattering layer to mimic the blue sky. The video explains the optics behind why most lamps do not look like sunlight and shows the build and its results.",
+    "content_type": "demo",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 9.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 9,
+      "rec_months": 8,
+      "strong_recs": 3,
+      "stances": {
+        "reference": 11,
+        "rec": 6,
+        "strong_rec": 3
+      },
+      "first_year": 2020,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "home-diy-repair",
+        "name": "Home, DIY & practical skills",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "3d-printing-cnc",
+        "name": "3D printing, CNC & maker projects",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "wh4aWZRtTwU",
+    "url": "https://www.youtube.com/watch?v=wh4aWZRtTwU",
+    "title": "Brown; color is weird",
+    "channel": "Technology Connections",
+    "summary": "Technology Connections explains why brown is not a spectral color but a context-dependent perception, essentially dark orange seen against brighter surroundings.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 9.0,
+    "hn": {
+      "mentions": 14,
+      "recommenders": 8,
+      "rec_months": 8,
+      "strong_recs": 2,
+      "stances": {
+        "rec": 7,
+        "reference": 5,
+        "strong_rec": 2
+      },
+      "first_year": 2020,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "graphic-design-typography",
+        "name": "Graphic design & typography",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "Ll6-eGDpimU",
+    "url": "https://www.youtube.com/watch?v=Ll6-eGDpimU",
+    "title": "I messed up. You're using too much detergent.",
+    "channel": "Technology Connections",
+    "summary": "Technology Connections explains dishwasher detergent use, arguing people use too much and that powder beats pods and gels. It follows an earlier dishwasher video and covers enzymes, bleach, rinse aids and when salt is needed.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 9.0,
+    "hn": {
+      "mentions": 17,
+      "recommenders": 10,
+      "rec_months": 8,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 7,
+        "rec": 8,
+        "strong_rec": 2
+      },
+      "first_year": 2021,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "home-diy-repair",
+        "name": "Home, DIY & practical skills",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "chemistry",
+        "name": "Chemistry",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "msVuCEs8Ydo",
+    "url": "https://www.youtube.com/watch?v=msVuCEs8Ydo",
+    "title": "The Speed of Light is NOT About Light",
+    "channel": "PBS Space Time",
+    "summary": "PBS Space Time argues that the speed of light is better understood as the speed of causality, the universal limit on how fast cause and effect propagate. Light travels at that speed because it is massless, but the limit itself is a property of spacetime.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 9.0,
+    "hn": {
+      "mentions": 15,
+      "recommenders": 8,
+      "rec_months": 8,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 5,
+        "rec": 8,
+        "strong_rec": 2
+      },
+      "first_year": 2017,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "7Hk9jct2ozY",
+    "url": "https://www.youtube.com/watch?v=7Hk9jct2ozY",
+    "title": "DNA animation (2002-2014) by Drew Berry and Etsuko Uno wehi.tv #ScienceArt",
+    "channel": "WEHImovies",
+    "summary": "A compilation of molecular animations of DNA replication and gene transcription by Drew Berry and Etsuko Uno at WEHI, made with no narration. It shows molecular machinery at work inside cells.",
+    "content_type": "other",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 8.5,
+    "hn": {
+      "mentions": 11,
+      "recommenders": 9,
+      "rec_months": 8,
+      "strong_recs": 1,
+      "stances": {
+        "rec": 8,
+        "reference": 2,
+        "strong_rec": 1
+      },
+      "first_year": 2020,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "biology-biotech",
+        "name": "Biology & biotechnology",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "evolution-genetics",
+        "name": "Evolution & genetics",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "animation-vfx",
+        "name": "Animation & visual effects",
+        "area": "design-graphics-media",
+        "area_name": "Design, Graphics & Visual Media"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "_ZG8HBuDjgc",
+    "url": "https://www.youtube.com/watch?v=_ZG8HBuDjgc",
+    "title": "DOUGLAS ADAMS: Parrots, the Universe and Everything",
+    "channel": "University of California Television (UCTV)",
+    "summary": "Douglas Adams gives a talk at UCSB, recorded shortly before his death, about the odd lives of animals and what they suggest about humanity's future. It draws on his Last Chance to See work and is funny and wide-ranging.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 8.5,
+    "hn": {
+      "mentions": 9,
+      "recommenders": 5,
+      "rec_months": 6,
+      "strong_recs": 5,
+      "stances": {
+        "reference": 1,
+        "rec": 3,
+        "strong_rec": 5
+      },
+      "first_year": 2014,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "animals-nature",
+        "name": "Animals & nature",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "tech-figures-interviews",
+        "name": "Tech pioneers & interviews",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "literature-writing",
+        "name": "Literature & writing craft",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "pTn6Ewhb27k",
+    "url": "https://www.youtube.com/watch?v=pTn6Ewhb27k",
+    "title": "Why No One Has Measured The Speed Of Light",
+    "channel": "Veritasium",
+    "summary": "Veritasium explains why the one-way speed of light has never been measured, only the round-trip speed, since measuring it requires synchronized clocks that assume the answer. It explores the implications for relativity.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 8.5,
+    "hn": {
+      "mentions": 17,
+      "recommenders": 6,
+      "rec_months": 7,
+      "strong_recs": 3,
+      "stances": {
+        "reference": 10,
+        "rec": 4,
+        "strong_rec": 3
+      },
+      "first_year": 2020,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "Uj-rK8V-rik",
+    "url": "https://www.youtube.com/watch?v=Uj-rK8V-rik",
+    "title": "Google Self-Driving Car Project | SXSW Interactive 2016",
+    "channel": "SXSW",
+    "summary": "Chris Urmson's SXSW 2016 talk on Google's self-driving car project, covering 1.3 million self-driven miles and the gap between hype and reality. It shows sensor visualizations and playbacks of hard situations the cars met, and discusses failures such as the low-speed bus collision.",
+    "content_type": "talk",
+    "level": "general",
+    "shelf_life": "dated",
+    "score": 8.0,
+    "hn": {
+      "mentions": 17,
+      "recommenders": 2,
+      "rec_months": 7,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 10,
+        "rec": 5,
+        "strong_rec": 2
+      },
+      "first_year": 2016,
+      "last_year": 2018
+    },
+    "candidateL1": "SCI-MEC",
+    "categories": [
+      {
+        "id": "self-driving-cars",
+        "name": "Self-driving & autonomous vehicles",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      },
+      {
+        "id": "tech-figures-interviews",
+        "name": "Tech pioneers & interviews",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "j3mhkYbznBk",
+    "url": "https://www.youtube.com/watch?v=j3mhkYbznBk",
+    "title": "Richard Feynman  - The.Character of Physical Law - Part 1 The Law of Gravitation (full version)",
+    "channel": "Tinkerin' Thinkers",
+    "summary": "The first of Richard Feynman's 1964 Cornell Messenger Lectures, The Character of Physical Law, focusing on the law of gravitation. Feynman builds up from planetary motion to the nature of physical laws.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 8.0,
+    "hn": {
+      "mentions": 9,
+      "recommenders": 6,
+      "rec_months": 6,
+      "strong_recs": 4,
+      "stances": {
+        "reference": 3,
+        "strong_rec": 4,
+        "rec": 2
+      },
+      "first_year": 2013,
+      "last_year": 2022
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "university-lectures",
+        "name": "University lectures & courses",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "2tdiKTSdE9Y",
+    "url": "https://www.youtube.com/watch?v=2tdiKTSdE9Y",
+    "title": "I promise this story about microwaves is interesting.",
+    "channel": "Tom Scott",
+    "summary": "Tom Scott investigates the claim that the microwave was invented to heat hamsters, and interviews James Lovelock about freezing and microwave-thawing hamsters in the 1950s. It traces early magnetron uses beyond radar.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 7.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 9,
+      "rec_months": 7,
+      "strong_recs": 1,
+      "stances": {
+        "rec": 8,
+        "reference": 11,
+        "strong_rec": 1
+      },
+      "first_year": 2021,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "documentaries-storytelling",
+        "name": "Documentaries & storytelling",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "physics-space-other",
+        "name": "Physics & space (other)",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "zNVQfWC_evg",
+    "url": "https://www.youtube.com/watch?v=zNVQfWC_evg",
+    "title": "Quantum Fields: The Real Building Blocks of the Universe - with David Tong",
+    "channel": "The Royal Institution",
+    "summary": "David Tong, a Cambridge theoretical physicist, explains at the Royal Institution that the fundamental building blocks of nature are quantum fields rather than particles. He covers what we know about these fields and how they fit into the Standard Model.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 7.5,
+    "hn": {
+      "mentions": 9,
+      "recommenders": 5,
+      "rec_months": 6,
+      "strong_recs": 3,
+      "stances": {
+        "rec": 3,
+        "reference": 3,
+        "strong_rec": 3
+      },
+      "first_year": 2019,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "quantum-physics",
+        "name": "Quantum physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "Q1lL-hXO27Q",
+    "url": "https://www.youtube.com/watch?v=Q1lL-hXO27Q",
+    "title": "Feynman: Magnets (and Why?)  FUN TO IMAGINE  4/ higher quality version!",
+    "channel": "Christopher Sykes",
+    "summary": "A 1983 BBC interview in which Richard Feynman is asked how magnets work and explains why 'why' questions are hard to answer in everyday terms. He reflects on what counts as an explanation and the limits of analogy.",
+    "content_type": "interview",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 6.5,
+    "hn": {
+      "mentions": 10,
+      "recommenders": 5,
+      "rec_months": 5,
+      "strong_recs": 3,
+      "stances": {
+        "reference": 5,
+        "rec": 2,
+        "strong_rec": 3
+      },
+      "first_year": 2021,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "Y9FZ4igNxNA",
+    "url": "https://www.youtube.com/watch?v=Y9FZ4igNxNA",
+    "title": "Fourier Optics used for Optical Pattern Recognition",
+    "channel": "Huygens Optics",
+    "summary": "Huygens Optics explains the Fourier transform and shows how a lens performs one optically. A DLP projector is used as a Fourier filter to do simple pattern recognition on lithographic character patterns.",
+    "content_type": "explainer",
+    "level": "intermediate",
+    "shelf_life": "evergreen",
+    "score": 6.5,
+    "hn": {
+      "mentions": 9,
+      "recommenders": 5,
+      "rec_months": 5,
+      "strong_recs": 3,
+      "stances": {
+        "strong_rec": 3,
+        "rec": 3,
+        "reference": 3
+      },
+      "first_year": 2021,
+      "last_year": 2025
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "information-theory",
+        "name": "Information theory & signal processing",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      },
+      {
+        "id": "computer-vision-speech",
+        "name": "Computer vision, speech & NLP",
+        "area": "ai-data",
+        "area_name": "AI, Machine Learning & Data"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "826HMLoiE_o",
+    "url": "https://www.youtube.com/watch?v=826HMLoiE_o",
+    "title": "The Intense 8 Hour Hunt | Attenborough Life of Mammals | BBC Earth",
+    "channel": "BBC Earth",
+    "summary": "A clip from Attenborough's Life of Mammals following a San tribesman in the Kalahari on an eight-hour persistence hunt, running down a kudu through harsh heat. It shows tracking, endurance running and the hunter's reaction after the kill.",
+    "content_type": "documentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 6.5,
+    "hn": {
+      "mentions": 20,
+      "recommenders": 6,
+      "rec_months": 6,
+      "strong_recs": 1,
+      "stances": {
+        "joke": 2,
+        "rec": 5,
+        "reference": 12,
+        "strong_rec": 1
+      },
+      "first_year": 2010,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "animals-nature",
+        "name": "Animals & nature",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "evolution-genetics",
+        "name": "Evolution & genetics",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "IV3dnLzthDA",
+    "url": "https://www.youtube.com/watch?v=IV3dnLzthDA",
+    "title": "The Man Who Accidentally Killed The Most People In History",
+    "channel": "Veritasium",
+    "summary": "Veritasium tells the story of Thomas Midgley Jr., who introduced leaded gasoline and CFCs, and covers the science behind lead exposure and ozone damage. It also touches on isotope geochemistry used to uncover the history.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 6.5,
+    "hn": {
+      "mentions": 12,
+      "recommenders": 6,
+      "rec_months": 6,
+      "strong_recs": 1,
+      "stances": {
+        "rec": 5,
+        "reference": 6,
+        "strong_rec": 1
+      },
+      "first_year": 2022,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-CHE",
+    "categories": [
+      {
+        "id": "chemistry",
+        "name": "Chemistry",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "environment-agriculture",
+        "name": "Environment, agriculture & food systems",
+        "area": "earth-energy-environment",
+        "area_name": "Earth, Energy & Environment"
+      },
+      {
+        "id": "world-history",
+        "name": "World history",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "JLb5hZLw44s",
+    "url": "https://www.youtube.com/watch?v=JLb5hZLw44s",
+    "title": "Bret Weinstein on \"The Portal\" (w/ host Eric Weinstein), Ep. #019 - The Prediction and the DISC.",
+    "channel": "Eric Weinstein",
+    "summary": "A long Portal podcast episode in which Bret Weinstein tells Eric Weinstein the story of his lab mice telomere work, the prediction behind it, and what it means for science and aging.",
+    "content_type": "podcast",
+    "level": "intermediate",
+    "shelf_life": "dated",
+    "score": 6.0,
+    "hn": {
+      "mentions": 8,
+      "recommenders": 5,
+      "rec_months": 6,
+      "strong_recs": 0,
+      "stances": {
+        "rec": 6,
+        "reference": 2
+      },
+      "first_year": 2020,
+      "last_year": 2023
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "evolution-genetics",
+        "name": "Evolution & genetics",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "biology-biotech",
+        "name": "Biology & biotechnology",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "ydqReeTV_vk",
+    "url": "https://www.youtube.com/watch?v=ydqReeTV_vk",
+    "title": "Evo-Devo (Despacito Biology Parody) | A Capella Science",
+    "channel": "acapellascience",
+    "summary": "A Capella Science parody of Despacito that sings through evolutionary developmental biology, explaining how a single cell becomes a body, including body-axis genes and dormant snake leg DNA. It runs about four minutes.",
+    "content_type": "music",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 6.0,
+    "hn": {
+      "mentions": 11,
+      "recommenders": 6,
+      "rec_months": 6,
+      "strong_recs": 0,
+      "stances": {
+        "reference": 3,
+        "rec": 7,
+        "joke": 1
+      },
+      "first_year": 2017,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-BIO",
+    "categories": [
+      {
+        "id": "evolution-genetics",
+        "name": "Evolution & genetics",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      },
+      {
+        "id": "satire-parody",
+        "name": "Satire & parody",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "biology-biotech",
+        "name": "Biology & biotechnology",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "l_aFHrzSBrM",
+    "url": "https://www.youtube.com/watch?v=l_aFHrzSBrM",
+    "title": "Is olive oil safe at high heat? Does it taste bad?",
+    "channel": "Adam Ragusea",
+    "summary": "Adam Ragusea examines whether olive oil is unsafe for high-heat cooking and whether it tastes bad when heated. He cites studies showing it is among the most stable cooking oils and that smoke-point worries are overblown.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 6.0,
+    "hn": {
+      "mentions": 9,
+      "recommenders": 4,
+      "rec_months": 5,
+      "strong_recs": 2,
+      "stances": {
+        "strong_rec": 2,
+        "reference": 4,
+        "rec": 3
+      },
+      "first_year": 2021,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-CHE",
+    "categories": [
+      {
+        "id": "cooking-food",
+        "name": "Cooking & food",
+        "area": "engineering-making",
+        "area_name": "Engineering, Transport & Making"
+      },
+      {
+        "id": "nutrition-diet",
+        "name": "Nutrition & diet science",
+        "area": "life-sciences-health",
+        "area_name": "Life Sciences, Mind & Health"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "kya_LXa_y1E",
+    "url": "https://www.youtube.com/watch?v=kya_LXa_y1E",
+    "title": "string theory lied to us and now science communication is hard",
+    "channel": "Angela Collier ",
+    "summary": "Physicist Angela Collier's roughly hour-long video on how string theory was hyped to the public and what that did to science communication. She traces the history of the theory as a narrative and argues it is interesting but was oversold.",
+    "content_type": "commentary",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 6.0,
+    "hn": {
+      "mentions": 10,
+      "recommenders": 8,
+      "rec_months": 5,
+      "strong_recs": 2,
+      "stances": {
+        "reference": 2,
+        "strong_rec": 2,
+        "rec": 6
+      },
+      "first_year": 2023,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "RrHnLXMTOWM",
+    "url": "https://www.youtube.com/watch?v=RrHnLXMTOWM",
+    "title": "Introduction: The Chemical History of a Candle by Michael Faraday (1/6)",
+    "channel": "engineerguy",
+    "summary": "Bill Hammack of engineerguy introduces his series on Michael Faraday's lectures on The Chemical History of a Candle. He describes the free companion book and the commentary and caption features that help modern viewers.",
+    "content_type": "lecture",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 5.0,
+    "hn": {
+      "mentions": 4,
+      "recommenders": 4,
+      "rec_months": 4,
+      "strong_recs": 2,
+      "stances": {
+        "strong_rec": 2,
+        "rec": 2
+      },
+      "first_year": 2018,
+      "last_year": 2022
+    },
+    "candidateL1": "SCI-CHE",
+    "categories": [
+      {
+        "id": "chemistry",
+        "name": "Chemistry",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "zVhQOhxb1Mc",
+    "url": "https://www.youtube.com/watch?v=zVhQOhxb1Mc",
+    "title": "Nuclear 101: How Nuclear Bombs Work Part 1/2",
+    "channel": "Belfer Center",
+    "summary": "Harvard Belfer Center lecture by Matthew Bunn explaining how nuclear bombs work, including fission and fusion weapons and which parts of bomb-making are hard. It is part 1 of 2 in the Nuclear 101 series.",
+    "content_type": "lecture",
+    "level": "intro",
+    "shelf_life": "evergreen",
+    "score": 5.0,
+    "hn": {
+      "mentions": 5,
+      "recommenders": 4,
+      "rec_months": 4,
+      "strong_recs": 2,
+      "stances": {
+        "strong_rec": 2,
+        "reference": 1,
+        "rec": 2
+      },
+      "first_year": 2018,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "military-warfare",
+        "name": "Military history & warfare",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "university-lectures",
+        "name": "University lectures & courses",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "ZMByI4s-D-Y",
+    "url": "https://www.youtube.com/watch?v=ZMByI4s-D-Y",
+    "title": "World's Roundest Object!",
+    "channel": "Veritasium",
+    "summary": "Veritasium explains the effort to redefine the kilogram, which was still defined by a physical artifact, and how a near-perfect silicon sphere from the Avogadro project helps. It also covers the history of the unit's odd naming.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "dated",
+    "score": 5.0,
+    "hn": {
+      "mentions": 9,
+      "recommenders": 6,
+      "rec_months": 4,
+      "strong_recs": 2,
+      "stances": {
+        "rec": 4,
+        "strong_rec": 2,
+        "reference": 3
+      },
+      "first_year": 2013,
+      "last_year": 2018
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "physics-space-other",
+        "name": "Physics & space (other)",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "Oo0jm1PPRuo",
+    "url": "https://www.youtube.com/watch?v=Oo0jm1PPRuo",
+    "title": "How We're Redefining the kg",
+    "channel": "Veritasium",
+    "summary": "Veritasium explains why the kilogram is being redefined in terms of Planck's constant rather than a physical metal artifact. It visits NIST to show the Kibble balance and why measuring mass precisely is hard.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 4.0,
+    "hn": {
+      "mentions": 3,
+      "recommenders": 3,
+      "rec_months": 3,
+      "strong_recs": 2,
+      "stances": {
+        "rec": 1,
+        "strong_rec": 2
+      },
+      "first_year": 2017,
+      "last_year": 2024
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "physics-space-other",
+        "name": "Physics & space (other)",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "LWGJA9i18Co",
+    "url": "https://www.youtube.com/watch?v=LWGJA9i18Co",
+    "title": "OK Go - Upside Down & Inside Out",
+    "channel": "OKGoVEVO",
+    "summary": "OK Go's music video for Upside Down & Inside Out, filmed during parabolic flights so the band and performers are weightless in the plane.",
+    "content_type": "music",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 4.0,
+    "hn": {
+      "mentions": 3,
+      "recommenders": 3,
+      "rec_months": 3,
+      "strong_recs": 2,
+      "stances": {
+        "strong_rec": 2,
+        "rec": 1
+      },
+      "first_year": 2018,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "music-performance",
+        "name": "Music performance & songs",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "qOTYgcdNrXE",
+    "url": "https://www.youtube.com/watch?v=qOTYgcdNrXE",
+    "title": "The Future of War, and How It Affects YOU (Multi-Domain Operations) - Smarter Every Day 211",
+    "channel": "SmarterEveryDay",
+    "summary": "Destin Sandlin of Smarter Every Day explains Multi-Domain Operations through footage from his last mission at RIMPAC 2018. He covers missile and torpedo testing and interviews military leaders about the cyber and information domains.",
+    "content_type": "interview",
+    "level": "general",
+    "shelf_life": "dated",
+    "score": 4.0,
+    "hn": {
+      "mentions": 17,
+      "recommenders": 4,
+      "rec_months": 4,
+      "strong_recs": 0,
+      "stances": {
+        "reference": 11,
+        "rec": 6
+      },
+      "first_year": 2019,
+      "last_year": 2022
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "military-warfare",
+        "name": "Military history & warfare",
+        "area": "politics-history-society",
+        "area_name": "Politics, History & Society"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "esQyYGezS7c",
+    "url": "https://www.youtube.com/watch?v=esQyYGezS7c",
+    "title": "The world depends on a collection of strange items. They're not cheap",
+    "channel": "Veritasium",
+    "summary": "Veritasium visits NIST to explain Standard Reference Materials, the carefully characterized items such as peanut butter used to calibrate instruments and keep measurements consistent. It covers why they exist and why they are expensive.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 4.0,
+    "hn": {
+      "mentions": 10,
+      "recommenders": 6,
+      "rec_months": 4,
+      "strong_recs": 0,
+      "stances": {
+        "rec": 6,
+        "reference": 4
+      },
+      "first_year": 2023,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "physics-space-other",
+        "name": "Physics & space (other)",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "science-method-communication",
+        "name": "Scientific method & science communication",
+        "area": "ideas-education",
+        "area_name": "Ideas, Learning & Language"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "1Hqm0dYKUx4",
+    "url": "https://www.youtube.com/watch?v=1Hqm0dYKUx4",
+    "title": "Why It's Impossible to Tune a Piano",
+    "channel": "minutephysics",
+    "summary": "A minutephysics video explaining why a piano cannot be perfectly tuned, comparing equal temperament with just intonation and the math of harmonics.",
+    "content_type": "explainer",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 3.0,
+    "hn": {
+      "mentions": 4,
+      "recommenders": 2,
+      "rec_months": 3,
+      "strong_recs": 0,
+      "stances": {
+        "rec": 3,
+        "reference": 1
+      },
+      "first_year": 2015,
+      "last_year": 2026
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "music-theory-production",
+        "name": "Music theory, synthesis & production",
+        "area": "arts-entertainment",
+        "area_name": "Arts, Comedy, Music & Film"
+      },
+      {
+        "id": "everyday-physics-demos",
+        "name": "Everyday physics & science demos",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "recreational-math",
+        "name": "Recreational & visual math",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  },
+  {
+    "vid": "2wq9x2QcZN0",
+    "url": "https://www.youtube.com/watch?v=2wq9x2QcZN0",
+    "title": "Eric Weinstein: Revolutionary Ideas in Science, Math, and Society | Lex Fridman Podcast #16",
+    "channel": "Lex Fridman",
+    "summary": "Lex Fridman interviews mathematician and economist Eric Weinstein about science, mathematics, and society. The conversation ranges across physics, academia, AI and job displacement.",
+    "content_type": "podcast",
+    "level": "general",
+    "shelf_life": "evergreen",
+    "score": 2.0,
+    "hn": {
+      "mentions": 3,
+      "recommenders": 2,
+      "rec_months": 2,
+      "strong_recs": 0,
+      "stances": {
+        "reference": 1,
+        "rec": 2
+      },
+      "first_year": 2019,
+      "last_year": 2019
+    },
+    "candidateL1": "SCI-PHY",
+    "categories": [
+      {
+        "id": "tech-figures-interviews",
+        "name": "Tech pioneers & interviews",
+        "area": "computing-history-culture",
+        "area_name": "Computing History & Culture"
+      },
+      {
+        "id": "fundamental-physics",
+        "name": "Fundamental physics",
+        "area": "physics-space",
+        "area_name": "Physics, Space & Chemistry"
+      },
+      {
+        "id": "pure-mathematics",
+        "name": "Pure mathematics",
+        "area": "math-theory",
+        "area_name": "Mathematics & Theoretical CS"
+      }
+    ],
+    "reviewStatus": "candidate",
+    "evidenceStatus": "discovery_only",
+    "rights": "reference_only",
+    "usage": "教师备课参考；不得直接作为科学真值或生产素材"
+  }
+]
