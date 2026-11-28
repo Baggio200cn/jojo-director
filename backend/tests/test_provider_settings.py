@@ -70,6 +70,13 @@ def main():
         check("辅助能力独立使用火山", independent.json()["routes"][-2]["provider"] == "ark"
               and independent.json()["routes"][-1]["provider"] == "ark")
         check("另一家模型配置独立保留", independent.json()["profiles"]["ark"]["image"] == "ark-image-model")
+        optional_aux = client.put("/api/admin/provider-settings", json={
+            "activeProvider": "ark",
+            "profiles": {"moma": {"research": "", "embedding": ""}}, "env": {},
+        })
+        check("MoMA 可选辅助能力允许留空", optional_aux.status_code == 200
+              and optional_aux.json()["profiles"]["moma"]["research"] == ""
+              and optional_aux.json()["profiles"]["moma"]["embedding"] == "")
         switched = client.put("/api/admin/provider-settings", json={"activeProvider": "ark", "profiles": {}, "env": {}})
         check("切回火山恢复独立模型且主链一致", switched.status_code == 200
               and switched.json()["profiles"]["ark"]["image"] == "ark-image-model"

@@ -149,9 +149,12 @@ def save_settings(payload: dict) -> dict:
             if provider not in ("moma", "ark"):
                 raise ValueError("不支持的供应商配置档案")
             for key, model in updates.items():
-                if key not in ROUTE_KEYS or not str(model).strip() or len(str(model).strip()) > 120:
+                model_text = str(model).strip()
+                if key not in ROUTE_KEYS or len(model_text) > 120:
                     raise ValueError("模型或 EP 接入点 ID 无效")
-                profiles[provider][key] = str(model).strip()
+                if not model_text and (key in MAIN_ROUTE_KEYS or provider == "ark"):
+                    raise ValueError("模型或 EP 接入点 ID 无效")
+                profiles[provider][key] = model_text
         active = payload.get("activeProvider") or _active(saved)
         if active not in ("moma", "ark"):
             raise ValueError("主生产链供应商无效")
