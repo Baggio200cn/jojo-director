@@ -946,15 +946,16 @@ export default function App() {
   const upFilesTotalBytes = upFiles.reduce((total, file) => total + file.size, 0)
   const upFilesUnsupported = upFiles.filter(file => !UPLOAD_EXTENSIONS.has(file.name.split('.').pop()?.toLowerCase() || ''))
   const upFilesError = upFiles.length > MAX_UPLOAD_FILES
-    ? `已选择 ${upFiles.length} 个文件，超过单批 ${MAX_UPLOAD_FILES} 个上限，请拆分后重新选择。`
+    ? language === 'en' ? `Selected ${upFiles.length} files, exceeding the ${MAX_UPLOAD_FILES}-file batch limit. Split the folder and select again.` : `已选择 ${upFiles.length} 个文件，超过单批 ${MAX_UPLOAD_FILES} 个上限，请拆分后重新选择。`
     : upFilesTotalBytes > MAX_UPLOAD_BYTES
-      ? `所选文件共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB，超过单批 500MB 上限，请拆分后重新选择。`
+      ? language === 'en' ? `Selected files total ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB, exceeding the 500MB batch limit. Split the folder and select again.` : `所选文件共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB，超过单批 500MB 上限，请拆分后重新选择。`
       : upFiles.length > 0 && upFilesUnsupported.length === upFiles.length
-        ? '所选文件均不在支持格式范围内，请重新选择教学资料。'
+        ? language === 'en' ? 'None of the selected files have a supported format. Choose teaching materials instead.' : '所选文件均不在支持格式范围内，请重新选择教学资料。'
         : ''
   const uploadTargetDomain = upDomain === '__custom__' ? upDomainCustom.trim() : upDomain
   const uploadTargetFolder = upDomain === '__auto__' ? '自动归类（待审核）' : upTopic.trim() ? `${uploadTargetDomain}/${upTopic.trim()}` : uploadTargetDomain || '待确认'
   const uploadedFolders = [...new Set(upReport?.results.filter(item => item.status === 'accepted' && item.folder).map(item => item.folder!) || [])]
+  const localizedFolder = (folder: string) => folder.split('/').map(part => t(part)).join('/')
 
   // ── 教师投稿表单（首页投稿板块 & 画布素材库面板共用）──
   const uploadForm = (
@@ -969,22 +970,22 @@ export default function App() {
         <button type="button" onClick={() => folderUploadRef.current?.click()}>{t('选择文件夹')}</button>
       </div>
       <select value={upCommunityId} onChange={e => setUpCommunityId(e.target.value)}>
-        <option value="">仅提交素材库（不关联课题社区）</option>
-        {communityOptions.filter(item => item.my_role).map(item => <option key={item.id} value={item.id}>投稿到课题：{item.title}</option>)}
+        <option value="">{t('仅提交素材库（不关联课题社区）')}</option>
+        {communityOptions.filter(item => item.my_role).map(item => <option key={item.id} value={item.id}>{t('投稿到课题：')}{item.title}</option>)}
       </select>
       {upFile && <div className="muted upload-selection">{upFile.name}</div>}
       {upFiles.length > 0 && <div className="muted upload-selection">{upFiles[0].webkitRelativePath || upFiles[0].name} · {upFiles.length} {t('个文件')}</div>}
       {upFiles.length > 0 && <div className={`upload-preflight ${upFilesError ? 'error' : ''}`} role={upFilesError ? 'alert' : 'status'}>
-        <b>{upFilesError || `预检通过：${upFiles.length} 个文件，共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB`}</b>
+        <b>{upFilesError || (language === 'en' ? `Preflight passed: ${upFiles.length} files, ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB total` : `预检通过：${upFiles.length} 个文件，共 ${(upFilesTotalBytes / 1024 / 1024).toFixed(1)}MB`)}</b>
         {upFilesUnsupported.length > 0 && upFilesUnsupported.length < upFiles.length && <span>
-          {upFilesUnsupported.length} 个不支持格式的文件将在上传时被拒绝：{upFilesUnsupported.slice(0, 3).map(file => file.name).join('、')}{upFilesUnsupported.length > 3 ? ' 等' : ''}
+          {language === 'en' ? `${upFilesUnsupported.length} unsupported files will be rejected: ` : `${upFilesUnsupported.length} 个不支持格式的文件将在上传时被拒绝：`}{upFilesUnsupported.slice(0, 3).map(file => file.name).join('、')}{upFilesUnsupported.length > 3 ? ' 等' : ''}
         </span>}
-        {!upFilesError && <span>单批最多 200 个文件、总大小不超过 500MB；建议按课次拆分并排除 .git、依赖和缓存文件。</span>}
+        {!upFilesError && <span>{t('单批最多 200 个文件、总大小不超过 500MB；建议按课次拆分并排除 .git、依赖和缓存文件。')}</span>}
       </div>}
       <div className="lib-filter">
         <select value={upDomain} onChange={e => setUpDomain(e.target.value)}>
           {[...new Set(libFolders.map(f => f.split('/')[0]))].map(d => (
-            <option key={d} value={d}>{d}</option>
+            <option key={d} value={d}>{t(d)}</option>
           ))}
           <option value="__custom__">{t('（新学科…）')}</option>
           <option value="__auto__">{t('自动归类（待审核）')}</option>
@@ -999,7 +1000,7 @@ export default function App() {
         <input placeholder={t('新学科目录名（如 电子类）')} value={upDomainCustom}
           onChange={e => setUpDomainCustom(e.target.value)} />
       )}
-      <div className="upload-target"><b>目标目录：{uploadTargetFolder}</b><span>选择已有课题即合并到原目录；同名不同内容不会覆盖，重复内容自动跳过。</span></div>
+      <div className="upload-target"><b>{t('目标目录：')}{localizedFolder(uploadTargetFolder)}</b><span>{t('选择已有课题即合并到原目录；同名不同内容不会覆盖，重复内容自动跳过。')}</span></div>
       <div className="lib-filter">
         <select value={upRights} onChange={e => setUpRights(e.target.value)}>
           <option value="own">{t('本人自制')}</option>
@@ -1037,15 +1038,15 @@ export default function App() {
           {upReport.summary.receiptIncomplete && <div className="muted">{t('历史批次仅保留通过文件，拒绝与重复数量不可回推。')}</div>}
         </div>
         <div className="upload-destination">
-          <b>{uploadedFolders.length ? '新文件已保存到素材库目录' : '本批没有新文件写入素材目录'}</b>
-          {uploadedFolders.length > 0 && <span>{uploadedFolders.join('；')}</span>}
-          {!uploadedFolders.length && <span>重复文件仍保留在原目录，拒绝文件不会写入。</span>}
+          <b>{uploadedFolders.length ? t('新文件已保存到素材库目录') : t('本批没有新文件写入素材目录')}</b>
+          {uploadedFolders.length > 0 && <span>{uploadedFolders.map(localizedFolder).join('；')}</span>}
+          {!uploadedFolders.length && <span>{t('重复文件仍保留在原目录，拒绝文件不会写入。')}</span>}
           {uploadedFolders.length > 0 && <div className="upload-move">
             <select value={upMoveFolder} onChange={e => setUpMoveFolder(e.target.value)}>
-              <option value="">将本批接收文件整理到已有目录…</option>
-              {libFolders.map(path => <option key={path} value={path}>{path}</option>)}
+              <option value="">{t('将本批接收文件整理到已有目录…')}</option>
+              {libFolders.map(path => <option key={path} value={path}>{localizedFolder(path)}</option>)}
             </select>
-            <button disabled={upBusy || !upMoveFolder} onClick={() => void moveUploadBatch()}>确认整理</button>
+            <button disabled={upBusy || !upMoveFolder} onClick={() => void moveUploadBatch()}>{t('确认整理')}</button>
           </div>}
         </div>
         {upReport.results.map((result, index) => <div className={`upload-report-row ${result.status}`} key={`${result.path}-${index}`}>
@@ -1617,8 +1618,8 @@ export default function App() {
         </div>
         {homeErr && <div className="home-err">{homeErr}</div>}
         <section className="community-entry">
-          <div><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><div><h2>课题共建社区</h2><p>不止上传素材：参与讨论、认领任务、学科审校、场景接驳与版本发布。</p></div></div>
-          <button onClick={() => { setCommunityId(''); setView('communities') }}>进入共建 →</button>
+          <div><img src={publicAsset('jojo-director-mark.svg')} alt="" aria-hidden="true" /><div><h2>{t('课题共建社区')}</h2><p>{t('不止上传素材：参与讨论、认领任务、学科审校、场景接驳与版本发布。')}</p></div></div>
+          <button onClick={() => { setCommunityId(''); setView('communities') }}>{t('进入共建 →')}</button>
         </section>
         <div className="home-documents">
           <section className="home-document-card">

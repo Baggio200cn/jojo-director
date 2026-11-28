@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { communityEn } from './communityI18n'
 
 export type Language = 'zh' | 'en'
 type I18nValue = { language: Language; setLanguage: (language: Language) => void; t: (text: string) => string }
 
 const en: Record<string, string> = {
+  ...communityEn,
   '语言': 'Language', '中文': '中文', '英文': 'English',
   '科学实验类创作画布': 'Scientific Scene Studio', '科学场景生产与验收': 'Scientific scene production and review', '正在验证登录状态…': 'Checking your session…',
   '管理员': 'Administrator', '邀请码进入': 'Enter with invite code', '账号': 'Username', '密码': 'Password',
