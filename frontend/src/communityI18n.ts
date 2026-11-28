@@ -187,6 +187,7 @@ export const communityEn: Record<string, string> = {
   '行': 'lines',
   '正在读取代码…': 'Loading code…',
   '点击代码行发起讨论': 'Click a line to start a discussion',
+  '费用待核算': 'Cost pending calculation',
   '两家供应商独立配置，主生产链整体切换': 'Independent provider profiles with a single active production chain',
   '主生产链一次只启用一家供应商；MoMA 与火山的模型配置分别保存，切换不会覆盖。API Key 仅服务端保存，留空表示不修改。': 'Only one provider is active for the main production chain. MoMA and Volcano model profiles are stored independently and preserved when switching. Keys are server-side only; leave blank to keep unchanged.',
   '主生产链当前启用': 'Active production provider',

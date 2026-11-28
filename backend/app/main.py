@@ -409,7 +409,7 @@ def project_stats(pid: str):
     with db._conn() as c:
         c.row_factory = __import__("sqlite3").Row
         rows = [dict(r) for r in c.execute(
-            "SELECT id, node_id, model, task_type, status, verdict, capability_id,"
+            "SELECT id, node_id, model, provider, task_type, status, verdict, capability_id,"
             "       COALESCE(input_tokens,0) ti, COALESCE(output_tokens,0) tou,"
             "       estimated_cost_cny, created_at"
             " FROM model_tasks WHERE project_id=?", (pid,))]
@@ -449,11 +449,19 @@ def project_stats(pid: str):
                                          else "image")
             regret["by_capability"][cap] = regret["by_capability"].get(cap, 0) + 1
     total = round(sum(d["cost_cny"] for d in by_type.values()), 2)
+    unpriced = [{"task_type": r["task_type"], "provider": r["provider"], "model": r["model"]}
+                for r in rows if r["status"] == "succeeded" and r["provider"] != "local"
+                and not r["estimated_cost_cny"]
+                and estimate_cost_cny(r["model"] or "", r["task_type"], r["ti"], r["tou"]) is None]
+    cost_status = "partial" if unpriced and total > 0 else "uncalculated" if unpriced else "estimated"
     uncal = [m for m, p in PRICING.items() if not p.get("calibrated")]
+    note = ("单价含未校准估计值(" + ",".join(uncal) + ")，拿到账单后在 providers.yaml 更新"
+            if uncal else "全部单价已账单校准")
+    if unpriced:
+        note = "部分模型缺少价格配置，显示金额仅为已估算部分，完整费用待核算；" + note
     return {"project_id": pid, "by_type": by_type, "total_cost_cny": total,
-            "route_regret": regret,
-            "note": ("单价含未校准估计值(" + ",".join(uncal) + ")，拿到账单后在 providers.yaml 更新")
-                    if uncal else "全部单价已账单校准"}
+            "cost_status": cost_status, "has_unpriced_generation": bool(unpriced),
+            "unpriced_tasks": unpriced, "route_regret": regret, "note": note}
 
 
 @app.get("/api/stats/capability")

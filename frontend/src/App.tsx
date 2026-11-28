@@ -358,7 +358,7 @@ export default function App() {
   const [connectMenu, setConnectMenu] = useState<{ x: number; y: number; fx: number; fy: number; src: string } | null>(null)
   const connectSrcRef = useRef<string | null>(null)
   const [reviewCount, setReviewCount] = useState(0)
-  const [projCost, setProjCost] = useState<number | null>(null)
+  const [projCost, setProjCost] = useState<{ total: number; hasUnpriced: boolean } | null>(null)
   const runStartRef = useRef<Record<string, number>>({})
   const flowRef = useRef<ReactFlowInstance | null>(null)
   const focusAll = () => setTimeout(() => flowRef.current?.fitView({ padding: 0.25, duration: 400 }), 80)
@@ -465,7 +465,7 @@ export default function App() {
       }
     }
     if (transitioned) {
-      api.projectStats(pid).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
+      api.projectStats(pid).then(s => setProjCost({ total: s.total_cost_cny, hasUnpriced: s.has_unpriced_generation })).catch(() => {})
       api.reviewQueue(pid).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     }
     setBnodes(map)
@@ -573,7 +573,7 @@ export default function App() {
       await syncGraph(initial.id)
       if (requestedView === 'training') setView('training')
       else if (initial.id === requestedPid) setView('canvas')
-      api.projectStats(initial.id).then(s => setProjCost(s.total_cost_cny)).catch(() => {})
+      api.projectStats(initial.id).then(s => setProjCost({ total: s.total_cost_cny, hasUnpriced: s.has_unpriced_generation })).catch(() => {})
       api.reviewQueue(initial.id).then(r => setReviewCount((r.reviews?.length ?? 0) + (r.failures?.length ?? 0))).catch(() => {})
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1794,7 +1794,7 @@ export default function App() {
                 {selectedSceneId === scene.sceneId ? '● ' : '○ '}{localizedContent(scene.title, language)}
               </button>
             ))}
-            {projCost != null && <div className="cost-chip">💰 {t('本项目已花')} ¥{projCost.toFixed(2)}</div>}
+            {projCost != null && <div className="cost-chip">💰 {t('本项目已花')} {projCost.hasUnpriced ? t('费用待核算') : `¥${projCost.total.toFixed(2)}`}</div>}
           </div>
         )}
         {!taskMode && <div className="tab-bar">
@@ -1810,7 +1810,7 @@ export default function App() {
             <button onClick={tidyLayout}>🧹 一键整理布局</button>
             {projCost != null && (
               <div className="cost-chip" title="本项目累计模型调用成本（MAAO 台账实时计）">
-                💰 {t('本项目已花')} ¥{projCost.toFixed(2)}
+                💰 {t('本项目已花')} {projCost.hasUnpriced ? t('费用待核算') : `¥${projCost.total.toFixed(2)}`}
               </div>
             )}
             <div className="style-bar">
