@@ -23,6 +23,7 @@ const jsonReq = (method: string) => (url: string, body?: object) =>
 
 const post = jsonReq('POST')
 const patch = jsonReq('PATCH')
+const put = jsonReq('PUT')
 
 const uploadWithProgress = (path: string, body: FormData, onProgress?: (percent: number) => void) =>
   new Promise<any>((resolve, reject) => {
@@ -199,6 +200,9 @@ export const api = {
     post('/api/admin/invites', body),
   adminToggleInvite: (code: string) =>
     request(`/api/admin/invites/${code}`, { method: 'PATCH' }).then(j),
+  providerSettings: () => request('/api/admin/provider-settings').then(j),
+  saveProviderSettings: (body: object) => put('/api/admin/provider-settings', body),
+  providerCatalog: (provider: 'moma' | 'ark') => request(`/api/admin/provider-settings/catalog/${provider}`).then(j),
   projectStats: (pid: string) => request(`/api/projects/${pid}/stats`).then(j),
   storyboardFromRef: (nid: string) => post(`/api/nodes/${nid}/storyboard_from_ref`),
   scriptFromRef: (nid: string) => post(`/api/nodes/${nid}/script_from_ref`),

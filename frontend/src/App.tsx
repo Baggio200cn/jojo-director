@@ -10,6 +10,7 @@ import TrainingLibrary from './TrainingLibrary'
 import DocumentView from './DocumentView'
 import BrandFilm from './BrandFilm'
 import CommunityCenter from './CommunityCenter'
+import ProviderConfig from './ProviderConfig'
 import { localizedRoute, useI18n } from './I18n'
 import { localizedContent } from './contentI18n'
 
@@ -350,6 +351,7 @@ export default function App() {
   const [loginU, setLoginU] = useState(''); const [loginP, setLoginP] = useState(''); const [loginCode, setLoginCode] = useState('')
   const [loginErr, setLoginErr] = useState(''); const [loginBusy, setLoginBusy] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [providerOpen, setProviderOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [invites, setInvites] = useState<{ code: string; label: string; daily_video_limit: number; daily_cost_limit_cny: number; disabled: number; usage_today?: { videos: number; cost: number } }[]>([])
   const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null)
@@ -1497,6 +1499,7 @@ export default function App() {
   const authBar = (
     <div className="auth-bar">
       <button onClick={() => setAccountOpen(true)}>👤 {localizedContent(authInfo.account || t('账号'), language)}</button>
+      {authRole === 'admin' && <button onClick={() => setProviderOpen(true)}>API 配置</button>}
       {authRole === 'admin' && authInfo.auth_enabled !== false && (
         <button onClick={async () => { await loadInvites(); setInviteOpen(true) }}>🎟 {t('邀请码管理')}</button>
       )}
@@ -1577,6 +1580,7 @@ export default function App() {
       {authBar}
       {inviteModal}
       {accountModal}
+      <ProviderConfig open={providerOpen} onClose={() => setProviderOpen(false)} />
       <div className="home-center">
         <div className="home-brand-film"><BrandFilm /></div>
         <div className="home-kicker">SCIENTIFIC SCENE PRODUCTION ENGINE</div>

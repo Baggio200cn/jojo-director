@@ -26,12 +26,12 @@ providers:
 routes:
   script:      { provider: moma, model: kimi-k3 }
   storyboard:  { provider: moma, model: kimi-k3 }
-  image:       { provider: moma, model: doubao-seedream-5-0-260128 }
-  image_edit:  { provider: moma, model: doubao-seedream-5-0-260128 }
+  image:       { provider: ark, model: doubao-seedream-5-0-260128 }
+  image_edit:  { provider: ark, model: doubao-seedream-5-0-260128 }
   image_alt:   { provider: openai, model: gpt-image-2 }                    # 预留
-  video:       { provider: moma, model: doubao-seedance-2-0-260128,
+  video:       { provider: ark, model: doubao-seedance-2-0-260128,
                  resolutions: ["480p", "540p", "720p", "1080p", "4k"] }
-  video_hd:    { provider: moma, model: doubao-seedance-2-0-260128,
+  video_hd:    { provider: ark, model: doubao-seedance-2-0-260128,
                  resolutions: ["480p", "540p", "720p", "1080p", "4k"] }
   code_render: { provider: local, engine: manim }
   qc_vision:   { provider: moma, model: doubao-seed-2-1-pro-huoshan }

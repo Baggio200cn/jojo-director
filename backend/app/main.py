@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import (asset_ingest, auth, community, db, document_library, document_text, embeddings, executors, ingestion_review,
-               repository, screenshots, teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
+               provider_settings, repository, screenshots, teaching_video_confirm, teaching_video_import, teaching_video_produce, training_library, yuke_import)
 from .config import ASSETS_DIR
 
 
@@ -83,6 +83,8 @@ async def lifespan(_app: FastAPI):
     db.init_db()
     auth.init()
     _migrate()
+    provider_settings.apply_saved()
+    provider_settings.refresh_adapters()
     ingestion_review.backfill_legacy_batches()
     _reset_stuck_nodes()
     yield
@@ -207,6 +209,30 @@ def admin_toggle_invite(code: str, request: Request):
     with db._conn() as c:
         c.execute("UPDATE invite_codes SET disabled=1-disabled WHERE code=?", (code,))
     return db.query("invite_codes", "code=?", (code,))[0]
+
+@app.get("/api/admin/provider-settings")
+def get_provider_settings(request: Request):
+    auth.require_admin(request)
+    return provider_settings.settings_view()
+
+
+@app.put("/api/admin/provider-settings")
+def save_provider_settings(payload: dict, request: Request):
+    auth.require_admin(request)
+    try:
+        return provider_settings.save_settings(payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/admin/provider-settings/catalog/{provider}")
+async def provider_catalog(provider: str, request: Request):
+    auth.require_admin(request)
+    try:
+        return await provider_settings.catalog(provider)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
 
 class ProjectIn(BaseModel):
     title: str

@@ -181,9 +181,10 @@ sceneId / pointId / sourceVersions
 文本、图像、视频和视觉质检按能力位在 `backend/providers.yaml` 显式选择 **MoMA / 火山引擎**：
 
 - 脚本与分镜默认 MoMA `kimi-k3`；
-- 图像默认 `doubao-seedream-5-0-260128`；
-- 视觉质检默认 `doubao-seed-2-1-pro-huoshan`；
-- 视频默认 `doubao-seedance-2-0-260128`；
+- 图像默认火山引擎 `doubao-seedream-5-0-260128`；
+- 视觉质检默认 MoMA `doubao-seed-2-1-pro-huoshan`；
+- 视频默认火山引擎 `doubao-seedance-2-0-260128`；
+- 管理员可在首页右上角“API 配置”中设置 MoMA / 火山密钥、各能力供应商与模型/EP，检查模型目录并热更新路由；密钥仅服务端保存和掩码显示，不写入浏览器存储；
 - Agent 下拉框可选择 MoMA / 火山引擎文本模型；
 - 任务记录请求模型与供应商实际返回模型，不静默跨供应商降级。
 
