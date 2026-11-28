@@ -64,6 +64,123 @@ CREATE TABLE IF NOT EXISTS video_plan_confirmations (
   package_hash TEXT NOT NULL, plan_hash TEXT UNIQUE NOT NULL, scene_ids TEXT NOT NULL,
   generative_media TEXT NOT NULL, paid_generation TEXT NOT NULL, created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS video_candidates (
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, import_task_id TEXT NOT NULL,
+  package_hash TEXT NOT NULL, parent_id TEXT, version INTEGER NOT NULL,
+  status TEXT NOT NULL, video_asset_id TEXT, manifest TEXT NOT NULL,
+  created_at TEXT, finished_at TEXT, error TEXT
+);
+CREATE TABLE IF NOT EXISTS video_revision_requests (
+  id TEXT PRIMARY KEY, candidate_id TEXT NOT NULL, scene_id TEXT NOT NULL,
+  comment TEXT NOT NULL, status TEXT NOT NULL, new_candidate_id TEXT, created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS training_reviews (
+  id TEXT PRIMARY KEY, object_type TEXT NOT NULL, object_id TEXT NOT NULL,
+  object_version TEXT NOT NULL, content_hash TEXT NOT NULL,
+  reviewer TEXT NOT NULL, decision TEXT NOT NULL, comment TEXT DEFAULT '',
+  checks TEXT DEFAULT '[]', session_role TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_training_reviews_object
+  ON training_reviews(object_type, object_id, created_at);
+CREATE TABLE IF NOT EXISTS ingestion_batches (
+  id TEXT PRIMARY KEY, status TEXT NOT NULL, summary TEXT NOT NULL,
+  results TEXT NOT NULL, folder TEXT DEFAULT '', rights TEXT DEFAULT 'own',
+  note TEXT DEFAULT '', uploader_role TEXT DEFAULT '', created_at TEXT, updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS ingestion_reviews (
+  id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, action TEXT NOT NULL,
+  comment TEXT DEFAULT '', actor_role TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ingestion_reviews_batch
+  ON ingestion_reviews(batch_id, created_at);
+CREATE TABLE IF NOT EXISTS communities (
+  id TEXT PRIMARY KEY, title TEXT NOT NULL, domain TEXT DEFAULT '',
+  description TEXT DEFAULT '', goals TEXT DEFAULT '', status TEXT DEFAULT 'active',
+  current_version INTEGER DEFAULT 0, created_by TEXT NOT NULL,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS community_members (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, actor_id TEXT NOT NULL,
+  display_name TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'teacher',
+  joined_at TEXT NOT NULL, UNIQUE(community_id, actor_id)
+);
+CREATE TABLE IF NOT EXISTS community_contributions (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, batch_id TEXT,
+  asset_id TEXT, task_id TEXT, kind TEXT NOT NULL, title TEXT NOT NULL,
+  body TEXT DEFAULT '', status TEXT NOT NULL DEFAULT 'under_discussion',
+  version INTEGER DEFAULT 1, author_id TEXT NOT NULL, author_name TEXT NOT NULL,
+  bound_project_id TEXT, bound_node_id TEXT,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_community_contributions_topic
+  ON community_contributions(community_id, updated_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_community_contribution_asset
+  ON community_contributions(community_id, asset_id) WHERE asset_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS community_comments (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, contribution_id TEXT NOT NULL,
+  parent_id TEXT, body TEXT NOT NULL, author_id TEXT NOT NULL,
+  author_name TEXT NOT NULL, created_at TEXT NOT NULL,
+  anchor_path TEXT, anchor_line INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_community_comments_contribution
+  ON community_comments(contribution_id, created_at);
+CREATE TABLE IF NOT EXISTS community_tasks (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, title TEXT NOT NULL,
+  description TEXT DEFAULT '', kind TEXT DEFAULT 'review', status TEXT DEFAULT 'open',
+  assignee_id TEXT, assignee_name TEXT, created_by TEXT NOT NULL,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS community_reviews (
+  id TEXT PRIMARY KEY, contribution_id TEXT NOT NULL, decision TEXT NOT NULL,
+  comment TEXT DEFAULT '', reviewer_id TEXT NOT NULL, reviewer_name TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS contribution_versions (
+  id TEXT PRIMARY KEY, contribution_id TEXT NOT NULL, version INTEGER NOT NULL,
+  body TEXT DEFAULT '', asset_id TEXT, note TEXT DEFAULT '', author_id TEXT NOT NULL,
+  author_name TEXT NOT NULL, created_at TEXT NOT NULL,
+  UNIQUE(contribution_id, version)
+);
+CREATE TABLE IF NOT EXISTS community_versions (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, version INTEGER NOT NULL,
+  title TEXT NOT NULL, summary TEXT DEFAULT '', contribution_ids TEXT NOT NULL,
+  created_by TEXT NOT NULL, creator_name TEXT NOT NULL, created_at TEXT NOT NULL,
+  UNIQUE(community_id, version)
+);
+CREATE TABLE IF NOT EXISTS code_repositories (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, contribution_id TEXT NOT NULL,
+  source_url TEXT NOT NULL, owner TEXT NOT NULL, repo TEXT NOT NULL,
+  branch TEXT NOT NULL, default_branch TEXT NOT NULL, commit_sha TEXT NOT NULL,
+  file_count INTEGER DEFAULT 0, total_bytes INTEGER DEFAULT 0,
+  author_id TEXT NOT NULL, author_name TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_code_repositories_community
+  ON code_repositories(community_id, created_at);
+CREATE TABLE IF NOT EXISTS code_repository_files (
+  id TEXT PRIMARY KEY, repository_id TEXT NOT NULL, path TEXT NOT NULL,
+  size INTEGER NOT NULL, lines INTEGER NOT NULL, language TEXT NOT NULL,
+  sha TEXT DEFAULT '', UNIQUE(repository_id, path)
+);
+CREATE INDEX IF NOT EXISTS idx_code_repository_files_repo
+  ON code_repository_files(repository_id, path);
+CREATE TABLE IF NOT EXISTS comment_screenshots (
+  id TEXT PRIMARY KEY, community_id TEXT NOT NULL, contribution_id TEXT NOT NULL,
+  comment_id TEXT, filename TEXT NOT NULL, orig_name TEXT NOT NULL,
+  mime TEXT NOT NULL, size INTEGER NOT NULL, analysis_status TEXT DEFAULT 'uploaded',
+  analysis_text TEXT DEFAULT '', analysis_model TEXT DEFAULT '', analysis_error TEXT DEFAULT '',
+  author_id TEXT NOT NULL, created_at TEXT NOT NULL, analyzed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_comment_screenshots_comment
+  ON comment_screenshots(comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_screenshots_contribution
+  ON comment_screenshots(contribution_id, created_at);
+CREATE TABLE IF NOT EXISTS community_notifications (
+  id TEXT PRIMARY KEY, recipient_id TEXT NOT NULL, community_id TEXT NOT NULL,
+  contribution_id TEXT, kind TEXT NOT NULL, message TEXT NOT NULL,
+  read_at TEXT, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_community_notifications_recipient
+  ON community_notifications(recipient_id, read_at, created_at);
 """
 
 

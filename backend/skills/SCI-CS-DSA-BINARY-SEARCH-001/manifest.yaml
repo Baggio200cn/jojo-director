@@ -1,0 +1,35 @@
+skillId: SCI-CS-DSA-BINARY-SEARCH-001
+version: 0.1.0
+status: candidate
+classification:
+  primary: SCI-CS-DSA-BINARY-SEARCH
+  labels: [高职, 算法, 代码执行, 真实输出, 待复核]
+title: 二分查找的边界与执行过程
+description: 通过受控代码执行展示二分查找的比较、边界和真实输出。候选 Skill，需补齐执行环境与测试用例。
+source:
+  - type: official_document
+    id: https://docs.python.org/3/reference/
+    locator: Python 官方语言参考
+    rights: documentation-reference
+inputs:
+  - {name: sortedValues, required: true}
+  - {name: target, required: true}
+  - {name: runtime, required: true}
+outputs:
+  - {type: execution_trace, template: spec_template.json}
+  - {type: test_results, required: true}
+routeCandidates: [code_execution, diagram_2d]
+forbiddenRoutes: [generated_scene]
+evidenceCards: []
+qc:
+  rulesFile: qc/rules.yaml
+  minRules: 3
+  positiveSamples: 0
+  negativeSamples: 0
+reviewStatus:
+  reviewer: 待教研指定
+  status: pending
+reuse:
+  usedCount: 0
+  firstPassRate: null
+  avgFixMinutes: null

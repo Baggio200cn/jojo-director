@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+  <title>JOJO Director brand mark</title>
+  <desc>Minimal orbital system mark with nodes and three functional color accents.</desc>
+  <rect width="1200" height="420" fill="#FAF8F2"/>
+  <g transform="translate(205 210)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M -118 -84 A 145 145 0 0 1 -24 -143" stroke="#1A1A1A" stroke-width="10"/>
+    <path d="M 2 -145 A 145 145 0 0 1 116 -87" stroke="#00B3A6" stroke-width="10"/>
+    <path d="M 143 -25 A 145 145 0 0 1 86 116" stroke="#1A1A1A" stroke-width="10"/>
+    <path d="M 63 131 A 145 145 0 0 1 -85 117" stroke="#1A1A1A" stroke-width="10"/>
+    <path d="M -132 59 A 145 145 0 0 1 -143 -26" stroke="#E6007E" stroke-width="10"/>
+    <path d="M -86 -53 A 102 102 0 0 1 76 -68" stroke="#1A1A1A" stroke-width="8"/>
+    <path d="M 76 -68 A 102 102 0 0 1 57 84" stroke="#1A1A1A" stroke-width="8"/>
+    <path d="M 57 84 A 102 102 0 0 1 -86 -53" stroke="#1A1A1A" stroke-width="8"/>
+    <path d="M -73 50 L 72 -50" stroke="#1A1A1A" stroke-width="7"/>
+    <path d="M 48 89 A 102 102 0 0 0 93 48" stroke="#FF8A00" stroke-width="8"/>
+    <circle cx="-118" cy="-84" r="13" fill="#FAF8F2" stroke="#1A1A1A" stroke-width="7"/>
+    <circle cx="116" cy="-87" r="11" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="4"/>
+    <circle cx="86" cy="116" r="12" fill="#FAF8F2" stroke="#1A1A1A" stroke-width="7"/>
+    <circle cx="-73" cy="50" r="10" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="3"/>
+    <circle cx="72" cy="-50" r="10" fill="#FAF8F2" stroke="#1A1A1A" stroke-width="7"/>
+    <circle cx="57" cy="84" r="8" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="3"/>
+    <path d="M 0 -169 V -154 M 169 0 H 154 M 0 169 V 154 M -169 0 H -154" stroke="#1A1A1A" stroke-width="3"/>
+  </g>
+  <path d="M 430 105 V 315" stroke="#C9C7C0" stroke-width="2"/>
+  <g fill="#1A1A1A" font-family="Arial, Helvetica, sans-serif">
+    <text x="490" y="220" font-size="112" font-weight="600" letter-spacing="7">JOJO</text>
+    <text x="497" y="286" font-size="42" font-weight="400" letter-spacing="17">DIRECTOR</text>
+  </g>
+  <g transform="translate(500 330)">
+    <rect x="0" y="0" width="28" height="6" rx="3" fill="#00B3A6"/>
+    <rect x="39" y="0" width="28" height="6" rx="3" fill="#E6007E"/>
+    <rect x="78" y="0" width="28" height="6" rx="3" fill="#FF8A00"/>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "sceneId": "scene-binary-search",
+  "pointId": "point-binary-search",
+  "teachingGoal": "观察二分查找的比较过程、边界条件和真实执行结果",
+  "objects": ["有序数据", "目标值", "左右边界", "中间位置"],
+  "parameters": {
+    "sortedValues": {"required": true},
+    "target": {"required": true},
+    "runtime": {"required": true}
+  },
+  "initialState": {"sorted": true},
+  "actions": ["执行比较并记录边界变化", "执行边界测试并保存真实输出"],
+  "observations": ["边界更新符合代码", "输出与预期一致", "异常输入得到明确处理"],
+  "invariants": ["不得虚构执行结果", "不得省略空输入与越界测试"],
+  "assertions": [],
+  "reviewRequired": true
+}

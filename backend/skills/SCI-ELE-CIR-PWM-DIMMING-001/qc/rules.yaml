@@ -1,0 +1,10 @@
+rules:
+  - id: PWM-001
+    severity: high
+    check: 所有比较波形的周期必须一致，不能只检查画面是否类似方波。
+  - id: PWM-002
+    severity: high
+    check: 高电平持续时间与占空比序列必须按同一方向变化，不得把频率增加当作占空比增加。
+  - id: PWM-003
+    severity: high
+    check: 口播、字幕和波形数值必须一致，真实调光素材必须有可回查来源和授权。

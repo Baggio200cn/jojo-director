@@ -5,6 +5,9 @@
 *.db-*
 backend/assets/*
 !backend/assets/.gitkeep
+backend/runtime_provider_settings.json
+backend/repositories/*
+backend/comment_screenshots/*
 
 # 依赖与构建产物
 node_modules/

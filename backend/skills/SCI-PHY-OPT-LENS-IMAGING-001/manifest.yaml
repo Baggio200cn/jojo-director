@@ -1,0 +1,35 @@
+skillId: SCI-PHY-OPT-LENS-IMAGING-001
+version: 0.1.0
+status: candidate
+classification:
+  primary: SCI-PHY-OPT-LENS-IMAGING
+  labels: [高职, 光学, 光路, 确定性2D, 待复核]
+title: 凸透镜成像光路
+description: 按焦距、物距和光线关系生成确定性凸透镜光路。候选 Skill，需完成参数和成像结论复核。
+source:
+  - type: existing_project
+    id: backend/app/render/lens_focus.py
+    locator: 现有透镜光路渲染实现
+    rights: own
+inputs:
+  - {name: focalLength, unit: mm, required: true}
+  - {name: objectDistance, unit: mm, required: true}
+  - {name: rayCount, required: false}
+outputs:
+  - {type: scene_spec, template: spec_template.json}
+  - {type: ray_diagram, renderer: backend/app/render/lens_focus.py}
+routeCandidates: [diagram_2d, live_action]
+forbiddenRoutes: [generated_scene]
+evidenceCards: []
+qc:
+  rulesFile: qc/rules.yaml
+  minRules: 3
+  positiveSamples: 0
+  negativeSamples: 0
+reviewStatus:
+  reviewer: 待教研指定
+  status: pending
+reuse:
+  usedCount: 0
+  firstPassRate: null
+  avgFixMinutes: null
