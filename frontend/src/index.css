@@ -1140,3 +1140,11 @@ body { background: var(--jojo-paper); color: var(--jojo-ink); }
 .provider-footer span { color: #77736B; font-size: 11px; }
 .provider-footer .accent { border: 0; border-radius: 7px; background: var(--jojo-ink); color: #fff; padding: 10px 16px; cursor: pointer; }
 @media (max-width: 720px) { .provider-columns { grid-template-columns: 1fr; } .provider-footer { align-items: flex-start; flex-direction: column; } }
+
+.provider-active-section { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.provider-active-section > label { display: flex; align-items: center; gap: 10px; margin: 0; }
+.provider-active-section select { min-width: 150px; }
+.provider-edit-tabs { display: flex; align-items: center; gap: 6px; color: #77736B; font-size: 11px; }
+.provider-edit-tabs button.on { border-color: var(--jojo-scene); background: #E5F5F3; }
+.provider-route-row.independent { grid-template-columns: 150px minmax(260px, 1fr); }
+@media (max-width: 720px) { .provider-active-section { align-items: flex-start; flex-direction: column; } .provider-edit-tabs { flex-wrap: wrap; } }

@@ -187,4 +187,12 @@ export const communityEn: Record<string, string> = {
   '行': 'lines',
   '正在读取代码…': 'Loading code…',
   '点击代码行发起讨论': 'Click a line to start a discussion',
+  '两家供应商独立配置，主生产链整体切换': 'Independent provider profiles with a single active production chain',
+  '主生产链一次只启用一家供应商；MoMA 与火山的模型配置分别保存，切换不会覆盖。API Key 仅服务端保存，留空表示不修改。': 'Only one provider is active for the main production chain. MoMA and Volcano model profiles are stored independently and preserved when switching. Keys are server-side only; leave blank to keep unchanged.',
+  '主生产链当前启用': 'Active production provider',
+  '正在编辑的配置档案': 'Profile being edited',
+  '独立模型配置': 'Independent model profile',
+  '这里只修改当前档案，不会改变其他供应商的模型。保存时按“主生产链当前启用”整体应用。': 'Only this profile is edited; the other provider is unchanged. Saving applies the provider selected for the main production chain.',
+  '独立辅助能力（不计入主生产链）': 'Independent auxiliary capabilities (outside the main production chain)',
+  '联网调研与 Embedding 当前仅使用火山引擎，不受主生产链切换影响。': 'Web research and embeddings currently use Volcano only and are unaffected by production provider switching.',
 }

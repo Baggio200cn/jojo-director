@@ -1,4 +1,5 @@
-"""管理员供应商配置：密钥服务端保存、模型路由热更新与目录预检。"""
+"""管理员供应商配置：独立档案、单供应商主生产链与目录预检。"""
+import copy
 import json
 import os
 import secrets
@@ -12,11 +13,29 @@ from . import config, executors
 SETTINGS_PATH = config.BACKEND_DIR / "runtime_provider_settings.json"
 SECRET_KEYS = {"ARK_API_KEY", "BJMOMA_API_KEY", "PUB_SIGN_KEY", "TTS_TOKEN"}
 ENV_KEYS = SECRET_KEYS | {"BJMOMA_BASE", "PUBLIC_BASE", "TTS_APPID", "TTS_VOICE", "WHISPER_MODEL_DIR"}
-ROUTE_KEYS = {"script", "storyboard", "image", "image_edit", "video", "video_hd", "qc_vision", "ref_video", "research", "embedding"}
+MAIN_ROUTE_KEYS = ("script", "storyboard", "image", "image_edit", "video", "video_hd", "qc_vision", "ref_video")
+AUX_ROUTE_KEYS = ("research", "embedding")
+ROUTE_KEYS = set(MAIN_ROUTE_KEYS) | set(AUX_ROUTE_KEYS)
 ROUTE_LABELS = {
     "script": "口播脚本", "storyboard": "分镜规划", "image": "图片生成", "image_edit": "图片编辑",
     "video": "视频生成", "video_hd": "高清视频", "qc_vision": "视觉质检", "ref_video": "参考视频理解",
     "research": "联网调研", "embedding": "向量检索",
+}
+DEFAULT_PROFILES = {
+    "moma": {
+        "script": "kimi-k3", "storyboard": "kimi-k3",
+        "image": "doubao-seedream-5-0-260128", "image_edit": "doubao-seedream-5-0-260128",
+        "video": "doubao-seedance-2-0-260128", "video_hd": "doubao-seedance-2-0-260128",
+        "qc_vision": "doubao-seed-2-1-pro-huoshan", "ref_video": "doubao-seed-2-1-pro-huoshan",
+        "research": "", "embedding": "",
+    },
+    "ark": {
+        "script": "ep-m-20260628072122-2qpsz", "storyboard": "ep-m-20260628072122-2qpsz",
+        "image": "doubao-seedream-5-0-260128", "image_edit": "doubao-seedream-5-0-260128",
+        "video": "doubao-seedance-2-0-260128", "video_hd": "doubao-seedance-2-0-260128",
+        "qc_vision": "doubao-seed-2-1-pro-260628", "ref_video": "doubao-seed-2-1-pro-260628",
+        "research": "ep-m-20260628072122-2qpsz", "embedding": "doubao-embedding-vision-251215",
+    },
 }
 
 
@@ -32,20 +51,52 @@ def _mask(value: str) -> str:
     return "••••" + value[-4:] if value else ""
 
 
-def apply_saved() -> None:
+def _read_saved() -> dict:
     if not SETTINGS_PATH.exists():
-        return
+        return {}
     try:
-        saved = json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+        return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _profiles(saved: dict) -> dict:
+    profiles = copy.deepcopy(DEFAULT_PROFILES)
+    for provider in ("moma", "ark"):
+        for key, model in (saved.get("profiles", {}).get(provider, {})).items():
+            if key in ROUTE_KEYS:
+                profiles[provider][key] = str(model)
+    for key, override in saved.get("routes", {}).items():
+        if key in ROUTE_KEYS and override.get("provider") in profiles and override.get("model"):
+            profiles[override["provider"]][key] = str(override["model"])
+    return profiles
+
+
+def _active(saved: dict) -> str:
+    if saved.get("activeProvider") in ("moma", "ark"):
+        return saved["activeProvider"]
+    if saved.get("routes", {}).get("image", {}).get("provider") in ("moma", "ark"):
+        return saved["routes"]["image"]["provider"]
+    return "ark"
+
+
+def _routes_for(active: str, profiles: dict) -> dict:
+    routes = {key: {"provider": active, "model": profiles[active][key]} for key in MAIN_ROUTE_KEYS}
+    routes.update({key: {"provider": "ark", "model": profiles["ark"][key]} for key in AUX_ROUTE_KEYS})
+    return routes
+
+
+def apply_saved() -> None:
+    saved = _read_saved()
+    if not saved:
         return
     for key in ENV_KEYS:
         value = saved.get("env", {}).get(key)
         if value is not None:
             os.environ[key] = str(value)
-    for key, override in saved.get("routes", {}).items():
-        if key in ROUTE_KEYS and key in config.ROUTES:
-            config.ROUTES[key].update({k: v for k, v in override.items() if k in ("provider", "model")})
+    for key, override in _routes_for(_active(saved), _profiles(saved)).items():
+        if key in config.ROUTES:
+            config.ROUTES[key].update(override)
 
 
 def refresh_adapters() -> None:
@@ -53,8 +104,11 @@ def refresh_adapters() -> None:
 
 
 def settings_view() -> dict:
+    saved = _read_saved()
     apply_saved()
     return {
+        "activeProvider": _active(saved),
+        "profiles": _profiles(saved),
         "providers": {
             "moma": {"label": "MoMA", "baseUrl": os.getenv("BJMOMA_BASE", ""),
                      "apiKeyConfigured": bool(os.getenv("BJMOMA_API_KEY", "").strip()),
@@ -88,29 +142,40 @@ def save_settings(payload: dict) -> dict:
         clean_env[key] = value
     if not os.getenv("PUB_SIGN_KEY") and "PUB_SIGN_KEY" not in clean_env:
         clean_env["PUB_SIGN_KEY"] = secrets.token_hex(24)
-    route_updates = payload.get("routes") or {}
-    clean_routes = {}
-    for key, update in route_updates.items():
-        if key not in ROUTE_KEYS or key not in config.ROUTES:
-            raise ValueError("不支持的模型路由")
-        provider = str(update.get("provider") or config.ROUTES[key]["provider"])
-        model = str(update.get("model") or "").strip()
-        if provider not in ("moma", "ark") or not model or len(model) > 120:
-            raise ValueError("供应商或模型标识无效")
-        if key in ("research", "embedding") and provider != "ark":
-            raise ValueError(f"{ROUTE_LABELS[key]}当前必须使用火山引擎")
-        clean_routes[key] = {"provider": provider, "model": model}
-    saved = {}
-    if SETTINGS_PATH.exists():
-        try:
-            saved = json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            saved = {}
+    saved = _read_saved()
+    if "profiles" in payload or "activeProvider" in payload:
+        profiles = _profiles(saved)
+        for provider, updates in (payload.get("profiles") or {}).items():
+            if provider not in ("moma", "ark"):
+                raise ValueError("不支持的供应商配置档案")
+            for key, model in updates.items():
+                if key not in ROUTE_KEYS or not str(model).strip() or len(str(model).strip()) > 120:
+                    raise ValueError("模型或 EP 接入点 ID 无效")
+                profiles[provider][key] = str(model).strip()
+        active = payload.get("activeProvider") or _active(saved)
+        if active not in ("moma", "ark"):
+            raise ValueError("主生产链供应商无效")
+        saved["profiles"] = profiles
+        saved["activeProvider"] = active
+        saved["routes"] = _routes_for(active, profiles)
+    else:
+        clean_routes = {}
+        for key, update in (payload.get("routes") or {}).items():
+            if key not in ROUTE_KEYS or key not in config.ROUTES:
+                raise ValueError("不支持的模型路由")
+            provider = str(update.get("provider") or config.ROUTES[key]["provider"])
+            model = str(update.get("model") or "").strip()
+            if provider not in ("moma", "ark") or not model or len(model) > 120:
+                raise ValueError("供应商或模型标识无效")
+            if key in AUX_ROUTE_KEYS and provider != "ark":
+                raise ValueError(f"{ROUTE_LABELS[key]}当前必须使用火山引擎")
+            clean_routes[key] = {"provider": provider, "model": model}
+        saved_routes = saved.get("routes", {})
+        saved_routes.update(clean_routes)
+        saved["routes"] = saved_routes
     saved_env = saved.get("env", {})
     saved_env.update(clean_env)
-    saved_routes = saved.get("routes", {})
-    saved_routes.update(clean_routes)
-    saved = {"env": saved_env, "routes": saved_routes}
+    saved["env"] = saved_env
     temp = SETTINGS_PATH.with_suffix(".tmp")
     temp.write_text(json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
     os.chmod(temp, 0o600)

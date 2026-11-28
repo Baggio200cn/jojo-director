@@ -59,6 +59,22 @@ def main():
             "env": {}, "routes": {"research": {"provider": "moma", "model": "unsupported"}},
         })
         check("不支持的能力路由被拒绝", invalid_route.status_code == 400)
+        independent = client.put("/api/admin/provider-settings", json={
+            "activeProvider": "moma",
+            "profiles": {"moma": {"image": "moma-image-model"}, "ark": {"image": "ark-image-model"}},
+            "env": {},
+        })
+        check("主生产链整体使用同一供应商", independent.status_code == 200
+              and all(row["provider"] == "moma" for row in independent.json()["routes"]
+                      if row["key"] in provider_settings.MAIN_ROUTE_KEYS))
+        check("辅助能力独立使用火山", independent.json()["routes"][-2]["provider"] == "ark"
+              and independent.json()["routes"][-1]["provider"] == "ark")
+        check("另一家模型配置独立保留", independent.json()["profiles"]["ark"]["image"] == "ark-image-model")
+        switched = client.put("/api/admin/provider-settings", json={"activeProvider": "ark", "profiles": {}, "env": {}})
+        check("切回火山恢复独立模型且主链一致", switched.status_code == 200
+              and switched.json()["profiles"]["ark"]["image"] == "ark-image-model"
+              and all(row["provider"] == "ark" for row in switched.json()["routes"]
+                      if row["key"] in provider_settings.MAIN_ROUTE_KEYS))
         client.close()
         import gc
         gc.collect()

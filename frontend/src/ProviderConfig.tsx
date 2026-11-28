@@ -2,19 +2,26 @@ import { useEffect, useState } from 'react'
 import { api } from './api'
 import { useI18n } from './I18n'
 
-type RouteSetting = { key: string; label: string; provider: 'moma' | 'ark'; model: string }
+type Provider = 'moma' | 'ark'
+type RouteSetting = { key: string; label: string; provider: Provider; model: string }
 type Settings = {
-  providers: Record<'moma' | 'ark', { label: string; baseUrl: string; apiKeyConfigured: boolean; apiKeyMask: string }>
+  activeProvider: Provider
+  profiles: Record<Provider, Record<string, string>>
+  providers: Record<Provider, { label: string; baseUrl: string; apiKeyConfigured: boolean; apiKeyMask: string }>
   runtime: { publicBase: string; pubSignConfigured: boolean; ttsAppId: string; ttsVoice: string; ttsTokenConfigured: boolean; whisperModelDir: string }
   routes: RouteSetting[]
 }
+const MAIN_KEYS = ['script', 'storyboard', 'image', 'image_edit', 'video', 'video_hd', 'qc_vision', 'ref_video']
+const AUX_KEYS = ['research', 'embedding']
 
 export default function ProviderConfig({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t, language } = useI18n()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [env, setEnv] = useState<Record<string, string>>({})
-  const [routes, setRoutes] = useState<Record<string, RouteSetting>>({})
-  const [catalogs, setCatalogs] = useState<Record<string, string[]>>({ moma: [], ark: [] })
+  const [activeProvider, setActiveProvider] = useState<Provider>('ark')
+  const [editingProvider, setEditingProvider] = useState<Provider>('ark')
+  const [profiles, setProfiles] = useState<Record<Provider, Record<string, string>>>({ moma: {}, ark: {} })
+  const [catalogs, setCatalogs] = useState<Record<Provider, string[]>>({ moma: [], ark: [] })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -24,7 +31,9 @@ export default function ProviderConfig({ open, onClose }: { open: boolean; onClo
     setError(''); setNotice('')
     api.providerSettings().then((data: Settings) => {
       setSettings(data)
-      setRoutes(Object.fromEntries(data.routes.map(route => [route.key, route])))
+      setActiveProvider(data.activeProvider)
+      setEditingProvider(data.activeProvider)
+      setProfiles(data.profiles)
       setEnv({
         BJMOMA_BASE: data.providers.moma.baseUrl,
         PUBLIC_BASE: data.runtime.publicBase,
@@ -37,22 +46,24 @@ export default function ProviderConfig({ open, onClose }: { open: boolean; onClo
 
   if (!open) return null
 
-  const updateRoute = (key: string, field: 'provider' | 'model', value: string) => {
-    setRoutes(previous => ({ ...previous, [key]: { ...previous[key], [field]: value } }))
+  const updateModel = (key: string, value: string) => {
+    setProfiles(previous => ({ ...previous, [editingProvider]: { ...previous[editingProvider], [key]: value } }))
   }
 
   const save = async () => {
     setBusy(true); setError(''); setNotice('')
     try {
-      const result = await api.saveProviderSettings({ env, routes }) as Settings
+      const result = await api.saveProviderSettings({ env, activeProvider, profiles }) as Settings
       setSettings(result)
+      setActiveProvider(result.activeProvider)
+      setProfiles(result.profiles)
       setEnv(previous => ({ ...previous, ARK_API_KEY: '', BJMOMA_API_KEY: '', PUB_SIGN_KEY: '', TTS_TOKEN: '' }))
       setNotice(t('配置已保存并即时生效。API Key 未回显；图片和视频仍需最小生成预检。'))
     } catch (e) { setError(String(e).replace('Error: ', '')) }
     finally { setBusy(false) }
   }
 
-  const testCatalog = async (provider: 'moma' | 'ark') => {
+  const testCatalog = async (provider: Provider) => {
     setBusy(true); setError(''); setNotice('')
     try {
       const result = await api.providerCatalog(provider) as { count: number; models: string[]; message: string }
@@ -64,20 +75,27 @@ export default function ProviderConfig({ open, onClose }: { open: boolean; onClo
 
   return <div className="lightbox" onClick={onClose}>
     <div className="lightbox-inner provider-config" onClick={e => e.stopPropagation()}>
-      <div className="lightbox-head"><div><b>{t('API 调用配置')}</b><p>{t('图片、视频、Agent 与辅助模型的实际生产路由')}</p></div><button onClick={onClose}>✕ {t('关闭')}</button></div>
-      <div className="provider-notice">{t('API Key 仅提交到服务端保存，留空表示不修改。模型目录连通不等于生成端点、余额或配额已验收。')}</div>
+      <div className="lightbox-head"><div><b>{t('API 调用配置')}</b><p>{t('两家供应商独立配置，主生产链整体切换')}</p></div><button onClick={onClose}>✕ {t('关闭')}</button></div>
+      <div className="provider-notice">{t('主生产链一次只启用一家供应商；MoMA 与火山的模型配置分别保存，切换不会覆盖。API Key 仅服务端保存，留空表示不修改。')}</div>
       {error && <div className="provider-error">{error}</div>}
       {notice && <div className="provider-success">{notice}</div>}
       {!settings ? <div className="community-empty">{t('正在读取配置…')}</div> : <div className="provider-config-body">
-        <section className="provider-section"><h3>{t('当前生产路由')}</h3>
-          <div className="provider-route-table"><div className="provider-route-row head"><span>{t('能力')}</span><span>{t('供应商')}</span><span>{t('模型或 EP 接入点 ID')}</span></div>
-            {Object.values(routes).map(route => <div className="provider-route-row" key={route.key}>
+        <section className="provider-section provider-active-section">
+          <label><b>{t('主生产链当前启用')}</b><select value={activeProvider} onChange={e => setActiveProvider(e.target.value as Provider)}><option value="ark">{t('火山引擎')}</option><option value="moma">MoMA</option></select></label>
+          <div className="provider-edit-tabs"><span>{t('正在编辑的配置档案')}</span><button className={editingProvider === 'ark' ? 'on' : ''} onClick={() => setEditingProvider('ark')}>{t('火山引擎')}</button><button className={editingProvider === 'moma' ? 'on' : ''} onClick={() => setEditingProvider('moma')}>MoMA</button></div>
+        </section>
+        <section className="provider-section"><h3>{editingProvider === 'ark' ? t('火山引擎') : 'MoMA'} · {t('独立模型配置')}</h3>
+          <div className="provider-route-table"><div className="provider-route-row head"><span>{t('能力')}</span><span>{t('模型或 EP 接入点 ID')}</span></div>
+            {settings.routes.filter(route => MAIN_KEYS.includes(route.key)).map(route => <div className="provider-route-row independent" key={route.key}>
               <label>{t(route.label)}</label>
-              <select value={route.provider} onChange={e => updateRoute(route.key, 'provider', e.target.value)}><option value="ark">{t('火山引擎')}</option><option value="moma">MoMA</option></select>
-              <input list={`provider-models-${route.provider}`} value={route.model} onChange={e => updateRoute(route.key, 'model', e.target.value)} placeholder={route.key === 'research' || route.key === 'script' || route.key === 'storyboard' ? t('模型 ID 或 EP 接入点 ID') : t('模型 ID')} />
+              <input list={`provider-models-${editingProvider}`} value={profiles[editingProvider]?.[route.key] || ''} onChange={e => updateModel(route.key, e.target.value)} placeholder={route.key === 'script' || route.key === 'storyboard' ? t('模型 ID 或 EP 接入点 ID') : t('模型 ID')} />
             </div>)}
           </div>
-          <small>{t('火山的文本、调研等自定义接入点通常填写 ep-...；图片和视频按实际可用模型 ID 配置。联网调研与 Embedding 当前固定使用火山。')}</small>
+          <small>{t('这里只修改当前档案，不会改变其他供应商的模型。保存时按“主生产链当前启用”整体应用。')}</small>
+        </section>
+        <section className="provider-section"><h3>{t('独立辅助能力（不计入主生产链）')}</h3>
+          <div className="provider-route-table">{settings.routes.filter(route => AUX_KEYS.includes(route.key)).map(route => <div className="provider-route-row independent" key={route.key}><label>{t(route.label)}</label><input list="provider-models-ark" value={profiles.ark?.[route.key] || ''} onChange={e => setProfiles(previous => ({ ...previous, ark: { ...previous.ark, [route.key]: e.target.value } }))} /></div>)}</div>
+          <small>{t('联网调研与 Embedding 当前仅使用火山引擎，不受主生产链切换影响。')}</small>
         </section>
         <datalist id="provider-models-ark">{catalogs.ark.map(model => <option key={model} value={model} />)}</datalist>
         <datalist id="provider-models-moma">{catalogs.moma.map(model => <option key={model} value={model} />)}</datalist>
@@ -100,7 +118,7 @@ export default function ProviderConfig({ open, onClose }: { open: boolean; onClo
             <label>TTS APPID<input value={env.TTS_APPID || ''} onChange={e => setEnv({ ...env, TTS_APPID: e.target.value })} /></label>
             <label>TTS Token<input type="password" autoComplete="off" placeholder={settings.runtime.ttsTokenConfigured ? t('已配置，留空不修改') : t('请输入 TTS Token')} value={env.TTS_TOKEN || ''} onChange={e => setEnv({ ...env, TTS_TOKEN: e.target.value })} /></label>
             <label>TTS Voice<input value={env.TTS_VOICE || ''} onChange={e => setEnv({ ...env, TTS_VOICE: e.target.value })} /></label>
-            <label>Whisper 模型目录<input value={env.WHISPER_MODEL_DIR || ''} onChange={e => setEnv({ ...env, WHISPER_MODEL_DIR: e.target.value })} /></label>
+            <label>Whisper Model Dir<input value={env.WHISPER_MODEL_DIR || ''} onChange={e => setEnv({ ...env, WHISPER_MODEL_DIR: e.target.value })} /></label>
           </details>
         </section>
       </div>}
